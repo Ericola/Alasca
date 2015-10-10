@@ -2,7 +2,7 @@
 <classpath>
 	<classpathentry kind="src" path="src"/>
 	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER/org.eclipse.jdt.internal.debug.ui.launcher.StandardVMType/JavaSE-1.8"/>
-	<classpathentry kind="lib" path="C:/Users/Eric/Downloads/BasicComponentModel-02102015.jar/BasicComponentModel-02102015.jar"/>
 	<classpathentry kind="lib" path="jar/commons-math3-3.5.jar"/>
+	<classpathentry kind="lib" path="jar/BasicComponentModel-02102015.jar"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>
