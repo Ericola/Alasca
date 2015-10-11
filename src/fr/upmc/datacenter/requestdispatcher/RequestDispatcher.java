@@ -1,4 +1,4 @@
-package fr.upmc.datacenter.part1;
+package fr.upmc.datacenter.requestdispatcher;
 
 import java.util.HashMap;
 import java.util.HashSet;
@@ -69,14 +69,14 @@ public class RequestDispatcher extends AbstractComponent implements RequestSubmi
 		this.addPort(this.rdsip) ;
 		this.rdsip.publishPort() ;
 		
-		this.addOfferedInterface(RequestSubmissionI.class) ;
+		this.addRequiredInterface(RequestNotificationI.class) ;
 		this.rdnip =
 				new RequestNotificationInboundPort(
 						rdnip, this) ;
 		this.addPort(this.rdnip) ;
 		this.rdnip.publishPort() ;
 
-		this.addRequiredInterface(RequestNotificationI.class) ;
+		this.addOfferedInterface(RequestSubmissionI.class) ;
 		this.rdsop =
 				new RequestSubmissionOutboundPort(
 						rdsop,
@@ -96,17 +96,21 @@ public class RequestDispatcher extends AbstractComponent implements RequestSubmi
 	@Override
 	public void acceptRequestTerminationNotification(RequestI r)
 			throws Exception {
+		assert	r != null ;
+		this.logMessage("Request dispatcher " + this.rdURI + "  notified the request "+ r.getRequestURI() + " has ended.") ;
 		this.rdnop.notifyRequestTermination(r);
 	}
 
 	@Override
 	public void acceptRequestSubmission(RequestI r) throws Exception {
-		this.rdsip.submitRequest(r);
+		this.logMessage(this.rdURI + " submits request " + r.getRequestURI());
+		this.rdsop.submitRequest(r);
 	}
 
 	@Override
 	public void acceptRequestSubmissionAndNotify(RequestI r) throws Exception {
-		this.rdsip.submitRequestAndNotify(r);
+		this.logMessage(this.rdURI + " submits request " + r.getRequestURI());
+		this.rdsop.submitRequestAndNotify(r);
 
 	}
 

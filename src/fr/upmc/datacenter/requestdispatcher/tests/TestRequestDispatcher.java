@@ -1,4 +1,4 @@
-package fr.upmc.datacenter.part1.tests;
+package fr.upmc.datacenter.requestdispatcher.tests;
 
 import java.util.HashMap;
 import java.util.HashSet;
@@ -16,7 +16,7 @@ import fr.upmc.datacenter.hardware.computers.ports.ComputerDynamicStateDataOutbo
 import fr.upmc.datacenter.hardware.computers.ports.ComputerServicesOutboundPort;
 import fr.upmc.datacenter.hardware.computers.ports.ComputerStaticStateDataOutboundPort;
 import fr.upmc.datacenter.hardware.tests.ComputerMonitor;
-import fr.upmc.datacenter.part1.RequestDispatcher;
+import fr.upmc.datacenter.requestdispatcher.RequestDispatcher;
 import fr.upmc.datacenter.software.applicationvm.ApplicationVM;
 import fr.upmc.datacenter.software.applicationvm.connectors.ApplicationVMManagementConnector;
 import fr.upmc.datacenter.software.applicationvm.ports.ApplicationVMManagementOutboundPort;
@@ -32,7 +32,7 @@ import fr.upmc.datacenterclient.tests.TestRequestGenerator;
 public class TestRequestDispatcher extends AbstractCVM{
 
 	/**
-	 * The class <code>TestRequestGenerator</code> deploys a test application for
+	 * The class <code>TestRequestDispatcher</code> deploys a test application for
 	 * request generation in a single JVM (no remote execution provided) for a data
 	 * center simulation.
 	 *
@@ -252,7 +252,9 @@ public class TestRequestDispatcher extends AbstractCVM{
 				RequestDispatcherRequestSubmissionOutboundPortURI,
 				RequestDispatcherRequestNotificationOutboundPortURI,
 				RequestDispatcherRequestNotificationInboundPortURI);
-				
+		
+		rd.toggleTracing();
+		rd.toggleLogging();
 		
 		this.rsobp =
 				(RequestSubmissionOutboundPort) rg.findPortFromURI(
@@ -290,7 +292,7 @@ public class TestRequestDispatcher extends AbstractCVM{
 				RequestGeneratorManagementInboundPortURI,
 				RequestGeneratorManagementConnector.class.getCanonicalName()) ;
 		// --------------------------------------------------------------------
-
+		this.addDeployedComponent(rd) ;		
 		// complete the deployment at the component virtual machine level.
 		super.deploy();
 	}
@@ -321,6 +323,8 @@ public class TestRequestDispatcher extends AbstractCVM{
 		this.rsobp.doDisconnection() ;
 		this.nobp.doDisconnection() ;
 		this.rgmop.doDisconnection() ;
+		this.rdnobp.doDisconnection();
+		this.rdrsobp.doDisconnection();
 
 		super.shutdown() ;
 	}
@@ -349,20 +353,20 @@ public class TestRequestDispatcher extends AbstractCVM{
 	{
 		// Uncomment next line to execute components in debug mode.
 		// AbstractCVM.toggleDebugMode() ;
-		final TestRequestGenerator trg = new TestRequestGenerator() ;
+		final TestRequestDispatcher trd = new TestRequestDispatcher();
 		try {
 			// Deploy the components
-			trg.deploy() ;
+			trd.deploy() ;
 			System.out.println("starting...") ;
 			// Start them.
-			trg.start() ;
+			trd.start() ;
 			// Execute the chosen request generation test scenario in a
 			// separate thread.
 			new Thread(new Runnable() {
 				@Override
 				public void run() {
 					try {
-						trg.testScenario() ;
+						trd.testScenario() ;
 					} catch (Exception e) {
 						e.printStackTrace();
 					}
@@ -372,7 +376,7 @@ public class TestRequestDispatcher extends AbstractCVM{
 			Thread.sleep(90000L) ;
 			// Shut down the application.
 			System.out.println("shutting down...") ;
-			trg.shutdown() ;
+			trd.shutdown() ;
 			System.out.println("ending...") ;
 			// Exit from Java.
 			System.exit(0) ;
