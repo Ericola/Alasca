@@ -1,8 +1,10 @@
 package fr.upmc.datacenter.requestdispatcher;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedList;
+import java.util.List;
 import java.util.Map;
 
 import fr.upmc.components.AbstractComponent;
@@ -25,118 +27,110 @@ import fr.upmc.datacenter.software.ports.RequestNotificationOutboundPort;
 import fr.upmc.datacenter.software.ports.RequestSubmissionInboundPort;
 import fr.upmc.datacenter.software.ports.RequestSubmissionOutboundPort;
 
-public class RequestDispatcher extends AbstractComponent implements RequestSubmissionHandlerI, RequestNotificationHandlerI{
+public class RequestDispatcher extends AbstractComponent
+        implements RequestSubmissionHandlerI, RequestNotificationHandlerI {
 
-	/** URI of this request dispatcher RD										*/
-	protected String rdURI ;
+    /** URI of this request dispatcher RD */
+    protected String rdURI;
 
-	/** Map between RD URIs and the VM outbound ports to call them.		*/
-	protected RequestSubmissionInboundPort rdsip;
-	protected RequestSubmissionOutboundPort rdsop;
-	
-	
-	protected RequestNotificationInboundPort rdnip;
-	/** Outbound port used by the RD to notify tasks' termination to the generator. */
-	protected RequestNotificationOutboundPort rdnop ;
+    /** Map between RD URIs and the VM outbound ports to call them. */
+    protected RequestSubmissionInboundPort        rdsip;
+    protected List<RequestSubmissionOutboundPort> rdsopList;
 
-	public RequestDispatcher(
-			String rdURI,
-			String rdsip,
-			String rdsop,
-			String rdnop,
-			String rdnip
-			) throws Exception
-	{
-		super(true, false) ;
+    protected RequestNotificationInboundPort  rdnip;
+    /** Outbound port used by the RD to notify tasks' termination to the generator. */
+    protected RequestNotificationOutboundPort rdnop;
 
-		// Preconditions
-		assert	rdURI != null ;
-		
-		assert	rdsip != null ;
-		assert	rdsop != null ;
-		
-		assert	rdnip != null ;
-		assert	rdnop != null ;
-		
+    protected int current = 0;
 
-		this.rdURI = rdURI ;
+    public RequestDispatcher( String rdURI , String rdsip , List<String> rdsop , String rdnop , String rdnip )
+            throws Exception {
+        super( true , false );
 
-		// Interfaces
-		this.addOfferedInterface(RequestSubmissionI.class) ;
-		this.rdsip =
-				new RequestSubmissionInboundPort(
-						rdsip, this) ;
-		this.addPort(this.rdsip) ;
-		this.rdsip.publishPort() ;
-		
-		this.addRequiredInterface(RequestNotificationI.class) ;
-		this.rdnip =
-				new RequestNotificationInboundPort(
-						rdnip, this) ;
-		this.addPort(this.rdnip) ;
-		this.rdnip.publishPort() ;
+        // Preconditions
+        assert rdURI != null;
 
-		this.addOfferedInterface(RequestSubmissionI.class) ;
-		this.rdsop =
-				new RequestSubmissionOutboundPort(
-						rdsop,
-						this) ;
-		this.addPort(this.rdsop) ;
-		this.rdsop.publishPort() ;
-		
-		this.addRequiredInterface(RequestNotificationI.class) ;
-		this.rdnop =
-				new RequestNotificationOutboundPort(
-						rdnop,
-						this) ;
-		this.addPort(this.rdnop) ;
-		this.rdnop.publishPort() ;
-	}
+        assert rdsip != null;
+        assert rdsop != null;
 
-	@Override
-	public void acceptRequestTerminationNotification(RequestI r)
-			throws Exception {
-		assert	r != null ;
-		this.logMessage("Request dispatcher " + this.rdURI + "  notified the request "+ r.getRequestURI() + " has ended.") ;
-		this.rdnop.notifyRequestTermination(r);
-	}
+        assert rdnip != null;
+        assert rdnop != null;
 
-	@Override
-	public void acceptRequestSubmission(RequestI r) throws Exception {
-		this.logMessage(this.rdURI + " submits request " + r.getRequestURI());
-		this.rdsop.submitRequest(r);
-	}
+        this.rdURI = rdURI;
 
-	@Override
-	public void acceptRequestSubmissionAndNotify(RequestI r) throws Exception {
-		this.logMessage(this.rdURI + " submits request " + r.getRequestURI());
-		this.rdsop.submitRequestAndNotify(r);
+        rdsopList = new ArrayList<>();
 
-	}
+        // Interfaces
+        this.addOfferedInterface( RequestSubmissionI.class );
+        this.rdsip = new RequestSubmissionInboundPort( rdsip , this );
+        this.addPort( this.rdsip );
+        this.rdsip.publishPort();
 
-	public void	shutdown() throws ComponentShutdownException
-	{
-		// Disconnect ports to the request emitter and to the processors owning
-		// the allocated cores.
-		try {
-			if (this.rdnop.connected()) {
-				this.rdnop.doDisconnection() ;
-			}
-			if (this.rdsop.connected()) {
-				this.rdsop.doDisconnection() ;
-			}
-		} catch (Exception e) {
-			throw new ComponentShutdownException(e) ;
-		}
+        this.addRequiredInterface( RequestNotificationI.class );
+        this.rdnip = new RequestNotificationInboundPort( rdnip , this );
+        this.addPort( this.rdnip );
+        this.rdnip.publishPort();
 
-		try {
-			rdnip.doDisconnection();
-			rdsip.doDisconnection() ;
-		} catch (Exception e) {
-			throw new ComponentShutdownException(e) ;
-		}
+        for ( int i = 0 ; i < rdsop.size() ; i++ ) {
+            this.addOfferedInterface( RequestSubmissionI.class );
+            this.rdsopList.add( new RequestSubmissionOutboundPort( rdsop.get( i ) , this ) );
+            this.addPort( this.rdsopList.get( i ) );
+            this.rdsopList.get( i ).publishPort();
+        }
 
+        this.addRequiredInterface( RequestNotificationI.class );
+        this.rdnop = new RequestNotificationOutboundPort( rdnop , this );
+        this.addPort( this.rdnop );
+        this.rdnop.publishPort();
+    }
 
-		super.shutdown();
-	}
+    @Override
+    public void acceptRequestTerminationNotification( RequestI r ) throws Exception {
+        assert r != null;
+        this.logMessage(
+                "Request dispatcher " + this.rdURI + "  notified the request " + r.getRequestURI() + " has ended." );
+        this.rdnop.notifyRequestTermination( r );
+    }
+
+    @Override
+    public void acceptRequestSubmission( RequestI r ) throws Exception {
+        this.logMessage( this.rdURI + " submits request " + r.getRequestURI() );
+        this.rdsopList.get( current ).submitRequest( r );
+        current = ( current + 1 ) % rdsopList.size();
+
+    }
+
+    @Override
+    public void acceptRequestSubmissionAndNotify( RequestI r ) throws Exception {
+        this.logMessage( this.rdURI + " submits request " + r.getRequestURI() );
+        this.rdsopList.get( current ).submitRequestAndNotify( r );
+        current = ( current + 1 ) % rdsopList.size();
+    }
+
+    public void shutdown() throws ComponentShutdownException {
+        // Disconnect ports to the request emitter and to the processors owning
+        // the allocated cores.
+        try {
+            if ( this.rdnop.connected() ) {
+                this.rdnop.doDisconnection();
+            }
+            for ( int i = 0 ; i < rdsopList.size() ; i++ )
+                if ( this.rdsopList.get( i ).connected() ) {
+                    this.rdsopList.get( i ).doDisconnection();
+                }
+        }
+        catch ( Exception e ) {
+            throw new ComponentShutdownException( e );
+        }
+
+        try {
+            rdnip.doDisconnection();
+            rdsip.doDisconnection();
+        }
+        catch ( Exception e ) {
+            throw new ComponentShutdownException( e );
+        }
+
+        super.shutdown();
+    }
 }

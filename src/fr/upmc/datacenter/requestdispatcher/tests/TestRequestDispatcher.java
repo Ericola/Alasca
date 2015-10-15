@@ -1,7 +1,9 @@
 package fr.upmc.datacenter.requestdispatcher.tests;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -247,11 +249,16 @@ public class TestRequestDispatcher extends AbstractCVM{
 		// Creating the request dispatcher component.
 		// --------------------------------------------------------------------
 		
+		List<String> rdsopList = new ArrayList<>();
+		rdsopList.add(RequestDispatcherRequestSubmissionOutboundPortURI);
+
 		RequestDispatcher rd = new RequestDispatcher("rd", 
 				RequestDispatcherRequestSubmissionInboundPortURI,
-				RequestDispatcherRequestSubmissionOutboundPortURI,
+				rdsopList,
 				RequestDispatcherRequestNotificationOutboundPortURI,
 				RequestDispatcherRequestNotificationInboundPortURI);
+		
+		
 		
 		rd.toggleTracing();
 		rd.toggleLogging();
@@ -382,6 +389,6 @@ public class TestRequestDispatcher extends AbstractCVM{
 			System.exit(0) ;
 		} catch (Exception e) {
 			e.printStackTrace();
-		}
-	}
+        }
+    }
 }
