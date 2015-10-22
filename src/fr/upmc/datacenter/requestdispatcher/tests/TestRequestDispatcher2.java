@@ -73,7 +73,7 @@ public class TestRequestDispatcher2 extends AbstractCVM {
     // ------------------------------------------------------------------------
     // Constants and instance variables
     // ------------------------------------------------------------------------
-    public static final int NBVM = 2;
+    public static final int NBVM = 4;
 
     // Predefined URI of the different ports visible at the component assembly
     // level.
