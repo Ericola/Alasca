@@ -2,6 +2,8 @@ package fr.upmc.datacenterclient.applicationprovider.ports;
 
 import fr.upmc.components.ComponentI;
 import fr.upmc.components.ports.AbstractOutboundPort;
+import fr.upmc.datacenter.software.interfaces.RequestSubmissionI;
+import fr.upmc.datacenterclient.applicationprovider.ApplicationProvider;
 import fr.upmc.datacenterclient.applicationprovider.interfaces.ApplicationSubmissionI;
 
 public class ApplicationSubmissionOutboundPort extends AbstractOutboundPort implements ApplicationSubmissionI {
@@ -11,8 +13,8 @@ public class ApplicationSubmissionOutboundPort extends AbstractOutboundPort impl
     }
 
     @Override
-    public String submitApplication( int nbVM ) {
-        return null;
+    public String submitApplication( int nbVM ) throws Exception {
+      return  ( ( ApplicationSubmissionI ) this.connector ).submitApplication( nbVM );
     }
 
 }
