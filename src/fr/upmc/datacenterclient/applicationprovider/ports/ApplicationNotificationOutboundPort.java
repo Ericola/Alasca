@@ -12,9 +12,9 @@ public class ApplicationNotificationOutboundPort extends AbstractOutboundPort im
     }
 
     @Override
-    public void notifyRequestGeneratorCreated( String requestNotificationInboundPortURI ) throws Exception {
+    public void notifyRequestGeneratorCreated( String requestNotificationInboundPortURI , int i ) throws Exception {
         ( ( ApplicationNotificationI ) this.connector )
-                .notifyRequestGeneratorCreated( requestNotificationInboundPortURI );
+                .notifyRequestGeneratorCreated( requestNotificationInboundPortURI , i );
     }
 
 }

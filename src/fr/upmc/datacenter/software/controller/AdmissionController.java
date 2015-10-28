@@ -35,7 +35,7 @@ public class AdmissionController extends AbstractComponent {
 
     private int cpt = 0;
 
-    private RequestDispatcher rd;
+    private List<RequestDispatcher> rdList;
 
     public AdmissionController( String apURI , String applicationSubmissionInboundPortURI ,
             String applicationNotificationInboundPortURI , String computerServiceOutboundPortURI ) throws Exception {
@@ -54,6 +54,8 @@ public class AdmissionController extends AbstractComponent {
         this.csop = new ComputerServicesOutboundPort( computerServiceOutboundPortURI , this );
         this.addPort( csop );
         this.csop.localPublishPort();
+
+        rdList = new ArrayList<>();
     }
 
     public String submitApplication( int nbVm ) throws Exception {
@@ -75,22 +77,28 @@ public class AdmissionController extends AbstractComponent {
         // Création d'un requestdispatcher
         List<String> rdsop = new ArrayList<>();
         rdsop.add( createURI( "rdsop" ) );
-        rd = new RequestDispatcher( createURI( "rd" ) , createURI( "rdsip" ) , rdsop , createURI( "rdnop" ) ,
-                createURI( "rdnip" ) );
+        RequestDispatcher rd = new RequestDispatcher( createURI( "rd" ) , createURI( "rdsip" ) , rdsop ,
+                createURI( "rdnop" ) , createURI( "rdnip" ) );
+        rdList.add( rd );
         AbstractCVM.theCVM.addDeployedComponent( rd );
 
         // Connect RD with VM
         RequestSubmissionOutboundPort rsop = ( RequestSubmissionOutboundPort ) rd.findPortFromURI( rdsop.get( 0 ) );
         rsop.doConnection( createURI( "rsip" ) , RequestSubmissionConnector.class.getCanonicalName() );
         String res = createURI( "rdsip" );
+        vm.toggleTracing();
+        vm.toggleLogging();
 
         cpt++;
         return res;
     }
 
-    public void notifyRequestGeneratorCreated( String requestNotificationInboundPortURI ) throws Exception {
-        RequestNotificationOutboundPort rdnop = ( RequestNotificationOutboundPort ) rd.findPortFromURI( createURI( "rdnop" ) );
+    public void notifyRequestGeneratorCreated( String requestNotificationInboundPortURI, int i ) throws Exception {
+        RequestNotificationOutboundPort rdnop = ( RequestNotificationOutboundPort ) rdList.get( i )
+                .findPortFromURI(  "rdnop" + i );
         rdnop.doConnection( requestNotificationInboundPortURI , RequestNotificationConnector.class.getCanonicalName() );
+        rdList.get(i).toggleTracing();
+        rdList.get(i).toggleLogging();
     }
 
     private String createURI( String uri ) {

@@ -45,12 +45,16 @@ public class ApplicationProvider extends AbstractComponent {
             AbstractCVM.theCVM.addDeployedComponent( rg );
             RequestSubmissionOutboundPort rsop = ( RequestSubmissionOutboundPort ) rg.findPortFromURI( "rsop" );
             rsop.doConnection( requestDispatcherURI , RequestSubmissionConnector.class.getCanonicalName() );
+            
+            rg.toggleTracing();
+            rg.toggleLogging();
 
             rgmop = new RequestGeneratorManagementOutboundPort( "rgmop" , this );
             rgmop.publishPort();
             rgmop.doConnection( "rgmip" , RequestGeneratorManagementConnector.class.getCanonicalName() );
 
-            anop.notifyRequestGeneratorCreated( "rnip" );
+            int cpt = Integer.parseInt( requestDispatcherURI.substring( 5 , requestDispatcherURI.length() ) );
+            anop.notifyRequestGeneratorCreated( "rnip" , cpt );
             rg.startGeneration();
         }
         else
