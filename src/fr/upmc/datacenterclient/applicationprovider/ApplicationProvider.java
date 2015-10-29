@@ -37,9 +37,9 @@ public class ApplicationProvider extends AbstractComponent {
     }
 
     public void sendApplication() throws Exception {
-        System.out.println( "ApplicationProvider --> sendApplication" );
+        this.logMessage( this.apURI + " Begin sendApplication" );
         String requestDispatcherURI = this.asop.submitApplication( 1 );
-
+        System.out.println( requestDispatcherURI );
         if ( requestDispatcherURI != null ) {
             // Creation dynamique du request generator
             RequestGenerator rg = new RequestGenerator( "rg" , 500.0 , 6000000000L , "rgmip" , "rsop" , "rnip" );
@@ -58,9 +58,10 @@ public class ApplicationProvider extends AbstractComponent {
             System.out.println( "ApplicationProvider --> notifying requestGenerator Created" );
             anop.notifyRequestGeneratorCreated( "rnip" , cpt );
             rg.startGeneration();
+            this.logMessage( this.apURI + " Finish sendApplication" );
         }
         else
-            System.out.println( "Pas de ressources disponible" );
+            this.logMessage( this.apURI + " Pas de ressources disponibles" );
     }
 
     public void stopApplication() throws Exception {

@@ -35,7 +35,7 @@ public class AdmissionController extends AbstractComponent {
 
     private int cpt = 0;
 
-    private List<RequestDispatcher> rdList;
+    private List<RequestNotificationOutboundPort> rnopList;
 
     public AdmissionController( String apURI , String applicationSubmissionInboundPortURI ,
             String applicationNotificationInboundPortURI , String computerServiceOutboundPortURI ) throws Exception {
@@ -44,25 +44,24 @@ public class AdmissionController extends AbstractComponent {
         this.addRequiredInterface( ApplicationSubmissionI.class );
         this.asip = new ApplicationSubmissionInboundPort( applicationSubmissionInboundPortURI , this );
         this.addPort( asip );
-        this.asip.publishPort();
+        this.asip.localPublishPort();
 
         this.addRequiredInterface( ApplicationNotificationI.class );
         this.anip = new ApplicationNotificationInboundPort( applicationNotificationInboundPortURI , this );
         this.addPort( anip );
-        this.anip.publishPort();
+        this.anip.localPublishPort();
 
         this.csop = new ComputerServicesOutboundPort( computerServiceOutboundPortURI , this );
         this.addPort( csop );
-        this.csop.publishPort();
+        this.csop.localPublishPort();
 
-        rdList = new ArrayList<>();
+        rnopList = new ArrayList<>();
     }
 
     public String submitApplication( int nbVm ) throws Exception {
-        System.out.println( "AdmissionController --> submitApplication" );
-        // Verifier que des resources sont disponible
-
-        // Création d'une VM
+        this.logMessage( this.apURI + " Begin sendApplication" );// Verifier que des resources sont
+                                                                 // disponible
+        // Creation d'une VM
         ApplicationVM vm = new ApplicationVM( createURI( "vm" ) , createURI( "avmip" ) , createURI( "rsip" ) ,
                 createURI( "rnop" ) );
         AbstractCVM.theCVM.addDeployedComponent( vm );
@@ -80,7 +79,7 @@ public class AdmissionController extends AbstractComponent {
         rdsop.add( createURI( "rdsop" ) );
         RequestDispatcher rd = new RequestDispatcher( createURI( "rd" ) , createURI( "rdsip" ) , rdsop ,
                 createURI( "rdnop" ) , createURI( "rdnip" ) );
-        rdList.add( rd );
+        rnopList.add( ( RequestNotificationOutboundPort ) ( rd.findPortFromURI( createURI( "rdnop" ) ) ) );
         AbstractCVM.theCVM.addDeployedComponent( rd );
 
         // Connect RD with VM
@@ -89,23 +88,19 @@ public class AdmissionController extends AbstractComponent {
         String res = createURI( "rdsip" );
         vm.toggleTracing();
         vm.toggleLogging();
-
+        rd.toggleTracing();
+        rd.toggleLogging();
+        this.logMessage( this.apURI + " Finish submitApplication" );
         cpt++;
-        System.out.println( "fin de submitApplication" );
         return res;
     }
 
     public void notifyRequestGeneratorCreated( String requestNotificationInboundPortURI , int i ) throws Exception {
-        System.out.println( "AdmissionController --> notifyRequestGeneratorCreated" );
-        RequestNotificationOutboundPort rdnop = ( RequestNotificationOutboundPort ) rdList.get( i )
-                .findPortFromURI( "rdnop" + i );
-        rdnop.doConnection( requestNotificationInboundPortURI , RequestNotificationConnector.class.getCanonicalName() );
-        rdList.get( i ).toggleTracing();
-        rdList.get( i ).toggleLogging();
+        rnopList.get( i ).doConnection( requestNotificationInboundPortURI ,
+                RequestNotificationConnector.class.getCanonicalName() );
     }
 
     private String createURI( String uri ) {
         return uri + cpt;
     }
-
 }

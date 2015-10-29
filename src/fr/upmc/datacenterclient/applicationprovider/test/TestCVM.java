@@ -28,7 +28,8 @@ public class TestCVM extends AbstractCVM {
     protected ComputerDynamicStateDataOutboundPort cdsdop;
     protected ApplicationSubmissionOutboundPort    asop;
     protected ApplicationNotificationOutboundPort  anop;
-
+    protected ApplicationProvider ap;
+    
     @Override
     public void deploy() throws Exception {
         // --------------------------------------------------------------------
@@ -70,10 +71,14 @@ public class TestCVM extends AbstractCVM {
         this.addDeployedComponent( ac );
         this.csop = ( ComputerServicesOutboundPort ) ac.findPortFromURI( "csop" );
         this.csop.doConnection( "csip" , ComputerServicesConnector.class.getCanonicalName() );
-
-        ApplicationProvider ap = new ApplicationProvider( "ap" , "asop" , "anop" );
+        ac.toggleTracing();
+        ac.toggleLogging();
+        
+        ap = new ApplicationProvider( "ap" , "asop" , "anop" );
         this.addDeployedComponent( ap );
-
+        ap.toggleTracing();
+        ap.toggleLogging();
+        
         // asop -- asip
         this.asop = ( ApplicationSubmissionOutboundPort ) ap.findPortFromURI( "asop" );
         this.asop.doConnection( "asip" , ApplicationSubmissionConnector.class.getCanonicalName() );
@@ -91,8 +96,7 @@ public class TestCVM extends AbstractCVM {
     }
 
     public void test() throws Exception {
-        asop.submitApplication( 1 );
-        Thread.sleep( 20000L );
+        ap.sendApplication();
     }
 
     @Override
@@ -120,7 +124,7 @@ public class TestCVM extends AbstractCVM {
 					}
 				}
 			}).start() ;
-			Thread.sleep(90000L) ;
+			Thread.sleep(10000L) ;
 			System.out.println("shutting down...") ;
 			test.shutdown() ;
 			System.out.println("ending...") ;
