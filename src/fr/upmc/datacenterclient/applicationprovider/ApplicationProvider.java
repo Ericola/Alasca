@@ -37,6 +37,7 @@ public class ApplicationProvider extends AbstractComponent {
     }
 
     public void sendApplication() throws Exception {
+        System.out.println( "ApplicationProvider --> sendApplication" );
         String requestDispatcherURI = this.asop.submitApplication( 1 );
 
         if ( requestDispatcherURI != null ) {
@@ -45,7 +46,7 @@ public class ApplicationProvider extends AbstractComponent {
             AbstractCVM.theCVM.addDeployedComponent( rg );
             RequestSubmissionOutboundPort rsop = ( RequestSubmissionOutboundPort ) rg.findPortFromURI( "rsop" );
             rsop.doConnection( requestDispatcherURI , RequestSubmissionConnector.class.getCanonicalName() );
-            
+
             rg.toggleTracing();
             rg.toggleLogging();
 
@@ -54,6 +55,7 @@ public class ApplicationProvider extends AbstractComponent {
             rgmop.doConnection( "rgmip" , RequestGeneratorManagementConnector.class.getCanonicalName() );
 
             int cpt = Integer.parseInt( requestDispatcherURI.substring( 5 , requestDispatcherURI.length() ) );
+            System.out.println( "ApplicationProvider --> notifying requestGenerator Created" );
             anop.notifyRequestGeneratorCreated( "rnip" , cpt );
             rg.startGeneration();
         }

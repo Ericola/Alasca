@@ -44,21 +44,22 @@ public class AdmissionController extends AbstractComponent {
         this.addRequiredInterface( ApplicationSubmissionI.class );
         this.asip = new ApplicationSubmissionInboundPort( applicationSubmissionInboundPortURI , this );
         this.addPort( asip );
-        this.asip.localPublishPort();
+        this.asip.publishPort();
 
         this.addRequiredInterface( ApplicationNotificationI.class );
         this.anip = new ApplicationNotificationInboundPort( applicationNotificationInboundPortURI , this );
         this.addPort( anip );
-        this.anip.localPublishPort();
+        this.anip.publishPort();
 
         this.csop = new ComputerServicesOutboundPort( computerServiceOutboundPortURI , this );
         this.addPort( csop );
-        this.csop.localPublishPort();
+        this.csop.publishPort();
 
         rdList = new ArrayList<>();
     }
 
     public String submitApplication( int nbVm ) throws Exception {
+        System.out.println( "AdmissionController --> submitApplication" );
         // Verifier que des resources sont disponible
 
         // Création d'une VM
@@ -90,15 +91,17 @@ public class AdmissionController extends AbstractComponent {
         vm.toggleLogging();
 
         cpt++;
+        System.out.println( "fin de submitApplication" );
         return res;
     }
 
-    public void notifyRequestGeneratorCreated( String requestNotificationInboundPortURI, int i ) throws Exception {
+    public void notifyRequestGeneratorCreated( String requestNotificationInboundPortURI , int i ) throws Exception {
+        System.out.println( "AdmissionController --> notifyRequestGeneratorCreated" );
         RequestNotificationOutboundPort rdnop = ( RequestNotificationOutboundPort ) rdList.get( i )
-                .findPortFromURI(  "rdnop" + i );
+                .findPortFromURI( "rdnop" + i );
         rdnop.doConnection( requestNotificationInboundPortURI , RequestNotificationConnector.class.getCanonicalName() );
-        rdList.get(i).toggleTracing();
-        rdList.get(i).toggleLogging();
+        rdList.get( i ).toggleTracing();
+        rdList.get( i ).toggleLogging();
     }
 
     private String createURI( String uri ) {
