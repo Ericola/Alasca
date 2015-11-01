@@ -1,0 +1,10 @@
+<project name="BasicComponentModel" default="tests.stubs.compilation">
+	<target name="tests.stubs.compilation">
+		<echo message="Recompiling stubs..."/>
+		<echo message="Recompiling fr.upmc.components.examples.basic_cs.ports.URIProviderInboundPort"/>
+		<rmic classpath="${classpath}:../../../../../../../BasicComponentModel/bin/"
+			  classname="fr.upmc.components.examples.basic_cs.ports.URIProviderInboundPort"
+		      base="../../../../../../../BasicComponentModel/bin/"/>
+		<echo message="Stubs recompiled!"/>
+	</target>
+</project>
