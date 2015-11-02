@@ -1,0 +1,4 @@
+#!/bin/bash
+java -ea -cp '../jar/*' -Djava.security.manager \
+     -Djava.security.policy=dcvm.policy \
+     fr.upmc.components.registry.GlobalRegistry config.xml

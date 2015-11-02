@@ -43,6 +43,9 @@ public class RequestDispatcher extends AbstractComponent
 
     protected int current = 0;
 
+    private int     cpt              = 0;
+    private boolean askedForShutdown = false;
+
     public RequestDispatcher( String rdURI , String rdsip , List<String> rdsop , String rdnop , String rdnip )
             throws Exception {
         super( true , false );
@@ -90,6 +93,9 @@ public class RequestDispatcher extends AbstractComponent
         this.logMessage(
                 "Request dispatcher " + this.rdURI + "  notified the request " + r.getRequestURI() + " has ended." );
         this.rdnop.notifyRequestTermination( r );
+        cpt--;
+        if ( askedForShutdown && cpt == 0 )
+            shutdown();
     }
 
     @Override
@@ -97,6 +103,7 @@ public class RequestDispatcher extends AbstractComponent
         this.logMessage( this.rdURI + " submits request " + r.getRequestURI() );
         this.rdsopList.get( current ).submitRequest( r );
         current = ( current + 1 ) % rdsopList.size();
+        cpt++;
 
     }
 
@@ -105,6 +112,11 @@ public class RequestDispatcher extends AbstractComponent
         this.logMessage( this.rdURI + " submits request " + r.getRequestURI() );
         this.rdsopList.get( current ).submitRequestAndNotify( r );
         current = ( current + 1 ) % rdsopList.size();
+        cpt++;
+    }
+
+    public boolean isWaitingForTermination() {
+        return cpt == 0;
     }
 
     public void shutdown() throws ComponentShutdownException {

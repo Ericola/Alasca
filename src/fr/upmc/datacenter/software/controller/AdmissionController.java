@@ -122,6 +122,8 @@ public class AdmissionController extends AbstractComponent {
                 RequestNotificationConnector.class.getCanonicalName() );
         print( "RequestGenerator and requestDispatcher are connected" );
     }
+    
+    public void freeUpVM(){}
 
     private String createURI( String uri ) {
         return uri + cpt;

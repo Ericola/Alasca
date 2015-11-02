@@ -1,0 +1,9 @@
+#!/bin/bash
+if [ -z "$1" ]; then 
+  echo usage: $0 testNumber jvmName
+  exit
+ fi
+java -ea -cp '../bin/*' -Djava.security.manager \
+     -Djava.security.policy=dcvm.policy \
+     fr.upmc.datacenterclient.applicationprovider.test.test1appprovidermultijvm.TestAppProviderMultiJVM $1 config.xml
+

@@ -1,0 +1,23 @@
+package fr.upmc.datacenter.software.controller.ports;
+
+import fr.upmc.components.ComponentI;
+import fr.upmc.components.ports.AbstractOutboundPort;
+import fr.upmc.datacenter.software.controller.interfaces.AdmissionControllerManagementI;
+
+public class AdmissionControllerManagementOutboundPort extends AbstractOutboundPort
+        implements AdmissionControllerManagementI {
+
+    public AdmissionControllerManagementOutboundPort( ComponentI owner ) throws Exception {
+        super( AdmissionControllerManagementI.class , owner );
+    }
+
+    public AdmissionControllerManagementOutboundPort( String uri , ComponentI owner ) throws Exception {
+        super( uri , AdmissionControllerManagementI.class , owner );
+    }
+
+    @Override
+    public void freeUpVM() throws Exception {
+        ( ( AdmissionControllerManagementI ) this.connector ).freeUpVM();;
+
+    }
+}

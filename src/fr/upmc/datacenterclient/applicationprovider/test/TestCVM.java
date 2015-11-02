@@ -5,6 +5,7 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
+import fr.upmc.components.AbstractComponent;
 import fr.upmc.components.connectors.DataConnector;
 import fr.upmc.components.cvm.AbstractCVM;
 import fr.upmc.datacenter.connectors.ControlledDataConnector;
@@ -17,18 +18,21 @@ import fr.upmc.datacenter.hardware.tests.ComputerMonitor;
 import fr.upmc.datacenter.software.controller.AdmissionController;
 import fr.upmc.datacenterclient.applicationprovider.ApplicationProvider;
 import fr.upmc.datacenterclient.applicationprovider.connectors.ApplicationNotificationConnector;
+import fr.upmc.datacenterclient.applicationprovider.connectors.ApplicationProviderManagementConnector;
 import fr.upmc.datacenterclient.applicationprovider.connectors.ApplicationSubmissionConnector;
 import fr.upmc.datacenterclient.applicationprovider.ports.ApplicationNotificationOutboundPort;
+import fr.upmc.datacenterclient.applicationprovider.ports.ApplicationProviderManagementOutboundPort;
 import fr.upmc.datacenterclient.applicationprovider.ports.ApplicationSubmissionOutboundPort;
 
 public class TestCVM extends AbstractCVM {
 
-    protected ComputerServicesOutboundPort         csop;
-    protected ComputerStaticStateDataOutboundPort  cssdop;
-    protected ComputerDynamicStateDataOutboundPort cdsdop;
-    protected ApplicationSubmissionOutboundPort    asop;
-    protected ApplicationNotificationOutboundPort  anop;
-    protected ApplicationProvider                  ap;
+    protected ComputerServicesOutboundPort              csop;
+    protected ComputerStaticStateDataOutboundPort       cssdop;
+    protected ComputerDynamicStateDataOutboundPort      cdsdop;
+    protected ApplicationSubmissionOutboundPort         asop;
+    protected ApplicationNotificationOutboundPort       anop;
+    protected ApplicationProvider                       ap;
+    protected ApplicationProviderManagementOutboundPort apmop;
 
     @Override
     public void deploy() throws Exception {
@@ -76,7 +80,7 @@ public class TestCVM extends AbstractCVM {
         ac.toggleTracing();
         ac.toggleLogging();
 
-        ap = new ApplicationProvider( "ap" , "asop" , "anop" );
+        ap = new ApplicationProvider( "ap" , "asop" , "anop", "apmip" );
         this.addDeployedComponent( ap );
         ap.toggleTracing();
         ap.toggleLogging();
@@ -89,6 +93,9 @@ public class TestCVM extends AbstractCVM {
         this.anop = ( ApplicationNotificationOutboundPort ) ap.findPortFromURI( "anop" );
         this.anop.doConnection( "anip" , ApplicationNotificationConnector.class.getCanonicalName() );
 
+        this.apmop = new ApplicationProviderManagementOutboundPort( "apmop" , new AbstractComponent() {} );
+        this.apmop.publishPort();
+        this.apmop.doConnection( "apmip" , ApplicationProviderManagementConnector.class.getCanonicalName() );
         super.deploy();
     }
 
@@ -98,7 +105,7 @@ public class TestCVM extends AbstractCVM {
     }
 
     public void test() throws Exception {
-        ap.sendApplication();
+        apmop.sendApplication();
     }
 
     @Override
