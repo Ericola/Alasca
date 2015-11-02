@@ -37,12 +37,15 @@ public class ApplicationProvider extends AbstractComponent {
     }
 
     public void sendApplication() throws Exception {
-        this.logMessage( this.apURI + " Begin sendApplication" );
+        print( "Submit an application" );
+        print( "Waiting for URI" );
         String requestDispatcherURI = this.asop.submitApplication( 1 );
-        System.out.println( requestDispatcherURI );
+        print( "URI received" );
         if ( requestDispatcherURI != null ) {
+
             // Creation dynamique du request generator
-            RequestGenerator rg = new RequestGenerator( "rg" , 500.0 , 6000000000L , "rgmip" , "rsop" , "rnip" );
+            print( "creating RequestGenerator" );
+            RequestGenerator rg = new RequestGenerator( "rg" , 2000.0 , 6000000000L , "rgmip" , "rsop" , "rnip" );
             AbstractCVM.theCVM.addDeployedComponent( rg );
             RequestSubmissionOutboundPort rsop = ( RequestSubmissionOutboundPort ) rg.findPortFromURI( "rsop" );
             rsop.doConnection( requestDispatcherURI , RequestSubmissionConnector.class.getCanonicalName() );
@@ -55,17 +58,19 @@ public class ApplicationProvider extends AbstractComponent {
             rgmop.doConnection( "rgmip" , RequestGeneratorManagementConnector.class.getCanonicalName() );
 
             int cpt = Integer.parseInt( requestDispatcherURI.substring( 5 , requestDispatcherURI.length() ) );
-            System.out.println( "ApplicationProvider --> notifying requestGenerator Created" );
+            print( "Notify requestGenerator created" );
             anop.notifyRequestGeneratorCreated( "rnip" , cpt );
             rg.startGeneration();
-            this.logMessage( this.apURI + " Finish sendApplication" );
         }
         else
-            this.logMessage( this.apURI + " Pas de ressources disponibles" );
+            print( "Pas de resources disponibles" );
     }
 
     public void stopApplication() throws Exception {
         rgmop.stopGeneration();
     }
 
+    private void print( String s ) {
+        this.logMessage( "[ApplicationProvider] " + s );
+    }
 }

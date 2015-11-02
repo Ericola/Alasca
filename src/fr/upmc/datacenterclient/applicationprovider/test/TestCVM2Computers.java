@@ -21,11 +21,13 @@ import fr.upmc.datacenterclient.applicationprovider.connectors.ApplicationSubmis
 import fr.upmc.datacenterclient.applicationprovider.ports.ApplicationNotificationOutboundPort;
 import fr.upmc.datacenterclient.applicationprovider.ports.ApplicationSubmissionOutboundPort;
 
-public class TestCVM extends AbstractCVM {
+public class TestCVM2Computers extends AbstractCVM {
 
+    private static final int                       NB_COMPUTER = 2;
+    private static final int                       NB_APPPROVIDER = 2;
     protected ComputerServicesOutboundPort         csop;
-    protected ComputerStaticStateDataOutboundPort  cssdop;
-    protected ComputerDynamicStateDataOutboundPort cdsdop;
+    protected ComputerStaticStateDataOutboundPort  cssdop[];
+    protected ComputerDynamicStateDataOutboundPort cdsdop[];
     protected ApplicationSubmissionOutboundPort    asop;
     protected ApplicationNotificationOutboundPort  anop;
     protected ApplicationProvider                  ap;
@@ -45,9 +47,12 @@ public class TestCVM extends AbstractCVM {
         Map<Integer , Integer> processingPower = new HashMap<Integer , Integer>();
         processingPower.put( 1500 , 1500000 ); // 1,5 GHz executes 1,5 Mips
         processingPower.put( 3000 , 3000000 ); // 3 GHz executes 3 Mips
-        Computer c = new Computer( computerURI , admissibleFrequencies , processingPower , 1500 , 1500 ,
-                numberOfProcessors , numberOfCores , "csip" , "cssdip" , "cdsdip" );
-        this.addDeployedComponent( c );
+
+        for ( int i = 0 ; i < NB_COMPUTER ; ++i ) {
+            Computer c = new Computer( computerURI , admissibleFrequencies , processingPower , 1500 , 1500 ,
+                    numberOfProcessors , numberOfCores , "csip" + i , "cssdip" + i , "cdsdip" + i );
+            this.addDeployedComponent( c );
+        }
 
         // --------------------------------------------------------------------
 
@@ -55,26 +60,36 @@ public class TestCVM extends AbstractCVM {
         // Create the computer monitor component and connect its to ports
         // with the computer component.
         // --------------------------------------------------------------------
-        ComputerMonitor cm = new ComputerMonitor( computerURI , true , "cssdop" , "cdsdop" );
-        this.addDeployedComponent( cm );
-        this.cssdop = ( ComputerStaticStateDataOutboundPort ) cm.findPortFromURI( "cssdop" );
-        this.cssdop.doConnection( "cssdip" , DataConnector.class.getCanonicalName() );
 
-        this.cdsdop = ( ComputerDynamicStateDataOutboundPort ) cm.findPortFromURI( "cdsdop" );
-        this.cdsdop.doConnection( "cdsdip" , ControlledDataConnector.class.getCanonicalName() );
+        this.cssdop = new ComputerStaticStateDataOutboundPort[NB_COMPUTER];
+        this.cdsdop = new ComputerDynamicStateDataOutboundPort[NB_COMPUTER];
+        for ( int i = 0 ; i < NB_COMPUTER ; ++i ) {
+            ComputerMonitor cm = new ComputerMonitor( computerURI , true , "cssdop" + i , "cdsdop" + i );
+            this.addDeployedComponent( cm );
+            this.cssdop[i] = ( ComputerStaticStateDataOutboundPort ) cm.findPortFromURI( "cssdop" + i );
+            this.cssdop[i].doConnection( "cssdip" + i , DataConnector.class.getCanonicalName() );
+
+            this.cdsdop[i] = ( ComputerDynamicStateDataOutboundPort ) cm.findPortFromURI( "cdsdop" + i );
+            this.cdsdop[i].doConnection( "cdsdip" + i , ControlledDataConnector.class.getCanonicalName() );
+        }
 
         // --------------------------------------------------------------------
         // Create and deploy an AdmissionController component
         // --------------------------------------------------------------------
 
-        String csop[] = new String[1];
-        csop[0] = "csop";
+        String csop[] = new String[NB_COMPUTER];
+        for ( int i = 0 ; i < NB_COMPUTER ; ++i )
+            csop[i] = "csop" + i;
+
         AdmissionController ac = new AdmissionController( "ac" , "asip" , "anip" , csop );
-        this.addDeployedComponent( ac );
-        this.csop = ( ComputerServicesOutboundPort ) ac.findPortFromURI( "csop" );
-        this.csop.doConnection( "csip" , ComputerServicesConnector.class.getCanonicalName() );
+
+        for ( int i = 0 ; i < NB_COMPUTER ; ++i ) {
+            this.csop = ( ComputerServicesOutboundPort ) ac.findPortFromURI( "csop" + i );
+            this.csop.doConnection( "csip" + i , ComputerServicesConnector.class.getCanonicalName() );
+        }
         ac.toggleTracing();
         ac.toggleLogging();
+        this.addDeployedComponent( ac );
 
         ap = new ApplicationProvider( "ap" , "asop" , "anop" );
         this.addDeployedComponent( ap );
@@ -104,15 +119,17 @@ public class TestCVM extends AbstractCVM {
     @Override
     public void shutdown() throws Exception {
         csop.doDisconnection();
-        cssdop.doDisconnection();
-        cdsdop.doDisconnection();
+        for ( int i = 0 ; i < NB_COMPUTER ; ++i ) {
+            cssdop[i].doDisconnection();
+            cdsdop[i].doDisconnection();
+        }
         asop.doDisconnection();
         anop.doDisconnection();
         super.shutdown();
     }
 
     public static void main( String[] args ) {
-        TestCVM test = new TestCVM();
+        TestCVM2Computers test = new TestCVM2Computers();
         try {
             test.deploy();
             test.start();
