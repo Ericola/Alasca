@@ -7,6 +7,7 @@ import fr.upmc.components.AbstractComponent;
 import fr.upmc.components.cvm.AbstractCVM;
 import fr.upmc.components.exceptions.ComponentShutdownException;
 import fr.upmc.datacenter.hardware.computers.Computer.AllocatedCore;
+import fr.upmc.datacenter.hardware.computers.interfaces.ComputerServicesI;
 import fr.upmc.datacenter.hardware.computers.ports.ComputerServicesOutboundPort;
 import fr.upmc.datacenter.requestdispatcher.RequestDispatcher;
 import fr.upmc.datacenter.software.applicationvm.ApplicationVM;
@@ -42,16 +43,17 @@ public class AdmissionController extends AbstractComponent {
             String applicationNotificationInboundPortURI , String computerServiceOutboundPortURI[] ) throws Exception {
         super( false , true );
         this.acURI = apURI;
-        this.addRequiredInterface( ApplicationSubmissionI.class );
+        this.addOfferedInterface( ApplicationSubmissionI.class );
         this.asip = new ApplicationSubmissionInboundPort( applicationSubmissionInboundPortURI , this );
         this.addPort( asip );
         this.asip.publishPort();
 
-        this.addRequiredInterface( ApplicationNotificationI.class );
+        this.addOfferedInterface( ApplicationNotificationI.class );
         this.anip = new ApplicationNotificationInboundPort( applicationNotificationInboundPortURI , this );
         this.addPort( anip );
         this.anip.publishPort();
 
+        this.addRequiredInterface( ComputerServicesI.class );
         this.csop = new ComputerServicesOutboundPort[computerServiceOutboundPortURI.length];
         for ( int i = 0 ; i < computerServiceOutboundPortURI.length ; i++ ) {
             this.csop[i] = new ComputerServicesOutboundPort( computerServiceOutboundPortURI[i] , this );
@@ -122,9 +124,9 @@ public class AdmissionController extends AbstractComponent {
                 RequestNotificationConnector.class.getCanonicalName() );
         print( "RequestGenerator and requestDispatcher are connected" );
     }
-    
-    public void freeUpVM(){
-        
+
+    public void freeUpVM() {
+
     }
 
     private String createURI( String uri ) {

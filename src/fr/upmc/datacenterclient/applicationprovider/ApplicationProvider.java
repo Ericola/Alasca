@@ -4,6 +4,8 @@ import fr.upmc.components.AbstractComponent;
 import fr.upmc.components.cvm.AbstractCVM;
 import fr.upmc.datacenter.software.connectors.RequestSubmissionConnector;
 import fr.upmc.datacenter.software.ports.RequestSubmissionOutboundPort;
+import fr.upmc.datacenterclient.applicationprovider.interfaces.ApplicationNotificationI;
+import fr.upmc.datacenterclient.applicationprovider.interfaces.ApplicationProviderManagementI;
 import fr.upmc.datacenterclient.applicationprovider.interfaces.ApplicationSubmissionI;
 import fr.upmc.datacenterclient.applicationprovider.ports.ApplicationNotificationOutboundPort;
 import fr.upmc.datacenterclient.applicationprovider.ports.ApplicationProviderManagementInboundPort;
@@ -25,7 +27,8 @@ import fr.upmc.datacenterclient.requestgenerator.ports.RequestGeneratorManagemen
  * creates a <code>RequestGenerator</code> that send request to the <code>RequestDispatcher</code>.
  * 
  * Once the <code>RequestGenerator</code> is created, it notifies the admission controller with the
- * RequestNotificationInboundPort of the request generator. Thus the Admission controller can complete the connection.
+ * RequestNotificationInboundPort of the request generator. Thus the Admission controller can
+ * complete the connection.
  * 
  * The application provider offers the interface <code>ApplicationProviderManagerI</code> through
  * the inbound port <code>ApplicationProviderManagementInboundPort</code> that allows to send and
@@ -88,10 +91,12 @@ public class ApplicationProvider extends AbstractComponent {
         this.addPort( asop );
         this.asop.publishPort();
 
+        this.addRequiredInterface( ApplicationNotificationI.class );
         this.anop = new ApplicationNotificationOutboundPort( applicationNotificationOutboundPortURI , this );
         this.addPort( anop );
         this.anop.publishPort();
 
+        this.addOfferedInterface( ApplicationProviderManagementI.class );
         this.apmip = new ApplicationProviderManagementInboundPort( managementInboundPortURI , this );
         this.addPort( this.apmip );
         this.apmip.publishPort();
