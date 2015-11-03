@@ -89,12 +89,12 @@ public class ApplicationProvider extends AbstractComponent {
         this.addRequiredInterface( ApplicationSubmissionI.class );
         this.asop = new ApplicationSubmissionOutboundPort( applicationSubmissionOutboundPortURI , this );
         this.addPort( asop );
-        this.asop.publishPort();
+        this.asop.localPublishPort();
 
         this.addRequiredInterface( ApplicationNotificationI.class );
         this.anop = new ApplicationNotificationOutboundPort( applicationNotificationOutboundPortURI , this );
         this.addPort( anop );
-        this.anop.publishPort();
+        this.anop.localPublishPort();
 
         this.addOfferedInterface( ApplicationProviderManagementI.class );
         this.apmip = new ApplicationProviderManagementInboundPort( managementInboundPortURI , this );

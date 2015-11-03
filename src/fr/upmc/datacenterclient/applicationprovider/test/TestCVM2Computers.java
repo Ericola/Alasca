@@ -138,7 +138,7 @@ public class TestCVM2Computers extends AbstractCVM {
     }
 
     public static void main( String[] args ) {
-        TestCVM2Computers test = new TestCVM2Computers();
+       final TestCVM2Computers test = new TestCVM2Computers();
         try {
             test.deploy();
             test.start();

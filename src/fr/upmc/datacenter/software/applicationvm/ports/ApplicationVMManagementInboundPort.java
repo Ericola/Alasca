@@ -80,6 +80,7 @@ implements	ApplicationVMManagementI
 	{
 		final ApplicationVMManagementI avm =
 									(ApplicationVMManagementI) this.owner ;
+
 		this.owner.handleRequestSync(
 				new ComponentI.ComponentService<Void>() {
 					@Override

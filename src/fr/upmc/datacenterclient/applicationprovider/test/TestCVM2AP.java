@@ -155,7 +155,7 @@ public class TestCVM2AP extends AbstractCVM {
     }
 
     public static void main( String[] args ) {
-        TestCVM2AP test = new TestCVM2AP();
+      final  TestCVM2AP test = new TestCVM2AP();
         try {
             test.deploy();
             test.start();

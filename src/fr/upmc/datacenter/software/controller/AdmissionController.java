@@ -22,23 +22,53 @@ import fr.upmc.datacenterclient.applicationprovider.interfaces.ApplicationSubmis
 import fr.upmc.datacenterclient.applicationprovider.ports.ApplicationNotificationInboundPort;
 import fr.upmc.datacenterclient.applicationprovider.ports.ApplicationSubmissionInboundPort;
 
+/**
+ * The class <code>AdmissionController</code> implements the component representing an admission
+ * controller in the data center.
+ * 
+ * <p>
+ * <strong>Description</strong>
+ * </p>
+ * 
+ * An admission controller (AC) receives applications from <code>Application provider</code>. If
+ * there enough resources are available, the application is accepted, an <code>ApplicationVM</code>
+ * and a <code>RequestDispatcher</code> are created.
+ * 
+ * The admission controller offers the interface <code>ApplicationSubmissionI</code> to submit
+ * applications. It also offeres the interface <code>ApplicationNotificationI</code> to notify the
+ * end of the requestgenerator creation
+ */
 public class AdmissionController extends AbstractComponent {
 
     /** the URI of the component. */
     protected String acURI;
 
+    /** The inbound port used to receive application */
     protected ApplicationSubmissionInboundPort asip;
 
+    /**
+     * The inbound port used to be notified when the requestgenerator is created (by the AP)
+     */
     protected ApplicationNotificationInboundPort anip;
 
+    /** The outbound port used to allocate core to the vm */
     protected ApplicationVMManagementOutboundPort avmop;
 
+    /** the outbound port of the computer service */
     protected ComputerServicesOutboundPort[] csop;
 
     private int cpt = 0;
 
     private List<RequestNotificationOutboundPort> rnopList;
 
+    /**
+     * Create an admission controller
+     * 
+     * @param applicationSubmissionInboundPortURI URI of the application submission inbound port
+     * @param applicationNotificationInboundPortURI URI of the application notification inbound port
+     * @param computerServiceOutboundPortURI URI of the comuter service outbout port
+     * @throws Exception
+     */
     public AdmissionController( String apURI , String applicationSubmissionInboundPortURI ,
             String applicationNotificationInboundPortURI , String computerServiceOutboundPortURI[] ) throws Exception {
         super( false , true );
@@ -64,6 +94,13 @@ public class AdmissionController extends AbstractComponent {
         rnopList = new ArrayList<>();
     }
 
+    /**
+     * Receive an application
+     * 
+     * @param nbVm the number of VM we want to allocate to the applicaiton
+     * @return The URI of the reuqestDispatcher
+     * @throws Exception
+     */
     public String submitApplication( int nbVm ) throws Exception {
         print( "Application received" );
 
@@ -119,6 +156,14 @@ public class AdmissionController extends AbstractComponent {
         }
     }
 
+    /**
+     * Notify that the request generator has been created. We can now complete the request
+     * notification connection
+     * 
+     * @param requestNotificationInboundPortURI URI of the RG notification inbound port
+     * @param i index of the corresponding requestdispatcher
+     * @throws Exception
+     */
     public void notifyRequestGeneratorCreated( String requestNotificationInboundPortURI , int i ) throws Exception {
         rnopList.get( i ).doConnection( requestNotificationInboundPortURI ,
                 RequestNotificationConnector.class.getCanonicalName() );

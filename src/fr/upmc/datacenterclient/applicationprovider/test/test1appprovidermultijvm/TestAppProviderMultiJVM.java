@@ -31,13 +31,26 @@ import fr.upmc.datacenterclient.applicationprovider.ports.ApplicationProviderMan
 import fr.upmc.datacenterclient.applicationprovider.ports.ApplicationSubmissionOutboundPort;
 import fr.upmc.datacenterclient.applicationprovider.test.TestCVM;
 
+/**
+ * A distributed CVM that runs 2 JVMs</br>
+ * 1st JVM contains
+ * <ul>
+ * <li>a computer</li>
+ * <li>a computer monitor</li>
+ * <li>an admission controller</li>
+ * </ul>
+ * 2nd JVM contains
+ * <ul>
+ * <li>an application provider</li>
+ * </ul>
+ */
 public class TestAppProviderMultiJVM extends AbstractDistributedCVM {
 
     // URI of the CVM instances as defined in the config.xml file
 
     // Provider JVM contains 1 Computer, 1 Computer Monitor and 1 ApplicationController
     protected static String PROVIDER_JVM_URI = "provider";
-    // Consumer JVM contains 1 Applicatxion Provider
+    // Consumer JVM contains 1 Application Provider
     protected static String CONSUMER_JVM_URI = "consumer";
 
     /** PORT **/
@@ -197,14 +210,14 @@ public class TestAppProviderMultiJVM extends AbstractDistributedCVM {
 
             test.deploy();
             test.start();
-         
+
             // connecter
             if ( thisJVMURI.equals( CONSUMER_JVM_URI ) ) {
                 test.test();
             }
             Thread.sleep( 25000L ); // Attente de 25 secondes le temps pour le consumer de se
 
-             test.shutdown();
+            test.shutdown();
         }
         catch ( Exception e ) {
             System.out.println( e );

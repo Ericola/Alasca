@@ -119,7 +119,7 @@ public class TestCVM extends AbstractCVM {
     }
 
     public static void main( String[] args ) {
-        TestCVM test = new TestCVM();
+      final  TestCVM test = new TestCVM();
         try {
             test.deploy();
             test.start();
