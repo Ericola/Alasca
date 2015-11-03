@@ -12,6 +12,20 @@ import fr.upmc.datacenterclient.requestgenerator.RequestGenerator;
 import fr.upmc.datacenterclient.requestgenerator.connectors.RequestGeneratorManagementConnector;
 import fr.upmc.datacenterclient.requestgenerator.ports.RequestGeneratorManagementOutboundPort;
 
+/**
+ * The class <code>ApplicationProvider</code> implements the component representing an application
+ * provider in the data center.
+ * 
+ * <p>
+ * <strong>Description</strong>
+ * </p>
+ * 
+ * The application provider offers the interface <code>ApplicationProviderManagerI</code> through
+ * the inbound port <code>ApplicationProviderManagementInboundPort</code> that allows to send and
+ * stop applications.
+ * 
+ * 
+ */
 public class ApplicationProvider extends AbstractComponent {
 
     /** the URI of the component. */
