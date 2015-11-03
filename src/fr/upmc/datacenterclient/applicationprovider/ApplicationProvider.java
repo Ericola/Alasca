@@ -20,10 +20,16 @@ import fr.upmc.datacenterclient.requestgenerator.ports.RequestGeneratorManagemen
  * <strong>Description</strong>
  * </p>
  * 
+ * An application provider (AP) submits an application to an <code>AdmissionController</code>. If
+ * that application is accepted then the AP receives the URI of a <code>RequestDispatcher</code> and
+ * creates a <code>RequestGenerator</code> that send request to the <code>RequestDispatcher</code>.
+ * 
+ * Once the <code>RequestGenerator</code> is created, it notifies the admission controller with the
+ * RequestNotificationInboundPort of the request generator. Thus the Admission controller can complete the connection.
+ * 
  * The application provider offers the interface <code>ApplicationProviderManagerI</code> through
  * the inbound port <code>ApplicationProviderManagementInboundPort</code> that allows to send and
  * stop applications.
- * 
  * 
  */
 public class ApplicationProvider extends AbstractComponent {
@@ -31,12 +37,48 @@ public class ApplicationProvider extends AbstractComponent {
     /** the URI of the component. */
     protected String apURI;
 
-    /** the output port used to send application to the admission controller. */
-    protected ApplicationSubmissionOutboundPort        asop;
-    protected RequestGeneratorManagementOutboundPort   rgmop;
-    protected ApplicationNotificationOutboundPort      anop;
+    // ------------------------------------------------------------------
+    // PORTS
+    // ------------------------------------------------------------------
+    /** the outbound port used to send application to the admission controller. */
+    protected ApplicationSubmissionOutboundPort asop;
+
+    /** the outbound port used to start or stop the requestgenerator dynamically created */
+    protected RequestGeneratorManagementOutboundPort rgmop;
+
+    /** the outbound port to notify that the requestgenerator has been created */
+    protected ApplicationNotificationOutboundPort anop;
+
+    /** the inbound port used to send/stop application **/
     protected ApplicationProviderManagementInboundPort apmip;
 
+    // ------------------------------------------------------------------
+    // REQUEST GENERATOR URIs
+    // ------------------------------------------------------------------
+    /** RequestGenerator URI */
+    protected static final String RG = "rg";
+
+    /** Request generator management inbound port */
+    protected static final String RGMIP = "rgmip";
+
+    /** Request submission outbound port */
+    protected static final String RSOP = "rsop";
+
+    /** Request notification inbound port */
+    protected static final String RNIP = "rnip";
+
+    /** Request generator management outbound port */
+    protected static final String RGMOP = "rgmop";
+
+    /**
+     * Create an application provider
+     * 
+     * @param applicationSubmissionOutboundPortURI URI of the application submission outbound port
+     * @param applicationNotificationOutboundPortURI URI of the application notification outbound
+     *            port
+     * @param managementInboundPortURI URI of the application provider management inbound port
+     * @throws Exception
+     */
     public ApplicationProvider( String apURI , String applicationSubmissionOutboundPortURI ,
             String applicationNotificationOutboundPortURI , String managementInboundPortURI ) throws Exception {
         super( false , true );
@@ -56,6 +98,11 @@ public class ApplicationProvider extends AbstractComponent {
 
     }
 
+    /**
+     * Submit an application to the admission controller
+     * 
+     * @throws Exception
+     */
     public void sendApplication() throws Exception {
         print( "Submit an application" );
         print( "Waiting for URI" );
@@ -65,27 +112,32 @@ public class ApplicationProvider extends AbstractComponent {
 
             // Creation dynamique du request generator
             print( "creating RequestGenerator" );
-            RequestGenerator rg = new RequestGenerator( "rg" , 500.0 , 6000000000L , "rgmip" , "rsop" , "rnip" );
+            RequestGenerator rg = new RequestGenerator( RG , 500.0 , 6000000000L , RGMIP , RSOP , RNIP );
             AbstractCVM.theCVM.addDeployedComponent( rg );
-            RequestSubmissionOutboundPort rsop = ( RequestSubmissionOutboundPort ) rg.findPortFromURI( "rsop" );
+            RequestSubmissionOutboundPort rsop = ( RequestSubmissionOutboundPort ) rg.findPortFromURI( RSOP );
             rsop.doConnection( requestDispatcherURI , RequestSubmissionConnector.class.getCanonicalName() );
 
             rg.toggleTracing();
             rg.toggleLogging();
 
-            rgmop = new RequestGeneratorManagementOutboundPort( "rgmop" , this );
+            rgmop = new RequestGeneratorManagementOutboundPort( RGMOP , this );
             rgmop.publishPort();
-            rgmop.doConnection( "rgmip" , RequestGeneratorManagementConnector.class.getCanonicalName() );
+            rgmop.doConnection( RGMIP , RequestGeneratorManagementConnector.class.getCanonicalName() );
 
             int cpt = Integer.parseInt( requestDispatcherURI.substring( 5 , requestDispatcherURI.length() ) );
             print( "Notify requestGenerator created" );
-            anop.notifyRequestGeneratorCreated( "rnip" , cpt );
+            anop.notifyRequestGeneratorCreated( RNIP , cpt );
             rg.startGeneration();
         }
         else
             print( "Pas de resources disponibles" );
     }
 
+    /**
+     * Stop the application, it means it stops the requestgenerator
+     * 
+     * @throws Exception
+     */
     public void stopApplication() throws Exception {
         rgmop.stopGeneration();
 
