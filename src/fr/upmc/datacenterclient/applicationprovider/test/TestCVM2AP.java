@@ -26,9 +26,10 @@ import fr.upmc.datacenterclient.applicationprovider.ports.ApplicationSubmissionO
 
 /**
  * This runs on a single JVM :
- * - 2 computers with 2 processors of 2 cores,
- * - 1 admission controller that create a requestdispatcher and an applicationVM each time it receives an application and allocate 4 cores to that applicationVM
- * - 3 applications provider try to send application to the admission controller but only 2 are accepted the 3rd is refused cuz there is not enough resources 
+ * - NB_COMPUTER (initially 2) computers with 2 processors of 2 cores (can be modified by changing the variable NB_COMPUTER
+ * in the class TestCVM2Computers)
+ * -  admission controller that create a requestdispatcher and an applicationVM each time it receives an application and allocate 4 cores to that applicationVM
+ * - NB_APPLICATION_PROVIDER (initially 3) applications provider try to send application to the admission controller but only 2 are accepted the 3rd is refused cuz there is not enough resources 
  * applications provider that are accepted create a RequestGenerator that will send request to the corresponding requestDispatcher
  */
 public class TestCVM2AP extends AbstractCVM {
@@ -47,7 +48,7 @@ public class TestCVM2AP extends AbstractCVM {
     @Override
     public void deploy() throws Exception {
         // --------------------------------------------------------------------
-        // Create and deploy a computer component with its 2 processors and
+        // Create and deploy a NB_COMPUTER computer component with its 2 processors and
         // each with 2 cores.
         // --------------------------------------------------------------------
         int numberOfProcessors = 2;
@@ -68,7 +69,7 @@ public class TestCVM2AP extends AbstractCVM {
         // --------------------------------------------------------------------
 
         // --------------------------------------------------------------------
-        // Create the computer monitor component and connect its to ports
+        // Create NB_COMPUTER computer monitor component and connect its to ports
         // with the computer component.
         // --------------------------------------------------------------------
 
@@ -116,14 +117,15 @@ public class TestCVM2AP extends AbstractCVM {
             ap[i].toggleTracing();
             ap[i].toggleLogging();
 
-            // asop -- asip
+            // Connect asop -- asip
             this.asop[i] = ( ApplicationSubmissionOutboundPort ) ap[i].findPortFromURI( "asop" + i );
             this.asop[i].doConnection( "asip" , ApplicationSubmissionConnector.class.getCanonicalName() );
 
-            // anop -- anip
+            // Connect anop -- anip
             this.anop[i] = ( ApplicationNotificationOutboundPort ) ap[i].findPortFromURI( "anop" + i );
             this.anop[i].doConnection( "anip" , ApplicationNotificationConnector.class.getCanonicalName() );
 
+            // Connect apmop -- apmip
             this.apmop[i] = new ApplicationProviderManagementOutboundPort( "apmop" + i , new AbstractComponent() {} );
             this.apmop[i].publishPort();
             this.apmop[i].doConnection( "apmip" + i , ApplicationProviderManagementConnector.class.getCanonicalName() );

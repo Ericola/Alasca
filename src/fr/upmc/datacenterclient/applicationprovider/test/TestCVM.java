@@ -24,6 +24,13 @@ import fr.upmc.datacenterclient.applicationprovider.ports.ApplicationNotificatio
 import fr.upmc.datacenterclient.applicationprovider.ports.ApplicationProviderManagementOutboundPort;
 import fr.upmc.datacenterclient.applicationprovider.ports.ApplicationSubmissionOutboundPort;
 
+/**
+ * This runs on a single JVM :
+ * - 1 computers with 2 processors of 2 cores,
+ * - 1 admission controller that create a requestdispatcher and an applicationVM 
+ * - 1 applications provider which send application to the admission controller and after getting the permission
+ * creates a requestGenerator and connects it to the requestdispatcher of the admission controller
+ */
 public class TestCVM extends AbstractCVM {
 
     protected ComputerServicesOutboundPort              csop;
