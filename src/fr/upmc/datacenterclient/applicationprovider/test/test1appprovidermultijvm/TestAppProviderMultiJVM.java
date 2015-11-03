@@ -66,16 +66,14 @@ public class TestAppProviderMultiJVM extends AbstractDistributedCVM {
 
     @Override
     public void initialise() throws Exception {
-        AbstractCVM.toggleDebugMode();
+        // AbstractCVM.toggleDebugMode();
         super.initialise();
-        System.out.println( "initialise" );
         AbstractComponent.configureLogging( "." + File.separator + "bcm-tmp" , "log" , 4000 , '|' );
 
     }
 
     @Override
     public void instantiateAndPublish() throws Exception {
-        System.out.println( "instantiateandpublish" );
         if ( thisJVMURI.equals( CONSUMER_JVM_URI ) ) {
             // On instancie l'ApplicationProvider
             ap = new ApplicationProvider( AP , ASOP , ANOP , APMIP );
@@ -109,7 +107,7 @@ public class TestAppProviderMultiJVM extends AbstractDistributedCVM {
             // AdmissionController
             String csop[] = new String[1];
             csop[0] = "csop";
-            AdmissionController ac = new AdmissionController( "ac" , "asip" , "anip" , csop );
+            ac = new AdmissionController( "ac" , "asip" , "anip" , csop );
             this.addDeployedComponent( ac );
 
             ac.toggleTracing();
@@ -137,6 +135,7 @@ public class TestAppProviderMultiJVM extends AbstractDistributedCVM {
 
             // Connexion Computer - AdmissionController
             this.csop = ( ComputerServicesOutboundPort ) ac.findPortFromURI( "csop" );
+
             this.csop.doConnection( "csip" , ComputerServicesConnector.class.getCanonicalName() );
 
         }
@@ -186,7 +185,6 @@ public class TestAppProviderMultiJVM extends AbstractDistributedCVM {
     }
 
     public void test() throws Exception {
-        System.out.println( "sendAppication" );
         apmop.sendApplication();
 
     }
@@ -196,20 +194,17 @@ public class TestAppProviderMultiJVM extends AbstractDistributedCVM {
         try {
 
             TestAppProviderMultiJVM test = new TestAppProviderMultiJVM( args );
-            System.out.println( "z" );
+
             test.deploy();
-            System.out.println( "z apres deploy" );
             test.start();
-            // Thread.sleep( 15000L ); // Attente de 5 secondes le temps pour le consumer de se
+         
             // connecter
-            System.out.println( "a" );
             if ( thisJVMURI.equals( CONSUMER_JVM_URI ) ) {
-                System.out.println( "b" );
                 test.test();
             }
-            System.out.println( "c" );
+            Thread.sleep( 25000L ); // Attente de 25 secondes le temps pour le consumer de se
 
-            // test.shutdown();
+             test.shutdown();
         }
         catch ( Exception e ) {
             System.out.println( e );
