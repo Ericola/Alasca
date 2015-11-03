@@ -27,25 +27,40 @@ import fr.upmc.datacenter.software.ports.RequestNotificationOutboundPort;
 import fr.upmc.datacenter.software.ports.RequestSubmissionInboundPort;
 import fr.upmc.datacenter.software.ports.RequestSubmissionOutboundPort;
 
+/**
+ * 
+ * Class which implements the Request Dispatcher component
+ *
+ *Request Dispatcher offers the interface RequestSubmissionI and RequestDispatcherI.
+ */
 public class RequestDispatcher extends AbstractComponent
         implements RequestSubmissionHandlerI, RequestNotificationHandlerI {
 
     /** URI of this request dispatcher RD */
     protected String rdURI;
 
-    /** Map between RD URIs and the VM outbound ports to call them. */
+    /** RequestSubmissionInboundPort */
     protected RequestSubmissionInboundPort        rdsip;
+    
+    /** List of OutboundPort to send requests to the connected ApplicationVM  */
     protected List<RequestSubmissionOutboundPort> rdsopList;
 
     protected RequestNotificationInboundPort  rdnip;
     /** Outbound port used by the RD to notify tasks' termination to the generator. */
     protected RequestNotificationOutboundPort rdnop;
 
+    /** Variable to know the less recent ApplicationVM **/ 
     protected int current = 0;
-
-    private int     cpt              = 0;
-    private boolean askedForShutdown = false;
-
+    
+    /**
+     * Create a RequestDispatcher
+     * @param rdURI URI of the RequestDispatcher
+     * @param rdsip URI of the RequestSubmissionInboundPort
+     * @param rdsop URI of the RequestSubmissionOutboundPort
+     * @param rdnop URI of the RequestNotificationOutboundPort
+     * @param rdnip URI of the RequestNotificationInboundPort 
+     * @throws Exception
+     */
     public RequestDispatcher( String rdURI , String rdsip , List<String> rdsop , String rdnop , String rdnip )
             throws Exception {
         super( true , false );
@@ -63,7 +78,7 @@ public class RequestDispatcher extends AbstractComponent
 
         rdsopList = new ArrayList<>();
 
-        // Interfaces
+        // Creates and add ports to the component
         this.addOfferedInterface( RequestSubmissionI.class );
         this.rdsip = new RequestSubmissionInboundPort( rdsip , this );
         this.addPort( this.rdsip );
@@ -87,41 +102,43 @@ public class RequestDispatcher extends AbstractComponent
         this.rdnop.publishPort();
     }
 
+    /**
+     * Notify the Requests termination to the RequestGenerator
+     */
     @Override
     public void acceptRequestTerminationNotification( RequestI r ) throws Exception {
         assert r != null;
         this.logMessage(
                 "Request dispatcher " + this.rdURI + "  notified the request " + r.getRequestURI() + " has ended." );
         this.rdnop.notifyRequestTermination( r );
-        cpt--;
-//        if ( askedForShutdown && cpt == 0 )
-//           acmop.notifyALL
+        
     }
 
+    /**
+     * Send the Request r to the less recent ApplicationVM 
+     */
     @Override
     public void acceptRequestSubmission( RequestI r ) throws Exception {
         this.logMessage( this.rdURI + " submits request " + r.getRequestURI() );
         this.rdsopList.get( current ).submitRequest( r );
         current = ( current + 1 ) % rdsopList.size();
-        cpt++;
-
+     
     }
 
+    /**
+     * Send the Request r to the less recent ApplicationVM and notify its termination to the RequestGenerator
+     */
     @Override
     public void acceptRequestSubmissionAndNotify( RequestI r ) throws Exception {
         this.logMessage( this.rdURI + " submits request " + r.getRequestURI() );
         this.rdsopList.get( current ).submitRequestAndNotify( r );
         current = ( current + 1 ) % rdsopList.size();
-        cpt++;
     }
 
-    public boolean isWaitingForTermination() {
-        return cpt == 0;
-    }
-
+    /**
+     * Disconnect all connected ports of the Request Dispatcher
+     */
     public void shutdown() throws ComponentShutdownException {
-        // Disconnect ports to the request emitter and to the processors owning
-        // the allocated cores.
         try {
             if ( this.rdnop.connected() ) {
                 this.rdnop.doDisconnection();
@@ -145,4 +162,9 @@ public class RequestDispatcher extends AbstractComponent
 
         super.shutdown();
     }
+
+	public Boolean isWaitingForTermination() {
+	
+		return null;
+	}
 }

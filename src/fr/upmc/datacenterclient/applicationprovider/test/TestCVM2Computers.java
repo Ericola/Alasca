@@ -26,10 +26,17 @@ import fr.upmc.datacenterclient.applicationprovider.ports.ApplicationSubmissionO
 import fr.upmc.datacenterclient.requestgenerator.connectors.RequestGeneratorManagementConnector;
 import fr.upmc.datacenterclient.requestgenerator.ports.RequestGeneratorManagementOutboundPort;
 
+/**
+ * This runs on a single JVM :
+ * - NB_COMPUTER computers with 2 processors of 2 cores (can be modified by changing the variable NB_COMPUTER
+ * in the class TestCVM2Computers)
+ * - 1 admission controller that create a requestdispatcher and an applicationVM 
+ * - 1 applications provider which send application to the admission controller and after getting the permission
+ * creates a requestGenerator and connects it to the requestdispatcher of the admission controller
+ */
 public class TestCVM2Computers extends AbstractCVM {
 
     private static final int                            NB_COMPUTER    = 2;
-    private static final int                            NB_APPPROVIDER = 2;
     protected ComputerServicesOutboundPort              csop[];
     protected ComputerStaticStateDataOutboundPort       cssdop[];
     protected ComputerDynamicStateDataOutboundPort      cdsdop[];
@@ -41,7 +48,7 @@ public class TestCVM2Computers extends AbstractCVM {
     @Override
     public void deploy() throws Exception {
         // --------------------------------------------------------------------
-        // Create and deploy a computer component with its 2 processors and
+        // Create and deploy NB_COMPUTER computer component with its 2 processors and
         // each with 2 cores.
         // --------------------------------------------------------------------
         int numberOfProcessors = 2;
@@ -62,7 +69,7 @@ public class TestCVM2Computers extends AbstractCVM {
         // --------------------------------------------------------------------
 
         // --------------------------------------------------------------------
-        // Create the computer monitor component and connect its to ports
+        // Create NB_COMPUTER computer monitor component and connect its to ports
         // with the computer component.
         // --------------------------------------------------------------------
 
