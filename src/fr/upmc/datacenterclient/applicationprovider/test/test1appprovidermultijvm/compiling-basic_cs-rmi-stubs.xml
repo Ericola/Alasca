@@ -1,10 +1,15 @@
-<project name="BasicComponentModel" default="tests.stubs.compilation">
+<project name="Alasca" default="tests.stubs.compilation">
 	<target name="tests.stubs.compilation">
 		<echo message="Recompiling stubs..."/>
-		<echo message="Recompiling fr.upmc.components.examples.basic_cs.ports.URIProviderInboundPort"/>
-		<rmic classpath="${classpath}:../../../../../../../BasicComponentModel/bin/"
-			  classname="fr.upmc.components.examples.basic_cs.ports.URIProviderInboundPort"
-		      base="../../../../../../../BasicComponentModel/bin/"/>
+		<echo message="Recompiling fr.upmc.datacenterClient.applicationprovider.ports.ApplicationSubmissionInboundPort"/>
+		<rmic classpath="${classpath}:../../../../../../../bin/:../../../../../../../jar/BasicComponentModel-02102015.jar"
+			classname="fr.upmc.datacenterclient.applicationprovider.ports.ApplicationSubmissionInboundPort"
+		      base="../../../../../../../bin/"/>
+		
+		<echo message="Recompiling fr.upmc.datacenterClient.applicationprovider.ports.ApplicationNotificationInboundPort"/>
+		<rmic classpath="${classpath}:../../../../../../../bin/:../../../../../../../jar/BasicComponentModel-02102015.jar"
+					  classname="fr.upmc.datacenterclient.applicationprovider.ports.ApplicationNotificationInboundPort"
+				      base="../../../../../../../bin/"/>
 		<echo message="Stubs recompiled!"/>
 	</target>
 </project>
