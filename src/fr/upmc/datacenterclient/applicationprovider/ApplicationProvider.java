@@ -30,11 +30,11 @@ public class ApplicationProvider extends AbstractComponent {
         this.addRequiredInterface( ApplicationSubmissionI.class );
         this.asop = new ApplicationSubmissionOutboundPort( applicationSubmissionOutboundPortURI , this );
         this.addPort( asop );
-        this.asop.localPublishPort();
+        this.asop.publishPort();
 
         this.anop = new ApplicationNotificationOutboundPort( applicationNotificationOutboundPortURI , this );
         this.addPort( anop );
-        this.anop.localPublishPort();
+        this.anop.publishPort();
 
         this.apmip = new ApplicationProviderManagementInboundPort( managementInboundPortURI , this );
         this.addPort( this.apmip );
@@ -51,7 +51,7 @@ public class ApplicationProvider extends AbstractComponent {
 
             // Creation dynamique du request generator
             print( "creating RequestGenerator" );
-            RequestGenerator rg = new RequestGenerator( "rg" , 2000.0 , 6000000000L , "rgmip" , "rsop" , "rnip" );
+            RequestGenerator rg = new RequestGenerator( "rg" , 500.0 , 6000000000L , "rgmip" , "rsop" , "rnip" );
             AbstractCVM.theCVM.addDeployedComponent( rg );
             RequestSubmissionOutboundPort rsop = ( RequestSubmissionOutboundPort ) rg.findPortFromURI( "rsop" );
             rsop.doConnection( requestDispatcherURI , RequestSubmissionConnector.class.getCanonicalName() );
@@ -74,10 +74,10 @@ public class ApplicationProvider extends AbstractComponent {
 
     public void stopApplication() throws Exception {
         rgmop.stopGeneration();
-        
+
     }
 
     private void print( String s ) {
-        this.logMessage( "[ApplicationProvider] " + s );
+        this.logMessage( "[ApplicationProvider " + apURI + "] " + s );
     }
 }

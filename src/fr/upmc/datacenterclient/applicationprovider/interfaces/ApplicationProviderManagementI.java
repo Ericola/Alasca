@@ -8,5 +8,7 @@ public interface ApplicationProviderManagementI extends OfferedI, RequiredI {
    
     public void sendApplication() throws Exception;
 
+    public void stopApplication() throws Exception;
+
  
 }

@@ -17,4 +17,9 @@ public class ApplicationProviderManagementOutboundPort extends AbstractOutboundP
 
     }
 
+    @Override
+    public void stopApplication() throws Exception {
+        ( ( ApplicationProviderManagementI ) this.connector ).stopApplication();;
+    }
+
 }

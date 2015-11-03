@@ -45,18 +45,18 @@ public class AdmissionController extends AbstractComponent {
         this.addRequiredInterface( ApplicationSubmissionI.class );
         this.asip = new ApplicationSubmissionInboundPort( applicationSubmissionInboundPortURI , this );
         this.addPort( asip );
-        this.asip.localPublishPort();
+        this.asip.publishPort();
 
         this.addRequiredInterface( ApplicationNotificationI.class );
         this.anip = new ApplicationNotificationInboundPort( applicationNotificationInboundPortURI , this );
         this.addPort( anip );
-        this.anip.localPublishPort();
+        this.anip.publishPort();
 
         this.csop = new ComputerServicesOutboundPort[computerServiceOutboundPortURI.length];
         for ( int i = 0 ; i < computerServiceOutboundPortURI.length ; i++ ) {
             this.csop[i] = new ComputerServicesOutboundPort( computerServiceOutboundPortURI[i] , this );
             this.addPort( csop[i] );
-            this.csop[i].localPublishPort();
+            this.csop[i].publishPort();
         }
 
         rnopList = new ArrayList<>();
@@ -123,7 +123,9 @@ public class AdmissionController extends AbstractComponent {
         print( "RequestGenerator and requestDispatcher are connected" );
     }
     
-    public void freeUpVM(){}
+    public void freeUpVM(){
+        
+    }
 
     private String createURI( String uri ) {
         return uri + cpt;

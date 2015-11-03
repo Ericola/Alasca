@@ -11,4 +11,9 @@ public class ApplicationProviderManagementConnector extends AbstractConnector
         ( ( ApplicationProviderManagementI ) this.offering ).sendApplication();
     }
 
+    @Override
+    public void stopApplication() throws Exception {
+        ( ( ApplicationProviderManagementI ) this.offering ).stopApplication();
+    }
+
 }

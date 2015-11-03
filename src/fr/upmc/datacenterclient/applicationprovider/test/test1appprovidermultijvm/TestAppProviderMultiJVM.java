@@ -1,6 +1,7 @@
 package fr.upmc.datacenterclient.applicationprovider.test.test1appprovidermultijvm;
 
 import java.io.File;
+import java.rmi.registry.LocateRegistry;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
@@ -8,7 +9,9 @@ import java.util.Set;
 
 import fr.upmc.components.AbstractComponent;
 import fr.upmc.components.connectors.DataConnector;
+import fr.upmc.components.cvm.AbstractCVM;
 import fr.upmc.components.cvm.AbstractDistributedCVM;
+import fr.upmc.components.cvm.pre.dcc.DynamicComponentCreator;
 import fr.upmc.components.examples.basic_cs.DistributedCVM;
 import fr.upmc.components.ports.PortI;
 import fr.upmc.datacenter.connectors.ControlledDataConnector;
@@ -63,13 +66,16 @@ public class TestAppProviderMultiJVM extends AbstractDistributedCVM {
 
     @Override
     public void initialise() throws Exception {
+        AbstractCVM.toggleDebugMode();
         super.initialise();
-
+        System.out.println( "initialise" );
         AbstractComponent.configureLogging( "." + File.separator + "bcm-tmp" , "log" , 4000 , '|' );
+
     }
 
     @Override
     public void instantiateAndPublish() throws Exception {
+        System.out.println( "instantiateandpublish" );
         if ( thisJVMURI.equals( CONSUMER_JVM_URI ) ) {
             // On instancie l'ApplicationProvider
             ap = new ApplicationProvider( AP , ASOP , ANOP , APMIP );
@@ -180,25 +186,33 @@ public class TestAppProviderMultiJVM extends AbstractDistributedCVM {
     }
 
     public void test() throws Exception {
+        System.out.println( "sendAppication" );
         apmop.sendApplication();
+
     }
 
     public static void main( String[] args ) {
         System.out.println( "Beginning" );
         try {
-            TestAppProviderMultiJVM test = new TestAppProviderMultiJVM( args );
-            test.deploy();
-            test.start();
-            Thread.sleep( 5000L ); // Attente de 5 secondes le temps pour le consumer de se
-                                   // connecter
 
+            TestAppProviderMultiJVM test = new TestAppProviderMultiJVM( args );
+            System.out.println( "z" );
+            test.deploy();
+            System.out.println( "z apres deploy" );
+            test.start();
+            // Thread.sleep( 15000L ); // Attente de 5 secondes le temps pour le consumer de se
+            // connecter
+            System.out.println( "a" );
             if ( thisJVMURI.equals( CONSUMER_JVM_URI ) ) {
+                System.out.println( "b" );
                 test.test();
             }
+            System.out.println( "c" );
 
-            test.shutdown();
+            // test.shutdown();
         }
         catch ( Exception e ) {
+            System.out.println( e );
             e.printStackTrace();
         }
         System.out.println( "Main thread ending" );

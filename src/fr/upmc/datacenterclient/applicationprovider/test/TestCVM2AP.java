@@ -23,20 +23,26 @@ import fr.upmc.datacenterclient.applicationprovider.connectors.ApplicationSubmis
 import fr.upmc.datacenterclient.applicationprovider.ports.ApplicationNotificationOutboundPort;
 import fr.upmc.datacenterclient.applicationprovider.ports.ApplicationProviderManagementOutboundPort;
 import fr.upmc.datacenterclient.applicationprovider.ports.ApplicationSubmissionOutboundPort;
-import fr.upmc.datacenterclient.requestgenerator.connectors.RequestGeneratorManagementConnector;
-import fr.upmc.datacenterclient.requestgenerator.ports.RequestGeneratorManagementOutboundPort;
 
-public class TestCVM2Computers extends AbstractCVM {
+/**
+ * This runs on a single JVM :
+ * - 2 computers with 2 processors of 2 cores,
+ * - 1 admission controller that create a requestdispatcher and an applicationVM each time it receives an application and allocate 4 cores to that applicationVM
+ * - 3 applications provider try to send application to the admission controller but only 2 are accepted the 3rd is refused cuz there is not enough resources 
+ * applications provider that are accepted create a RequestGenerator that will send request to the corresponding requestDispatcher
+ */
+public class TestCVM2AP extends AbstractCVM {
 
-    private static final int                            NB_COMPUTER    = 2;
-    private static final int                            NB_APPPROVIDER = 2;
+    private static final int NB_COMPUTER             = 2;
+    private static final int NB_APPLICATION_PROVIDER = 3;
+
     protected ComputerServicesOutboundPort              csop[];
     protected ComputerStaticStateDataOutboundPort       cssdop[];
     protected ComputerDynamicStateDataOutboundPort      cdsdop[];
-    protected ApplicationSubmissionOutboundPort         asop;
-    protected ApplicationNotificationOutboundPort       anop;
-    protected ApplicationProvider                       ap;
-    protected ApplicationProviderManagementOutboundPort apmop;
+    protected ApplicationSubmissionOutboundPort         asop[];
+    protected ApplicationNotificationOutboundPort       anop[];
+    protected ApplicationProvider                       ap[];
+    protected ApplicationProviderManagementOutboundPort apmop[];
 
     @Override
     public void deploy() throws Exception {
@@ -97,22 +103,31 @@ public class TestCVM2Computers extends AbstractCVM {
         ac.toggleLogging();
         this.addDeployedComponent( ac );
 
-        ap = new ApplicationProvider( "ap" , "asop" , "anop" , "apmip" );
-        this.addDeployedComponent( ap );
-        ap.toggleTracing();
-        ap.toggleLogging();
+        // --------------------------------------------------------------------
+        // Create and deploy NB_APPLICATION_PROVIDER ApplicationProvider component
+        // --------------------------------------------------------------------
+        this.ap = new ApplicationProvider[NB_APPLICATION_PROVIDER];
+        this.asop = new ApplicationSubmissionOutboundPort[NB_APPLICATION_PROVIDER];
+        this.anop = new ApplicationNotificationOutboundPort[NB_APPLICATION_PROVIDER];
+        this.apmop = new ApplicationProviderManagementOutboundPort[NB_APPLICATION_PROVIDER];
+        for ( int i = 0 ; i < NB_APPLICATION_PROVIDER ; i++ ) {
+            ap[i] = new ApplicationProvider( "ap" + i , "asop" + i , "anop" + i , "apmip" + i );
+            this.addDeployedComponent( ap[i] );
+            ap[i].toggleTracing();
+            ap[i].toggleLogging();
 
-        // asop -- asip
-        this.asop = ( ApplicationSubmissionOutboundPort ) ap.findPortFromURI( "asop" );
-        this.asop.doConnection( "asip" , ApplicationSubmissionConnector.class.getCanonicalName() );
+            // asop -- asip
+            this.asop[i] = ( ApplicationSubmissionOutboundPort ) ap[i].findPortFromURI( "asop" + i );
+            this.asop[i].doConnection( "asip" , ApplicationSubmissionConnector.class.getCanonicalName() );
 
-        // anop -- anip
-        this.anop = ( ApplicationNotificationOutboundPort ) ap.findPortFromURI( "anop" );
-        this.anop.doConnection( "anip" , ApplicationNotificationConnector.class.getCanonicalName() );
+            // anop -- anip
+            this.anop[i] = ( ApplicationNotificationOutboundPort ) ap[i].findPortFromURI( "anop" + i );
+            this.anop[i].doConnection( "anip" , ApplicationNotificationConnector.class.getCanonicalName() );
 
-        this.apmop = new ApplicationProviderManagementOutboundPort( "apmop" , new AbstractComponent() {} );
-        this.apmop.publishPort();
-        this.apmop.doConnection( "apmip" , ApplicationProviderManagementConnector.class.getCanonicalName() );
+            this.apmop[i] = new ApplicationProviderManagementOutboundPort( "apmop" + i , new AbstractComponent() {} );
+            this.apmop[i].publishPort();
+            this.apmop[i].doConnection( "apmip" + i , ApplicationProviderManagementConnector.class.getCanonicalName() );
+        }
         super.deploy();
     }
 
@@ -122,7 +137,8 @@ public class TestCVM2Computers extends AbstractCVM {
     }
 
     public void test() throws Exception {
-        apmop.sendApplication();
+        for ( int i = 0 ; i < NB_APPLICATION_PROVIDER  ; i++ )
+            apmop[i].sendApplication();
     }
 
     @Override
@@ -131,14 +147,15 @@ public class TestCVM2Computers extends AbstractCVM {
             csop[i].doDisconnection();
             cssdop[i].doDisconnection();
             cdsdop[i].doDisconnection();
+            asop[i].doDisconnection();
+            anop[i].doDisconnection();
+            apmop[i].doDisconnection();
         }
-        asop.doDisconnection();
-        anop.doDisconnection();
         super.shutdown();
     }
 
     public static void main( String[] args ) {
-        TestCVM2Computers test = new TestCVM2Computers();
+        TestCVM2AP test = new TestCVM2AP();
         try {
             test.deploy();
             test.start();

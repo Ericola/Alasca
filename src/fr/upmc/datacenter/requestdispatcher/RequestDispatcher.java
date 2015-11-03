@@ -94,8 +94,8 @@ public class RequestDispatcher extends AbstractComponent
                 "Request dispatcher " + this.rdURI + "  notified the request " + r.getRequestURI() + " has ended." );
         this.rdnop.notifyRequestTermination( r );
         cpt--;
-        if ( askedForShutdown && cpt == 0 )
-            shutdown();
+//        if ( askedForShutdown && cpt == 0 )
+//           acmop.notifyALL
     }
 
     @Override

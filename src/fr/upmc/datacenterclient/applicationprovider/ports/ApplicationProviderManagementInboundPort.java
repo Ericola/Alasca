@@ -36,4 +36,20 @@ public class ApplicationProviderManagementInboundPort extends AbstractInboundPor
 
     }
 
+    @Override
+    public void stopApplication() throws Exception {
+        final ApplicationProvider ap = ( ApplicationProvider ) this.owner;
+
+        this.owner.handleRequestAsync( new ComponentService<String>() {
+
+            @Override
+            public String call() throws Exception {
+                ap.stopApplication();
+                return null;
+
+            }
+        } );
+
+    }
+
 }
