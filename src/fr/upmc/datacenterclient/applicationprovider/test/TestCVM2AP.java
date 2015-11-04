@@ -25,12 +25,18 @@ import fr.upmc.datacenterclient.applicationprovider.ports.ApplicationProviderMan
 import fr.upmc.datacenterclient.applicationprovider.ports.ApplicationSubmissionOutboundPort;
 
 /**
- * This runs on a single JVM :
- * - NB_COMPUTER (initially 2) computers with 2 processors of 2 cores (can be modified by changing the variable NB_COMPUTER
- * in the class TestCVM2Computers)
- * -  admission controller that create a requestdispatcher and an applicationVM each time it receives an application and allocate 4 cores to that applicationVM
- * - NB_APPLICATION_PROVIDER (initially 3) applications provider try to send application to the admission controller but only 2 are accepted the 3rd is refused cuz there is not enough resources 
- * applications provider that are accepted create a RequestGenerator that will send request to the corresponding requestDispatcher
+ * This runs on a single JVM :</br>
+ * <ul>
+ * <li>NB_COMPUTER (initially 2) computers with 2 processors of 2 cores (can be modified by changing
+ * the variable NB_COMPUTER in the class TestCVM2Computers)</li>
+ * <li>admission controller that create a requestdispatcher and an applicationVM each time it
+ * receives an application and allocate 4 cores to that applicationVM</li>
+ * </ul>
+ * <li>NB_APPLICATION_PROVIDER (initially 3) applications provider try to send application to the
+ * admission controller but only 2 are accepted the 3rd is refused cuz there is not enough resources
+ * applications provider that are accepted create a RequestGenerator that will send request to the
+ * corresponding requestDispatcher</li>
+ * </ul>
  */
 public class TestCVM2AP extends AbstractCVM {
 
@@ -139,7 +145,7 @@ public class TestCVM2AP extends AbstractCVM {
     }
 
     public void test() throws Exception {
-        for ( int i = 0 ; i < NB_APPLICATION_PROVIDER  ; i++ )
+        for ( int i = 0 ; i < NB_APPLICATION_PROVIDER ; i++ )
             apmop[i].sendApplication();
     }
 
@@ -157,7 +163,7 @@ public class TestCVM2AP extends AbstractCVM {
     }
 
     public static void main( String[] args ) {
-      final  TestCVM2AP test = new TestCVM2AP();
+        final TestCVM2AP test = new TestCVM2AP();
         try {
             test.deploy();
             test.start();
