@@ -20,9 +20,9 @@ public class ApplicationNotificationInboundPort extends AbstractInboundPort impl
     }
 
     @Override
-    public void notifyRequestGeneratorCreated( String requestNotificationInboundPortURI, int i ) throws Exception {
+    public void notifyRequestGeneratorCreated( String requestNotificationInboundPortURI, String rdnop ) throws Exception {
         final AdmissionController ac = ( AdmissionController ) this.owner;
-        ac.notifyRequestGeneratorCreated( requestNotificationInboundPortURI, i );
+        ac.notifyRequestGeneratorCreated( requestNotificationInboundPortURI, rdnop );
 
 //        this.owner.handleRequestSync( new ComponentService<String>() {
 //

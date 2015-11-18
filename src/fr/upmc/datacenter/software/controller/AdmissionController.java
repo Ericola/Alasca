@@ -1,7 +1,9 @@
 package fr.upmc.datacenter.software.controller;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import fr.upmc.components.AbstractComponent;
 import fr.upmc.components.cvm.AbstractCVM;
@@ -59,7 +61,7 @@ public class AdmissionController extends AbstractComponent {
 
     private int cpt = 0;
 
-    private List<RequestNotificationOutboundPort> rnopList;
+    private Map<String , RequestNotificationOutboundPort> rnopList;
 
     /**
      * Create an admission controller
@@ -69,10 +71,10 @@ public class AdmissionController extends AbstractComponent {
      * @param computerServiceOutboundPortURI URI of the comuter service outbout port
      * @throws Exception
      */
-    public AdmissionController( String apURI , String applicationSubmissionInboundPortURI ,
+    public AdmissionController( String acURI , String applicationSubmissionInboundPortURI ,
             String applicationNotificationInboundPortURI , String computerServiceOutboundPortURI[] ) throws Exception {
         super( false , true );
-        this.acURI = apURI;
+        this.acURI = acURI;
         this.addOfferedInterface( ApplicationSubmissionI.class );
         this.asip = new ApplicationSubmissionInboundPort( applicationSubmissionInboundPortURI , this );
         this.addPort( asip );
@@ -91,7 +93,7 @@ public class AdmissionController extends AbstractComponent {
             this.csop[i].publishPort();
         }
 
-        rnopList = new ArrayList<>();
+        rnopList = new HashMap<>();
         avmop = new ArrayList<>();
     }
 
@@ -99,10 +101,10 @@ public class AdmissionController extends AbstractComponent {
      * Receive an application
      * 
      * @param nbVm the number of VM we want to allocate to the applicaiton
-     * @return The URI of the reuqestDispatcher
+     * @return [0] The URI of the reqestDispatcher. [1] The requestDispatcher identifier
      * @throws Exception
      */
-    public String submitApplication( int nbVm ) throws Exception {
+    public String[] submitApplication( int nbVm ) throws Exception {
         print( "Application received" );
 
         // Verifier que des resources sont disponibles
@@ -138,7 +140,9 @@ public class AdmissionController extends AbstractComponent {
             rdsop.add( createURI( "rdsop" ) );
             RequestDispatcher rd = new RequestDispatcher( createURI( "rd" ) , createURI( "rdsip" ) , rdsop ,
                     createURI( "rdnop" ) , createURI( "rdnip" ) );
-            rnopList.add( ( RequestNotificationOutboundPort ) ( rd.findPortFromURI( createURI( "rdnop" ) ) ) );
+
+            String rdnop = createURI( "rdnop" );
+            rnopList.put( rdnop , ( RequestNotificationOutboundPort ) ( rd.findPortFromURI( rdnop ) ) );
             AbstractCVM.theCVM.addDeployedComponent( rd );
 
             // Connect RD with VM
@@ -148,7 +152,10 @@ public class AdmissionController extends AbstractComponent {
                     .findPortFromURI( createURI( "rnop" ) );
             rnop.doConnection( createURI( "rdnip" ) , RequestNotificationConnector.class.getCanonicalName() );
 
-            String res = createURI( "rdsip" );
+            String res[] = new String[2];
+
+            res[0] = createURI( "rdsip" );
+            res[1] = rdnop;
             vm.toggleTracing();
             vm.toggleLogging();
             rd.toggleTracing();
@@ -170,9 +177,8 @@ public class AdmissionController extends AbstractComponent {
      * @param i index of the corresponding requestdispatcher
      * @throws Exception
      */
-    public void notifyRequestGeneratorCreated( String requestNotificationInboundPortURI , int i ) throws Exception {
-        rnopList.get( i ).doConnection( requestNotificationInboundPortURI ,
-                RequestNotificationConnector.class.getCanonicalName() );
+    public void notifyRequestGeneratorCreated( String rnipUri , String rdnopUri ) throws Exception {
+        rnopList.get( rdnopUri ).doConnection( rnipUri , RequestNotificationConnector.class.getCanonicalName() );
         print( "RequestGenerator and requestDispatcher are connected" );
     }
 
@@ -181,7 +187,7 @@ public class AdmissionController extends AbstractComponent {
     }
 
     private String createURI( String uri ) {
-        return uri + cpt;
+        return acURI + uri + cpt;
     }
 
     private void print( String s ) {
@@ -191,12 +197,12 @@ public class AdmissionController extends AbstractComponent {
     @Override
     public void shutdown() throws ComponentShutdownException {
         try {
-//            if ( this.asip.connected() ) {
-//                this.asip.doDisconnection();
-//            }
-//            if ( this.anip.connected() ) {
-//                this.anip.doDisconnection();
-//            }
+            // if ( this.asip.connected() ) {
+            // this.asip.doDisconnection();
+            // }
+            // if ( this.anip.connected() ) {
+            // this.anip.doDisconnection();
+            // }
             for ( int i = 0 ; i < cpt ; i++ ) {
                 if ( this.avmop.get( i ).connected() ) {
                     this.avmop.get( i ).doDisconnection();

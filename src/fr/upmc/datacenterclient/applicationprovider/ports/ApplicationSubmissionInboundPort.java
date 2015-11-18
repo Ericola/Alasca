@@ -21,13 +21,13 @@ public class ApplicationSubmissionInboundPort extends AbstractInboundPort implem
     }
 
     @Override
-    public String submitApplication( final int nbVM ) throws Exception {
+    public String[] submitApplication( final int nbVM ) throws Exception {
         final AdmissionController arh = ( AdmissionController ) this.owner;
 
-        return this.owner.handleRequestSync( new ComponentService<String>() {
+        return this.owner.handleRequestSync( new ComponentService<String[]>() {
 
             @Override
-            public String call() throws Exception {
+            public String[] call() throws Exception {
                 return arh.submitApplication( nbVM );
             }
         } );

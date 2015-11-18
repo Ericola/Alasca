@@ -6,10 +6,10 @@ import fr.upmc.datacenterclient.applicationprovider.interfaces.ApplicationNotifi
 public class ApplicationNotificationConnector extends AbstractConnector implements ApplicationNotificationI {
 
     @Override
-    public void notifyRequestGeneratorCreated( String requestNotificationInboundPortURI , int i ) throws Exception {
-        ( ( ApplicationNotificationI ) this.offering ).notifyRequestGeneratorCreated( requestNotificationInboundPortURI , i );
+    public void notifyRequestGeneratorCreated( String requestNotificationInboundPortURI , String rdnopUri )
+            throws Exception {
+        ( ( ApplicationNotificationI ) this.offering )
+                .notifyRequestGeneratorCreated( requestNotificationInboundPortURI , rdnopUri );
     }
-
-
 
 }

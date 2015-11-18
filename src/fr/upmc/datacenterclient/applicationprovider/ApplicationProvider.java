@@ -60,21 +60,21 @@ public class ApplicationProvider extends AbstractComponent {
     // REQUEST GENERATOR URIs
     // ------------------------------------------------------------------
     /** RequestGenerator URI */
-    protected static final String RG = "rg";
+    protected static String rgUri;
 
     /** Request generator management inbound port */
-    protected static final String RGMIP = "rgmip";
+    protected static String rgmipUri = "rgmip";
 
     /** Request submission outbound port */
-    protected static final String RSOP = "rsop";
+    protected static String rsopUri = "rsop";
 
     /** Request notification inbound port */
-    protected static final String RNIP = "rnip";
+    protected static String rnipUri = "rnip";
 
     /** Request generator management outbound port */
-    protected static final String RGMOP = "rgmop";
-    
-    protected static int i = 0;
+    protected static String rgmopUri = "rgmop";
+
+//    protected static int i = 0;
 
     /**
      * Create an application provider
@@ -104,6 +104,13 @@ public class ApplicationProvider extends AbstractComponent {
         this.addPort( this.apmip );
         this.apmip.publishPort();
 
+        // Ports of the request generator
+        rgUri = apURI + "-rg";
+        rgmipUri = apURI + "-rgmip";
+        rsopUri = apURI + "-rsop";
+        rnipUri = apURI + "-rnip";
+        rgmopUri = apURI + "-rgmop";
+
     }
 
     /**
@@ -114,29 +121,31 @@ public class ApplicationProvider extends AbstractComponent {
     public void sendApplication() throws Exception {
         print( "Submit an application" );
         print( "Waiting for URI" );
-        String requestDispatcherURI = this.asop.submitApplication( 1 );
+        String res[] = this.asop.submitApplication( 1 );
+        String requestDispatcherURI = res[0];
+
         print( "URI received" );
         if ( requestDispatcherURI != null ) {
 
             // Creation dynamique du request generator
             print( "creating RequestGenerator" );
-            RequestGenerator rg = new RequestGenerator( RG, 500.0 , 6000000000L , RGMIP , RSOP , RNIP );
+            RequestGenerator rg = new RequestGenerator( rgUri , 500.0 , 6000000000L , rgmipUri , rsopUri , rnipUri );
             AbstractCVM.theCVM.addDeployedComponent( rg );
-            RequestSubmissionOutboundPort rsop = ( RequestSubmissionOutboundPort ) rg.findPortFromURI( RSOP );
+            RequestSubmissionOutboundPort rsop = ( RequestSubmissionOutboundPort ) rg.findPortFromURI( rsopUri );
             rsop.doConnection( requestDispatcherURI , RequestSubmissionConnector.class.getCanonicalName() );
 
             rg.toggleTracing();
             rg.toggleLogging();
 
-            rgmop = new RequestGeneratorManagementOutboundPort( RGMOP , this );
+            rgmop = new RequestGeneratorManagementOutboundPort( rgmopUri , this );
             rgmop.publishPort();
-            rgmop.doConnection( RGMIP , RequestGeneratorManagementConnector.class.getCanonicalName() );
+            rgmop.doConnection( rgmipUri , RequestGeneratorManagementConnector.class.getCanonicalName() );
 
-            int cpt = Integer.parseInt( requestDispatcherURI.substring( 5 , requestDispatcherURI.length() ) );
+            String rdnopUri = res[1];
             print( "Notify requestGenerator created" );
-            anop.notifyRequestGeneratorCreated( RNIP , cpt );
+            anop.notifyRequestGeneratorCreated( rnipUri , rdnopUri );
             rg.startGeneration();
-      i++;
+    
         }
         else
             print( "Pas de resources disponibles" );
@@ -168,9 +177,9 @@ public class ApplicationProvider extends AbstractComponent {
             if ( this.anop.connected() ) {
                 this.anop.doDisconnection();
             }
-//            if ( this.apmip.connected() ) {
-//                this.apmip.doDisconnection();
-//            }
+            // if ( this.apmip.connected() ) {
+            // this.apmip.doDisconnection();
+            // }
         }
         catch ( Exception e ) {
             throw new ComponentShutdownException( e );

@@ -5,6 +5,6 @@ import fr.upmc.components.interfaces.RequiredI;
 
 public interface ApplicationNotificationI extends OfferedI, RequiredI {
 
-    public void notifyRequestGeneratorCreated( String requestNotificationInboundPortURI , int i ) throws Exception;
+    public void notifyRequestGeneratorCreated( String requestNotificationInboundPortURI , String rdnopUri ) throws Exception;
 
 }

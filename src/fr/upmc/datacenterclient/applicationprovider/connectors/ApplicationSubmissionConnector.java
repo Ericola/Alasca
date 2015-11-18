@@ -6,9 +6,8 @@ import fr.upmc.datacenterclient.applicationprovider.interfaces.ApplicationSubmis
 public class ApplicationSubmissionConnector extends AbstractConnector implements ApplicationSubmissionI {
 
     @Override
-    public String submitApplication( int nbVM ) throws Exception {
+    public String[] submitApplication( int nbVM ) throws Exception {
         return ( ( ApplicationSubmissionI ) this.offering ).submitApplication( nbVM );
     }
-
 
 }

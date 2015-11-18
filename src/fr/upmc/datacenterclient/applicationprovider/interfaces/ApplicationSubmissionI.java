@@ -5,6 +5,6 @@ import fr.upmc.components.interfaces.RequiredI;
 
 public interface ApplicationSubmissionI extends OfferedI, RequiredI {
 
-    public String submitApplication( int nbVM ) throws Exception;
+    public String[] submitApplication( int nbVM ) throws Exception;
 
 }
