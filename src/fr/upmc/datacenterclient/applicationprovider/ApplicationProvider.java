@@ -2,6 +2,7 @@ package fr.upmc.datacenterclient.applicationprovider;
 
 import fr.upmc.components.AbstractComponent;
 import fr.upmc.components.cvm.AbstractCVM;
+import fr.upmc.components.exceptions.ComponentShutdownException;
 import fr.upmc.datacenter.software.connectors.RequestSubmissionConnector;
 import fr.upmc.datacenter.software.ports.RequestSubmissionOutboundPort;
 import fr.upmc.datacenterclient.applicationprovider.interfaces.ApplicationNotificationI;
@@ -72,6 +73,8 @@ public class ApplicationProvider extends AbstractComponent {
 
     /** Request generator management outbound port */
     protected static final String RGMOP = "rgmop";
+    
+    protected static int i = 0;
 
     /**
      * Create an application provider
@@ -117,7 +120,7 @@ public class ApplicationProvider extends AbstractComponent {
 
             // Creation dynamique du request generator
             print( "creating RequestGenerator" );
-            RequestGenerator rg = new RequestGenerator( RG , 500.0 , 6000000000L , RGMIP , RSOP , RNIP );
+            RequestGenerator rg = new RequestGenerator( RG, 500.0 , 6000000000L , RGMIP , RSOP , RNIP );
             AbstractCVM.theCVM.addDeployedComponent( rg );
             RequestSubmissionOutboundPort rsop = ( RequestSubmissionOutboundPort ) rg.findPortFromURI( RSOP );
             rsop.doConnection( requestDispatcherURI , RequestSubmissionConnector.class.getCanonicalName() );
@@ -133,6 +136,7 @@ public class ApplicationProvider extends AbstractComponent {
             print( "Notify requestGenerator created" );
             anop.notifyRequestGeneratorCreated( RNIP , cpt );
             rg.startGeneration();
+      i++;
         }
         else
             print( "Pas de resources disponibles" );
@@ -150,5 +154,27 @@ public class ApplicationProvider extends AbstractComponent {
 
     private void print( String s ) {
         this.logMessage( "[ApplicationProvider " + apURI + "] " + s );
+    }
+
+    @Override
+    public void shutdown() throws ComponentShutdownException {
+        try {
+            if ( this.asop.connected() ) {
+                this.asop.doDisconnection();
+            }
+            if ( this.rgmop.connected() ) {
+                this.rgmop.doDisconnection();
+            }
+            if ( this.anop.connected() ) {
+                this.anop.doDisconnection();
+            }
+//            if ( this.apmip.connected() ) {
+//                this.apmip.doDisconnection();
+//            }
+        }
+        catch ( Exception e ) {
+            throw new ComponentShutdownException( e );
+        }
+        super.shutdown();
     }
 }

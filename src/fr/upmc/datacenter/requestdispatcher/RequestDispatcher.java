@@ -84,13 +84,13 @@ public class RequestDispatcher extends AbstractComponent
         this.addPort( this.rdsip );
         this.rdsip.publishPort();
 
-        this.addRequiredInterface( RequestNotificationI.class );
+        this.addOfferedInterface(  RequestNotificationI.class );
         this.rdnip = new RequestNotificationInboundPort( rdnip , this );
         this.addPort( this.rdnip );
         this.rdnip.publishPort();
 
         for ( int i = 0 ; i < rdsop.size() ; i++ ) {
-            this.addOfferedInterface( RequestSubmissionI.class );
+            this.addRequiredInterface( RequestSubmissionI.class );
             this.rdsopList.add( new RequestSubmissionOutboundPort( rdsop.get( i ) , this ) );
             this.addPort( this.rdsopList.get( i ) );
             this.rdsopList.get( i ).publishPort();

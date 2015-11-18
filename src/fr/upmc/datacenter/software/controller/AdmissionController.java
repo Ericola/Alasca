@@ -52,7 +52,7 @@ public class AdmissionController extends AbstractComponent {
     protected ApplicationNotificationInboundPort anip;
 
     /** The outbound port used to allocate core to the vm */
-    protected ApplicationVMManagementOutboundPort avmop;
+    protected List<ApplicationVMManagementOutboundPort> avmop;
 
     /** the outbound port of the computer service */
     protected ComputerServicesOutboundPort[] csop;
@@ -92,6 +92,7 @@ public class AdmissionController extends AbstractComponent {
         }
 
         rnopList = new ArrayList<>();
+        avmop = new ArrayList<>();
     }
 
     /**
@@ -122,12 +123,13 @@ public class AdmissionController extends AbstractComponent {
                     createURI( "rnop" ) );
             AbstractCVM.theCVM.addDeployedComponent( vm );
 
-            avmop = new ApplicationVMManagementOutboundPort( createURI( "avmop" ) , new AbstractComponent() {} );
-            avmop.publishPort();
-            avmop.doConnection( createURI( "avmip" ) , ApplicationVMManagementConnector.class.getCanonicalName() );
+            avmop.add( new ApplicationVMManagementOutboundPort( createURI( "avmop" ) , new AbstractComponent() {} ) );
+            avmop.get( cpt ).publishPort();
+            avmop.get( cpt ).doConnection( createURI( "avmip" ) ,
+                    ApplicationVMManagementConnector.class.getCanonicalName() );
 
             // AllocateCore des computers aux VMs
-            this.avmop.allocateCores( ac );
+            this.avmop.get( cpt ).allocateCores( ac );
             print( ac.length + " cores allocated" );
 
             // Création d'un requestdispatcher
@@ -142,6 +144,10 @@ public class AdmissionController extends AbstractComponent {
             // Connect RD with VM
             RequestSubmissionOutboundPort rsop = ( RequestSubmissionOutboundPort ) rd.findPortFromURI( rdsop.get( 0 ) );
             rsop.doConnection( createURI( "rsip" ) , RequestSubmissionConnector.class.getCanonicalName() );
+            RequestNotificationOutboundPort rnop = ( RequestNotificationOutboundPort ) vm
+                    .findPortFromURI( createURI( "rnop" ) );
+            rnop.doConnection( createURI( "rdnip" ) , RequestNotificationConnector.class.getCanonicalName() );
+
             String res = createURI( "rdsip" );
             vm.toggleTracing();
             vm.toggleLogging();
@@ -180,6 +186,33 @@ public class AdmissionController extends AbstractComponent {
 
     private void print( String s ) {
         this.logMessage( "[AdmissionController] " + s );
+    }
+
+    @Override
+    public void shutdown() throws ComponentShutdownException {
+        try {
+//            if ( this.asip.connected() ) {
+//                this.asip.doDisconnection();
+//            }
+//            if ( this.anip.connected() ) {
+//                this.anip.doDisconnection();
+//            }
+            for ( int i = 0 ; i < cpt ; i++ ) {
+                if ( this.avmop.get( i ).connected() ) {
+                    this.avmop.get( i ).doDisconnection();
+                }
+                if ( this.csop[i].connected() ) {
+                    this.csop[i].doDisconnection();
+                }
+                if ( this.rnopList.get( i ).connected() ) {
+                    this.rnopList.get( i ).doDisconnection();
+                }
+            }
+        }
+        catch ( Exception e ) {
+            throw new ComponentShutdownException( e );
+        }
+        super.shutdown();
     }
 
 }
