@@ -60,21 +60,21 @@ public class ApplicationProvider extends AbstractComponent {
     // REQUEST GENERATOR URIs
     // ------------------------------------------------------------------
     /** RequestGenerator URI */
-    protected static String rgUri;
+    protected String rgUri;
 
     /** Request generator management inbound port */
-    protected static String rgmipUri = "rgmip";
+    protected String rgmipUri;
 
     /** Request submission outbound port */
-    protected static String rsopUri = "rsop";
+    protected String rsopUri;
 
     /** Request notification inbound port */
-    protected static String rnipUri = "rnip";
+    protected String rnipUri;
 
     /** Request generator management outbound port */
-    protected static String rgmopUri = "rgmop";
+    protected String rgmopUri;
 
-//    protected static int i = 0;
+    // protected static int i = 0;
 
     /**
      * Create an application provider
@@ -145,7 +145,7 @@ public class ApplicationProvider extends AbstractComponent {
             print( "Notify requestGenerator created" );
             anop.notifyRequestGeneratorCreated( rnipUri , rdnopUri );
             rg.startGeneration();
-    
+
         }
         else
             print( "Pas de resources disponibles" );
