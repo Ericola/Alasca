@@ -213,6 +213,7 @@ public class TestAppProviderMultiJVM extends AbstractDistributedCVM {
 
             // connecter
             if ( thisJVMURI.equals( CONSUMER_JVM_URI ) ) {
+            	Thread.sleep(100);
                 test.test();
             }
             Thread.sleep( 25000L ); // Attente de 25 secondes le temps pour le consumer de se

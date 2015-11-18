@@ -144,6 +144,7 @@ public class ApplicationProvider extends AbstractComponent {
             String rdnopUri = res[1];
             print( "Notify requestGenerator created" );
             anop.notifyRequestGeneratorCreated( rnipUri , rdnopUri );
+            rg.start();
             rg.startGeneration();
 
         }
