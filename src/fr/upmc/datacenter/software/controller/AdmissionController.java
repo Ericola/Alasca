@@ -129,7 +129,7 @@ public class AdmissionController extends AbstractComponent {
             avmop.get( cpt ).publishPort();
             avmop.get( cpt ).doConnection( createURI( "avmip" ) ,
                     ApplicationVMManagementConnector.class.getCanonicalName() );
-
+            vm.start();
             // AllocateCore des computers aux VMs
             this.avmop.get( cpt ).allocateCores( ac );
             print( ac.length + " cores allocated" );
@@ -140,7 +140,7 @@ public class AdmissionController extends AbstractComponent {
             rdsop.add( createURI( "rdsop" ) );
             RequestDispatcher rd = new RequestDispatcher( createURI( "rd" ) , createURI( "rdsip" ) , rdsop ,
                     createURI( "rdnop" ) , createURI( "rdnip" ) );
-
+            rd.start();
             String rdnop = createURI( "rdnop" );
             rnopList.put( rdnop , ( RequestNotificationOutboundPort ) ( rd.findPortFromURI( rdnop ) ) );
             AbstractCVM.theCVM.addDeployedComponent( rd );
