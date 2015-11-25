@@ -1,11 +1,11 @@
-package fr.upmc.datacenter.software.controller.ports;
+package fr.upmc.datacenter.software.admissioncontroller.ports;
 
 import fr.upmc.components.ComponentI;
 import fr.upmc.components.ports.AbstractInboundPort;
 import fr.upmc.datacenter.hardware.computers.Computer.AllocatedCore;
+import fr.upmc.datacenter.software.admissioncontroller.AdmissionController;
+import fr.upmc.datacenter.software.admissioncontroller.interfaces.AdmissionControllerManagementI;
 import fr.upmc.datacenter.software.applicationvm.interfaces.ApplicationVMManagementI;
-import fr.upmc.datacenter.software.controller.AdmissionController;
-import fr.upmc.datacenter.software.controller.interfaces.AdmissionControllerManagementI;
 
 public class AdmissionControllerManagementInboundPort extends AbstractInboundPort
         implements AdmissionControllerManagementI {

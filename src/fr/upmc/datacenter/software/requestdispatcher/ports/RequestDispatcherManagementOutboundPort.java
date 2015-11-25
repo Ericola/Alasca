@@ -1,8 +1,8 @@
-package fr.upmc.datacenter.requestdispatcher.ports;
+package fr.upmc.datacenter.software.requestdispatcher.ports;
 
 import fr.upmc.components.ComponentI;
 import fr.upmc.components.ports.AbstractOutboundPort;
-import fr.upmc.datacenter.requestdispatcher.interfaces.RequestDispatcherManagementI;
+import fr.upmc.datacenter.software.requestdispatcher.interfaces.RequestDispatcherManagementI;
 
 public class RequestDispatcherManagementOutboundPort extends AbstractOutboundPort
         implements RequestDispatcherManagementI {

@@ -1,22 +1,12 @@
-package fr.upmc.datacenter.requestdispatcher;
+package fr.upmc.datacenter.software.requestdispatcher;
 
 import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.LinkedList;
+import java.util.Date;
 import java.util.List;
 import java.util.Map;
 
 import fr.upmc.components.AbstractComponent;
 import fr.upmc.components.exceptions.ComponentShutdownException;
-import fr.upmc.datacenter.hardware.computers.Computer.AllocatedCore;
-import fr.upmc.datacenter.hardware.processors.interfaces.ProcessorServicesI;
-import fr.upmc.datacenter.hardware.processors.interfaces.ProcessorServicesNotificationI;
-import fr.upmc.datacenter.hardware.processors.ports.ProcessorServicesNotificationInboundPort;
-import fr.upmc.datacenter.hardware.processors.ports.ProcessorServicesOutboundPort;
-import fr.upmc.datacenter.software.applicationvm.interfaces.ApplicationVMManagementI;
-import fr.upmc.datacenter.software.applicationvm.interfaces.TaskI;
-import fr.upmc.datacenter.software.applicationvm.ports.ApplicationVMManagementInboundPort;
 import fr.upmc.datacenter.software.interfaces.RequestI;
 import fr.upmc.datacenter.software.interfaces.RequestNotificationHandlerI;
 import fr.upmc.datacenter.software.interfaces.RequestNotificationI;
@@ -26,12 +16,13 @@ import fr.upmc.datacenter.software.ports.RequestNotificationInboundPort;
 import fr.upmc.datacenter.software.ports.RequestNotificationOutboundPort;
 import fr.upmc.datacenter.software.ports.RequestSubmissionInboundPort;
 import fr.upmc.datacenter.software.ports.RequestSubmissionOutboundPort;
+import fr.upmc.datacenter.software.requestdispatcher.interfaces.RequestDispatcherDynamicStateI;
 
 /**
  * 
  * Class which implements the Request Dispatcher component
  *
- *Request Dispatcher offers the interface RequestSubmissionI and RequestDispatcherI.
+ * Request Dispatcher offers the interface RequestSubmissionI and RequestDispatcherI.
  */
 public class RequestDispatcher extends AbstractComponent
         implements RequestSubmissionHandlerI, RequestNotificationHandlerI {
@@ -40,25 +31,32 @@ public class RequestDispatcher extends AbstractComponent
     protected String rdURI;
 
     /** RequestSubmissionInboundPort */
-    protected RequestSubmissionInboundPort        rdsip;
-    
-    /** List of OutboundPort to send requests to the connected ApplicationVM  */
+    protected RequestSubmissionInboundPort rdsip;
+
+    /** List of OutboundPort to send requests to the connected ApplicationVM */
     protected List<RequestSubmissionOutboundPort> rdsopList;
 
     protected RequestNotificationInboundPort  rdnip;
     /** Outbound port used by the RD to notify tasks' termination to the generator. */
     protected RequestNotificationOutboundPort rdnop;
 
-    /** Variable to know the less recent ApplicationVM **/ 
+    /** Variable to know the less recent ApplicationVM **/
     protected int current = 0;
-    
+
+    /** map associate RequestUri with the startTime in millis */
+    protected Map<String , Long> requestStartTimes;
+
+    /** map associate RequestUri with the end Time in millis */
+    protected Map<String , Long> requestEndTimes;
+
     /**
      * Create a RequestDispatcher
+     * 
      * @param rdURI URI of the RequestDispatcher
      * @param rdsip URI of the RequestSubmissionInboundPort
      * @param rdsop URI of the RequestSubmissionOutboundPort
      * @param rdnop URI of the RequestNotificationOutboundPort
-     * @param rdnip URI of the RequestNotificationInboundPort 
+     * @param rdnip URI of the RequestNotificationInboundPort
      * @throws Exception
      */
     public RequestDispatcher( String rdURI , String rdsip , List<String> rdsop , String rdnop , String rdnip )
@@ -84,7 +82,7 @@ public class RequestDispatcher extends AbstractComponent
         this.addPort( this.rdsip );
         this.rdsip.publishPort();
 
-        this.addOfferedInterface(  RequestNotificationI.class );
+        this.addOfferedInterface( RequestNotificationI.class );
         this.rdnip = new RequestNotificationInboundPort( rdnip , this );
         this.addPort( this.rdnip );
         this.rdnip.publishPort();
@@ -111,28 +109,46 @@ public class RequestDispatcher extends AbstractComponent
         this.logMessage(
                 "Request dispatcher " + this.rdURI + "  notified the request " + r.getRequestURI() + " has ended." );
         this.rdnop.notifyRequestTermination( r );
-        
+
+        requestEndTimes.put( r.getRequestURI() , System.nanoTime() );
+
     }
 
     /**
-     * Send the Request r to the less recent ApplicationVM 
+     * Send the Request r to the less recent ApplicationVM
      */
     @Override
     public void acceptRequestSubmission( RequestI r ) throws Exception {
         this.logMessage( this.rdURI + " submits request " + r.getRequestURI() );
         this.rdsopList.get( current ).submitRequest( r );
         current = ( current + 1 ) % rdsopList.size();
-     
+        requestStartTimes.put( r.getRequestURI() , System.nanoTime() );
     }
 
     /**
-     * Send the Request r to the less recent ApplicationVM and notify its termination to the RequestGenerator
+     * Send the Request r to the less recent ApplicationVM and notify its termination to the
+     * RequestGenerator
      */
     @Override
     public void acceptRequestSubmissionAndNotify( RequestI r ) throws Exception {
         this.logMessage( this.rdURI + " submits request " + r.getRequestURI() );
         this.rdsopList.get( current ).submitRequestAndNotify( r );
         current = ( current + 1 ) % rdsopList.size();
+
+        requestStartTimes.put( r.getRequestURI() , System.nanoTime() );
+    }
+
+    public RequestDispatcherDynamicStateI getRequestProcessingTimeAvg() throws Exception {
+        long total = 0;
+        long nbRequest = 0;
+
+        for ( Map.Entry<String , Long> entry : requestStartTimes.entrySet() ) {
+            long endTime = requestEndTimes.get( entry.getKey() );
+            total += endTime - entry.getValue();
+            nbRequest++;
+        }
+        long avg = nbRequest == 0 ? 0 : total / nbRequest;
+        return new RequestDispatcherDynamicState( this.rdURI , avg );
     }
 
     /**
@@ -163,8 +179,8 @@ public class RequestDispatcher extends AbstractComponent
         super.shutdown();
     }
 
-	public Boolean isWaitingForTermination() {
-	
-		return null;
-	}
+    public Boolean isWaitingForTermination() {
+
+        return null;
+    }
 }

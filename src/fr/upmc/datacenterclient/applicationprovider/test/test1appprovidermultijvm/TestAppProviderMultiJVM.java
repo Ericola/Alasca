@@ -21,7 +21,7 @@ import fr.upmc.datacenter.hardware.computers.ports.ComputerDynamicStateDataOutbo
 import fr.upmc.datacenter.hardware.computers.ports.ComputerServicesOutboundPort;
 import fr.upmc.datacenter.hardware.computers.ports.ComputerStaticStateDataOutboundPort;
 import fr.upmc.datacenter.hardware.tests.ComputerMonitor;
-import fr.upmc.datacenter.software.controller.AdmissionController;
+import fr.upmc.datacenter.software.admissioncontroller.AdmissionController;
 import fr.upmc.datacenterclient.applicationprovider.ApplicationProvider;
 import fr.upmc.datacenterclient.applicationprovider.connectors.ApplicationNotificationConnector;
 import fr.upmc.datacenterclient.applicationprovider.connectors.ApplicationProviderManagementConnector;

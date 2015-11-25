@@ -1,8 +1,8 @@
-package fr.upmc.datacenter.software.controller.ports;
+package fr.upmc.datacenter.software.admissioncontroller.ports;
 
 import fr.upmc.components.ComponentI;
 import fr.upmc.components.ports.AbstractOutboundPort;
-import fr.upmc.datacenter.software.controller.interfaces.AdmissionControllerManagementI;
+import fr.upmc.datacenter.software.admissioncontroller.interfaces.AdmissionControllerManagementI;
 
 public class AdmissionControllerManagementOutboundPort extends AbstractOutboundPort
         implements AdmissionControllerManagementI {

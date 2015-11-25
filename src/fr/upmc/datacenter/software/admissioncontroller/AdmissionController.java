@@ -1,4 +1,4 @@
-package fr.upmc.datacenter.software.controller;
+package fr.upmc.datacenter.software.admissioncontroller;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -11,7 +11,6 @@ import fr.upmc.components.exceptions.ComponentShutdownException;
 import fr.upmc.datacenter.hardware.computers.Computer.AllocatedCore;
 import fr.upmc.datacenter.hardware.computers.interfaces.ComputerServicesI;
 import fr.upmc.datacenter.hardware.computers.ports.ComputerServicesOutboundPort;
-import fr.upmc.datacenter.requestdispatcher.RequestDispatcher;
 import fr.upmc.datacenter.software.applicationvm.ApplicationVM;
 import fr.upmc.datacenter.software.applicationvm.connectors.ApplicationVMManagementConnector;
 import fr.upmc.datacenter.software.applicationvm.ports.ApplicationVMManagementOutboundPort;
@@ -19,6 +18,7 @@ import fr.upmc.datacenter.software.connectors.RequestNotificationConnector;
 import fr.upmc.datacenter.software.connectors.RequestSubmissionConnector;
 import fr.upmc.datacenter.software.ports.RequestNotificationOutboundPort;
 import fr.upmc.datacenter.software.ports.RequestSubmissionOutboundPort;
+import fr.upmc.datacenter.software.requestdispatcher.RequestDispatcher;
 import fr.upmc.datacenterclient.applicationprovider.interfaces.ApplicationNotificationI;
 import fr.upmc.datacenterclient.applicationprovider.interfaces.ApplicationSubmissionI;
 import fr.upmc.datacenterclient.applicationprovider.ports.ApplicationNotificationInboundPort;

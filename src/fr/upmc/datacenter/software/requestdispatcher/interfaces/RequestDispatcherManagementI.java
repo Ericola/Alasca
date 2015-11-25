@@ -1,4 +1,4 @@
-package fr.upmc.datacenter.requestdispatcher.interfaces;
+package fr.upmc.datacenter.software.requestdispatcher.interfaces;
 
 import fr.upmc.components.interfaces.OfferedI;
 import fr.upmc.components.interfaces.RequiredI;

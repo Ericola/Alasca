@@ -3,7 +3,7 @@ package fr.upmc.datacenterclient.applicationprovider.ports;
 import fr.upmc.components.ComponentI;
 import fr.upmc.components.ComponentI.ComponentService;
 import fr.upmc.components.ports.AbstractInboundPort;
-import fr.upmc.datacenter.software.controller.AdmissionController;
+import fr.upmc.datacenter.software.admissioncontroller.AdmissionController;
 import fr.upmc.datacenterclient.applicationprovider.interfaces.ApplicationSubmissionI;
 
 public class ApplicationSubmissionInboundPort extends AbstractInboundPort implements ApplicationSubmissionI {
