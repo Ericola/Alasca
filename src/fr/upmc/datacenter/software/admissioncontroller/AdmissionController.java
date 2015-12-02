@@ -16,6 +16,7 @@ import fr.upmc.datacenter.software.applicationvm.connectors.ApplicationVMManagem
 import fr.upmc.datacenter.software.applicationvm.ports.ApplicationVMManagementOutboundPort;
 import fr.upmc.datacenter.software.connectors.RequestNotificationConnector;
 import fr.upmc.datacenter.software.connectors.RequestSubmissionConnector;
+import fr.upmc.datacenter.software.controller.Controller;
 import fr.upmc.datacenter.software.ports.RequestNotificationOutboundPort;
 import fr.upmc.datacenter.software.ports.RequestSubmissionOutboundPort;
 import fr.upmc.datacenter.software.requestdispatcher.RequestDispatcher;
@@ -139,7 +140,7 @@ public class AdmissionController extends AbstractComponent {
             List<String> rdsop = new ArrayList<>();
             rdsop.add( createURI( "rdsop" ) );
             RequestDispatcher rd = new RequestDispatcher( createURI( "rd" ) , createURI( "rdsip" ) , rdsop ,
-                    createURI( "rdnop" ) , createURI( "rdnip" ) );
+                    createURI( "rdnop" ) , createURI( "rdnip" ) , createURI( "rddsdip" ) );
             rd.start();
             String rdnop = createURI( "rdnop" );
             rnopList.put( rdnop , ( RequestNotificationOutboundPort ) ( rd.findPortFromURI( rdnop ) ) );
@@ -151,6 +152,15 @@ public class AdmissionController extends AbstractComponent {
             RequestNotificationOutboundPort rnop = ( RequestNotificationOutboundPort ) vm
                     .findPortFromURI( createURI( "rnop" ) );
             rnop.doConnection( createURI( "rdnip" ) , RequestNotificationConnector.class.getCanonicalName() );
+
+            // Create controller
+            print( "Creating the controller..." );
+            Controller controller = new Controller( createURI( "c" ) , createURI( "rd" ) , createURI( "rddsdip" ) );
+
+//            controller.startControlling();
+            controller.getDynamicState();
+
+   
 
             String res[] = new String[2];
 

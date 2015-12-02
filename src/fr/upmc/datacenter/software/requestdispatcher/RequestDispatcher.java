@@ -7,6 +7,8 @@ import java.util.Map;
 
 import fr.upmc.components.AbstractComponent;
 import fr.upmc.components.exceptions.ComponentShutdownException;
+import fr.upmc.datacenter.hardware.processors.ports.ProcessorDynamicStateDataInboundPort;
+import fr.upmc.datacenter.interfaces.ControlledDataOfferedI;
 import fr.upmc.datacenter.software.interfaces.RequestI;
 import fr.upmc.datacenter.software.interfaces.RequestNotificationHandlerI;
 import fr.upmc.datacenter.software.interfaces.RequestNotificationI;
@@ -17,6 +19,7 @@ import fr.upmc.datacenter.software.ports.RequestNotificationOutboundPort;
 import fr.upmc.datacenter.software.ports.RequestSubmissionInboundPort;
 import fr.upmc.datacenter.software.ports.RequestSubmissionOutboundPort;
 import fr.upmc.datacenter.software.requestdispatcher.interfaces.RequestDispatcherDynamicStateI;
+import fr.upmc.datacenter.software.requestdispatcher.ports.RequestDispatcherDynamicStateDataInboundPort;
 
 /**
  * 
@@ -49,6 +52,8 @@ public class RequestDispatcher extends AbstractComponent
     /** map associate RequestUri with the end Time in millis */
     protected Map<String , Long> requestEndTimes;
 
+    protected RequestDispatcherDynamicStateDataInboundPort requestDispatcherDynamicStateDataInboundPort;
+
     /**
      * Create a RequestDispatcher
      * 
@@ -59,8 +64,8 @@ public class RequestDispatcher extends AbstractComponent
      * @param rdnip URI of the RequestNotificationInboundPort
      * @throws Exception
      */
-    public RequestDispatcher( String rdURI , String rdsip , List<String> rdsop , String rdnop , String rdnip )
-            throws Exception {
+    public RequestDispatcher( String rdURI , String rdsip , List<String> rdsop , String rdnop , String rdnip ,
+            String requestDispatcherDynamicStateDataInboundPortURI ) throws Exception {
         super( true , false );
 
         // Preconditions
@@ -98,6 +103,12 @@ public class RequestDispatcher extends AbstractComponent
         this.rdnop = new RequestNotificationOutboundPort( rdnop , this );
         this.addPort( this.rdnop );
         this.rdnop.publishPort();
+
+        this.addOfferedInterface( ControlledDataOfferedI.ControlledPullI.class );
+        this.requestDispatcherDynamicStateDataInboundPort = new RequestDispatcherDynamicStateDataInboundPort(
+                requestDispatcherDynamicStateDataInboundPortURI , this );
+        this.addPort( this.requestDispatcherDynamicStateDataInboundPort );
+        this.requestDispatcherDynamicStateDataInboundPort.publishPort();
     }
 
     /**

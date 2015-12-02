@@ -16,7 +16,7 @@ public class RequestDispatcherDynamicStateDataOutboundPort extends AbstractContr
         super( owner );
         this.requestDispatcherURI = requestDispatcherURI;
 
-        assert owner instanceof RequestDispatcherStateDataConsumerI;
+//        assert owner instanceof RequestDispatcherStateDataConsumerI;
     }
 
     public RequestDispatcherDynamicStateDataOutboundPort( String uri , ComponentI owner , String requestDispatcherURI )
@@ -24,7 +24,7 @@ public class RequestDispatcherDynamicStateDataOutboundPort extends AbstractContr
         super( uri , owner );
         this.requestDispatcherURI = requestDispatcherURI;
 
-        assert owner instanceof RequestDispatcherStateDataConsumerI;
+//        assert owner instanceof RequestDispatcherStateDataConsumerI;
     }
 
     /**
