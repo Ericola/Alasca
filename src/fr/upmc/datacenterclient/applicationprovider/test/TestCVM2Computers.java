@@ -69,37 +69,29 @@ public class TestCVM2Computers extends AbstractCVM {
         // --------------------------------------------------------------------
 
         // --------------------------------------------------------------------
-        // Create NB_COMPUTER computer monitor component and connect its to ports
-        // with the computer component.
-        // --------------------------------------------------------------------
-
-        this.cssdop = new ComputerStaticStateDataOutboundPort[NB_COMPUTER];
-        this.cdsdop = new ComputerDynamicStateDataOutboundPort[NB_COMPUTER];
-        for ( int i = 0 ; i < NB_COMPUTER ; ++i ) {
-            ComputerMonitor cm = new ComputerMonitor( "computer" + i , true , "cssdop" + i , "cdsdop" + i );
-            this.addDeployedComponent( cm );
-            this.cssdop[i] = ( ComputerStaticStateDataOutboundPort ) cm.findPortFromURI( "cssdop" + i );
-            this.cssdop[i].doConnection( "cssdip" + i , DataConnector.class.getCanonicalName() );
-
-            this.cdsdop[i] = ( ComputerDynamicStateDataOutboundPort ) cm.findPortFromURI( "cdsdop" + i );
-            this.cdsdop[i].doConnection( "cdsdip" + i , ControlledDataConnector.class.getCanonicalName() );
-        }
-
-        // --------------------------------------------------------------------
         // Create and deploy an AdmissionController component
         // --------------------------------------------------------------------
 
         String csop[] = new String[NB_COMPUTER];
-        for ( int i = 0 ; i < NB_COMPUTER ; ++i )
+        String computer[] = new String[NB_COMPUTER];
+        String cdsop[] = new String[NB_COMPUTER];
+        for ( int i = 0 ; i < NB_COMPUTER ; ++i ){
             csop[i] = "csop" + i;
+            computer[i] = "computer" + i;
+            cdsop[i] = "cdsdop" + i;
+        }
 
-        AdmissionController ac = new AdmissionController( "ac" , "asip" , "anip" , csop );
+        AdmissionController ac = new AdmissionController( "ac" , "asip" , "anip" , csop, cdsop, computer );
 
         this.csop = new ComputerServicesOutboundPort[NB_COMPUTER];
+        this.cdsdop = new ComputerDynamicStateDataOutboundPort[NB_COMPUTER];
         for ( int i = 0 ; i < NB_COMPUTER ; ++i ) {
             this.csop[i] = ( ComputerServicesOutboundPort ) ac.findPortFromURI( "csop" + i );
             this.csop[i].doConnection( "csip" + i , ComputerServicesConnector.class.getCanonicalName() );
+            this.cdsdop[i] = ( ComputerDynamicStateDataOutboundPort ) ac.findPortFromURI( cdsop[i] );
+            this.cdsdop[i].doConnection( "cdsdip" + i , ControlledDataConnector.class.getCanonicalName() );
         }
+        ac.fillCore();
         ac.toggleTracing();
         ac.toggleLogging();
         this.addDeployedComponent( ac );

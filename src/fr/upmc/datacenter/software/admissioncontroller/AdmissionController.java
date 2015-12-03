@@ -9,7 +9,11 @@ import fr.upmc.components.AbstractComponent;
 import fr.upmc.components.cvm.AbstractCVM;
 import fr.upmc.components.exceptions.ComponentShutdownException;
 import fr.upmc.datacenter.hardware.computers.Computer.AllocatedCore;
+import fr.upmc.datacenter.hardware.computers.interfaces.ComputerDynamicStateI;
 import fr.upmc.datacenter.hardware.computers.interfaces.ComputerServicesI;
+import fr.upmc.datacenter.hardware.computers.interfaces.ComputerStateDataConsumerI;
+import fr.upmc.datacenter.hardware.computers.interfaces.ComputerStaticStateI;
+import fr.upmc.datacenter.hardware.computers.ports.ComputerDynamicStateDataOutboundPort;
 import fr.upmc.datacenter.hardware.computers.ports.ComputerServicesOutboundPort;
 import fr.upmc.datacenter.software.applicationvm.ApplicationVM;
 import fr.upmc.datacenter.software.applicationvm.connectors.ApplicationVMManagementConnector;
@@ -41,195 +45,280 @@ import fr.upmc.datacenterclient.applicationprovider.ports.ApplicationSubmissionI
  * applications. It also offeres the interface <code>ApplicationNotificationI</code> to notify the
  * end of the requestgenerator creation
  */
-public class AdmissionController extends AbstractComponent {
+public class AdmissionController extends AbstractComponent implements ComputerStateDataConsumerI{
 
-    /** the URI of the component. */
-    protected String acURI;
+	public static int NB_VM = 2;
 
-    /** The inbound port used to receive application */
-    protected ApplicationSubmissionInboundPort asip;
+	/** the URI of the component. */
+	protected String acURI;
 
-    /**
-     * The inbound port used to be notified when the requestgenerator is created (by the AP)
-     */
-    protected ApplicationNotificationInboundPort anip;
+	/** The inbound port used to receive application */
+	protected ApplicationSubmissionInboundPort asip;
 
-    /** The outbound port used to allocate core to the vm */
-    protected List<ApplicationVMManagementOutboundPort> avmop;
+	/**
+	 * The inbound port used to be notified when the requestgenerator is created (by the AP)
+	 */
+	protected ApplicationNotificationInboundPort anip;
 
-    /** the outbound port of the computer service */
-    protected ComputerServicesOutboundPort[] csop;
+	/** The outbound port used to allocate core to the vm */
+	protected List<ApplicationVMManagementOutboundPort> avmop;
 
-    private int cpt = 0;
+	/** the outbound port of the computer service */
+	protected ComputerServicesOutboundPort[] csop;
 
-    private Map<String , RequestNotificationOutboundPort> rnopList;
+	/** the outbound port of the ComputerDynamicStateOutboundPort service */
+	protected ComputerDynamicStateDataOutboundPort[] cdsop;
 
-    /**
-     * Create an admission controller
-     * 
-     * @param applicationSubmissionInboundPortURI URI of the application submission inbound port
-     * @param applicationNotificationInboundPortURI URI of the application notification inbound port
-     * @param computerServiceOutboundPortURI URI of the comuter service outbout port
-     * @throws Exception
-     */
-    public AdmissionController( String acURI , String applicationSubmissionInboundPortURI ,
-            String applicationNotificationInboundPortURI , String computerServiceOutboundPortURI[] ) throws Exception {
-        super( false , true );
-        this.acURI = acURI;
-        this.addOfferedInterface( ApplicationSubmissionI.class );
-        this.asip = new ApplicationSubmissionInboundPort( applicationSubmissionInboundPortURI , this );
-        this.addPort( asip );
-        this.asip.publishPort();
+	private int cpt = 0;
 
-        this.addOfferedInterface( ApplicationNotificationI.class );
-        this.anip = new ApplicationNotificationInboundPort( applicationNotificationInboundPortURI , this );
-        this.addPort( anip );
-        this.anip.publishPort();
+	private Map<String , RequestNotificationOutboundPort> rnopList;
 
-        this.addRequiredInterface( ComputerServicesI.class );
-        this.csop = new ComputerServicesOutboundPort[computerServiceOutboundPortURI.length];
-        for ( int i = 0 ; i < computerServiceOutboundPortURI.length ; i++ ) {
-            this.csop[i] = new ComputerServicesOutboundPort( computerServiceOutboundPortURI[i] , this );
-            this.addPort( csop[i] );
-            this.csop[i].publishPort();
-        }
+	/** Map containing the ressources (core) and their state (true reserved, false not reserved) */
+	private Map<String, Map<AllocatedCore, Boolean>> tabCore;
 
-        rnopList = new HashMap<>();
-        avmop = new ArrayList<>();
-    }
+	/** Uri of the computer **/
+	private String[] computerURI;
 
-    /**
-     * Receive an application
-     * 
-     * @param nbVm the number of VM we want to allocate to the applicaiton
-     * @return [0] The URI of the reqestDispatcher. [1] The requestDispatcher identifier
-     * @throws Exception
-     */
-    public String[] submitApplication( int nbVm ) throws Exception {
-        print( "Application received" );
+	/**
+	 * Create an admission controller
+	 * 
+	 * @param applicationSubmissionInboundPortURI URI of the application submission inbound port
+	 * @param applicationNotificationInboundPortURI URI of the application notification inbound port
+	 * @param computerServiceOutboundPortURI URI of the computer service outbout port
+	 * @param ComputerDynamicStateDataOutboundPort URI of the computer dynamic state data outbound port
+	 * @param computerURI URI of computer(s) 
+	 * @throws Exception
+	 */
+	public AdmissionController( String acURI , String applicationSubmissionInboundPortURI ,
+			String applicationNotificationInboundPortURI, 
+			String computerServiceOutboundPortURI[],
+			String ComputerDynamicStateDataOutboundPort[],
+			String computerURI[]) throws Exception {
+		super( false , true );
+		this.acURI = acURI;
+		this.addOfferedInterface( ApplicationSubmissionI.class );
+		this.asip = new ApplicationSubmissionInboundPort( applicationSubmissionInboundPortURI , this );
+		this.addPort( asip );
+		this.asip.publishPort();
 
-        // Verifier que des resources sont disponibles
-        print( "Looking for available resources..." );
+		this.addOfferedInterface( ApplicationNotificationI.class );
+		this.anip = new ApplicationNotificationInboundPort( applicationNotificationInboundPortURI , this );
+		this.addPort( anip );
+		this.anip.publishPort();
 
-        AllocatedCore[] ac = null;
-        for ( int i = 0 ; i < csop.length ; ++i ) {
-            ac = this.csop[i].allocateCores( 4 );
-            if ( ac.length != 0 )
-                break;
-        }
-        if ( ac.length != 0 ) {
-            print( "Resources found!" );
+		this.cdsop = new ComputerDynamicStateDataOutboundPort[computerServiceOutboundPortURI.length];
+		this.csop = new ComputerServicesOutboundPort[computerServiceOutboundPortURI.length];
+		this.computerURI = computerURI;
+		for ( int i = 0 ; i < computerServiceOutboundPortURI.length ; i++ ) {
+			this.addRequiredInterface( ComputerServicesI.class );
+			this.csop[i] = new ComputerServicesOutboundPort( computerServiceOutboundPortURI[i] , this );
+			this.addPort( csop[i] );
+			this.csop[i].publishPort();
+			this.addRequiredInterface( ComputerDynamicStateI.class );
+			this.cdsop[i] = new ComputerDynamicStateDataOutboundPort( ComputerDynamicStateDataOutboundPort[i], 
+					this, computerURI[i]);
+			this.addPort( cdsop[i] );
+			this.cdsop[i].publishPort();
+		}
 
-            // Creation d'une VM
-            print( "Creating an applicationVM..." );
-            ApplicationVM vm = new ApplicationVM( createURI( "vm" ) , createURI( "avmip" ) , createURI( "rsip" ) ,
-                    createURI( "rnop" ) );
-            AbstractCVM.theCVM.addDeployedComponent( vm );
+		// Allocation Hashmap
+		this.tabCore = new HashMap<String, Map<AllocatedCore, Boolean>>();
 
-            avmop.add( new ApplicationVMManagementOutboundPort( createURI( "avmop" ) , new AbstractComponent() {} ) );
-            avmop.get( cpt ).publishPort();
-            avmop.get( cpt ).doConnection( createURI( "avmip" ) ,
-                    ApplicationVMManagementConnector.class.getCanonicalName() );
-            vm.start();
-            // AllocateCore des computers aux VMs
-            this.avmop.get( cpt ).allocateCores( ac );
-            print( ac.length + " cores allocated" );
+		rnopList = new HashMap<>();
+		avmop = new ArrayList<>();
+	}
+	
+	/**
+	 * Fill map tabCore of all cores from computer(s)
+	 * @throws Exception
+	 */
+	public void fillCore() throws Exception{
+		for(int i = 0; i < csop.length; i++){
+			AllocatedCore[] listCores = csop[i].allocateCores(50);
+			HashMap<AllocatedCore, Boolean> listCoresFromComputer = new HashMap<AllocatedCore, Boolean>();
+			listCoresFromComputer = new HashMap<AllocatedCore, Boolean>();
+			for(int j = 0; j < listCores.length; j++){
+				listCoresFromComputer.put(listCores[j], false);
+			}
+			this.tabCore.put(computerURI[i], listCoresFromComputer);
+		}
+	}
 
-            // Création d'un requestdispatcher
-            print( "Creating the requestDispatcher..." );
-            List<String> rdsop = new ArrayList<>();
-            rdsop.add( createURI( "rdsop" ) );
-            RequestDispatcher rd = new RequestDispatcher( createURI( "rd" ) , createURI( "rdsip" ) , rdsop ,
-                    createURI( "rdnop" ) , createURI( "rdnip" ) , createURI( "rddsdip" ) );
-            rd.start();
-            String rdnop = createURI( "rdnop" );
-            rnopList.put( rdnop , ( RequestNotificationOutboundPort ) ( rd.findPortFromURI( rdnop ) ) );
-            AbstractCVM.theCVM.addDeployedComponent( rd );
+	/**
+	 * Receive an application
+	 * 
+	 * @param nbVm the number of VM we want to allocate to the applicaiton
+	 * @return [0] The URI of the reqestDispatcher. [1] The requestDispatcher identifier
+	 * @throws Exception
+	 */
+	public String[] submitApplication( int nbVm ) throws Exception {
+		print( "Application received" );
 
-            // Connect RD with VM
-            RequestSubmissionOutboundPort rsop = ( RequestSubmissionOutboundPort ) rd.findPortFromURI( rdsop.get( 0 ) );
-            rsop.doConnection( createURI( "rsip" ) , RequestSubmissionConnector.class.getCanonicalName() );
-            RequestNotificationOutboundPort rnop = ( RequestNotificationOutboundPort ) vm
-                    .findPortFromURI( createURI( "rnop" ) );
-            rnop.doConnection( createURI( "rdnip" ) , RequestNotificationConnector.class.getCanonicalName() );
+		// Verifier que des resources sont disponibles
+		print( "Looking for available resources..." );
+		ArrayList<AllocatedCore> ac = new ArrayList<AllocatedCore>();
+		ArrayList<AllocatedCore> tmp;
+		for ( int i = 0 ; i < computerURI.length ; i++) {
+			tmp = new ArrayList<AllocatedCore>();
+			print("Looking for " + NB_VM + " available core in Computer " + computerURI[i] + "...");
+			for(Map.Entry<AllocatedCore, Boolean> res : tabCore.get(computerURI[i]).entrySet()){
+				if(!res.getValue()){
+					tmp.add(res.getKey());
+				}
+				if(tmp.size() == NB_VM)
+					break;
+			}
+			if(tmp.size() == NB_VM){
+				ac.addAll(tmp);
+				break;
+			}
+			else{
+				if(tmp.size() > ac.size()){
+					ac = new ArrayList<AllocatedCore>();
+					ac.addAll(tmp);
+				}
+			}
+		}
+		if ( ac.size() != 0 ) {
+			print( "Resources found! (" + ac.size() + " available Core(s))" );
 
-            // Create controller
-            print( "Creating the controller..." );
-            Controller controller = new Controller( createURI( "c" ) , createURI( "rd" ) , createURI( "rddsdip" ) );
-            controller.toggleLogging();
-            controller.toggleTracing();
-          
-            controller.startControlling();
+			// Creation d'une VM
+			print( "Creating an applicationVM..." );
+			ApplicationVM vm = new ApplicationVM( createURI( "vm" ) , createURI( "avmip" ) , createURI( "rsip" ) ,
+					createURI( "rnop" ) );
+			AbstractCVM.theCVM.addDeployedComponent( vm );
 
-   
+			avmop.add( new ApplicationVMManagementOutboundPort( createURI( "avmop" ) , new AbstractComponent() {} ) );
+			avmop.get( cpt ).publishPort();
+			avmop.get( cpt ).doConnection( createURI( "avmip" ) ,
+					ApplicationVMManagementConnector.class.getCanonicalName() );
+			vm.start();
+			// AllocateCore des computers aux VMs
+			AllocatedCore[] coreList = new AllocatedCore[ac.size()];
+			for(int i = 0; i < ac.size(); i++)
+				coreList[i] = ac.get(i);
+			
+			this.avmop.get( cpt ).allocateCores( coreList );
+			print( ac.size() + " cores allocated." );
 
-            String res[] = new String[2];
+			// Création d'un requestdispatcher
+			print( "Creating the requestDispatcher..." );
+			List<String> rdsop = new ArrayList<>();
+			rdsop.add( createURI( "rdsop" ) );
+			RequestDispatcher rd = new RequestDispatcher( createURI( "rd" ) , createURI( "rdsip" ) , rdsop ,
+					createURI( "rdnop" ) , createURI( "rdnip" ) , createURI( "rddsdip" ) );
+			rd.start();
+			String rdnop = createURI( "rdnop" );
+			rnopList.put( rdnop , ( RequestNotificationOutboundPort ) ( rd.findPortFromURI( rdnop ) ) );
+			AbstractCVM.theCVM.addDeployedComponent( rd );
 
-            res[0] = createURI( "rdsip" );
-            res[1] = rdnop;
-            vm.toggleTracing();
-            vm.toggleLogging();
-            rd.toggleTracing();
-            rd.toggleLogging();
-            print( "RequestDispatcher created" );
-            cpt++;
-            return res;
-        }
-        else {
-            return null;
-        }
-    }
+			// Connect RD with VM
+			RequestSubmissionOutboundPort rsop = ( RequestSubmissionOutboundPort ) rd.findPortFromURI( rdsop.get( 0 ) );
+			rsop.doConnection( createURI( "rsip" ) , RequestSubmissionConnector.class.getCanonicalName() );
+			RequestNotificationOutboundPort rnop = ( RequestNotificationOutboundPort ) vm
+					.findPortFromURI( createURI( "rnop" ) );
+			rnop.doConnection( createURI( "rdnip" ) , RequestNotificationConnector.class.getCanonicalName() );
 
-    /**
-     * Notify that the request generator has been created. We can now complete the request
-     * notification connection
-     * 
-     * @param requestNotificationInboundPortURI URI of the RG notification inbound port
-     * @param i index of the corresponding requestdispatcher
-     * @throws Exception
-     */
-    public void notifyRequestGeneratorCreated( String rnipUri , String rdnopUri ) throws Exception {
-        rnopList.get( rdnopUri ).doConnection( rnipUri , RequestNotificationConnector.class.getCanonicalName() );
-        print( "RequestGenerator and requestDispatcher are connected" );
-    }
+			// Create controller
+			print( "Creating the controller..." );
+			Controller controller = new Controller( createURI( "c" ) , createURI( "rd" ) , createURI( "rddsdip" ) );
+			controller.toggleLogging();
+			controller.toggleTracing();
 
-    public void freeUpVM() {
+			controller.startControlling();
 
-    }
 
-    private String createURI( String uri ) {
-        return acURI + uri + cpt;
-    }
 
-    private void print( String s ) {
-        this.logMessage( "[AdmissionController] " + s );
-    }
+			String res[] = new String[2];
 
-    @Override
-    public void shutdown() throws ComponentShutdownException {
-        try {
-            // if ( this.asip.connected() ) {
-            // this.asip.doDisconnection();
-            // }
-            // if ( this.anip.connected() ) {
-            // this.anip.doDisconnection();
-            // }
-            for ( int i = 0 ; i < cpt ; i++ ) {
-                if ( this.avmop.get( i ).connected() ) {
-                    this.avmop.get( i ).doDisconnection();
-                }
-                if ( this.csop[i].connected() ) {
-                    this.csop[i].doDisconnection();
-                }
-                if ( this.rnopList.get( i ).connected() ) {
-                    this.rnopList.get( i ).doDisconnection();
-                }
-            }
-        }
-        catch ( Exception e ) {
-            throw new ComponentShutdownException( e );
-        }
-        super.shutdown();
-    }
+			res[0] = createURI( "rdsip" );
+			res[1] = rdnop;
+			vm.toggleTracing();
+			vm.toggleLogging();
+			rd.toggleTracing();
+			rd.toggleLogging();
+			print( "RequestDispatcher created" );
+			cpt++;
+			return res;
+		}
+		else {
+			return null;
+		}
+	}
+
+	/**
+	 * Notify that the request generator has been created. We can now complete the request
+	 * notification connection
+	 * 
+	 * @param requestNotificationInboundPortURI URI of the RG notification inbound port
+	 * @param i index of the corresponding requestdispatcher
+	 * @throws Exception
+	 */
+	public void notifyRequestGeneratorCreated( String rnipUri , String rdnopUri ) throws Exception {
+		rnopList.get( rdnopUri ).doConnection( rnipUri , RequestNotificationConnector.class.getCanonicalName() );
+		print( "RequestGenerator and requestDispatcher are connected" );
+	}
+
+	public void freeUpVM() {
+
+	}
+
+	private String createURI( String uri ) {
+		return acURI + uri + cpt;
+	}
+
+	private void print( String s ) {
+		this.logMessage( "[AdmissionController] " + s );
+	}
+
+	@Override
+	public void shutdown() throws ComponentShutdownException {
+		try {
+			// if ( this.asip.connected() ) {
+			// this.asip.doDisconnection();
+			// }
+			// if ( this.anip.connected() ) {
+			// this.anip.doDisconnection();
+			// }
+			for ( int i = 0 ; i < cpt ; i++ ) {
+				if ( this.avmop.get( i ).connected() ) {
+					this.avmop.get( i ).doDisconnection();
+				}
+				if ( this.csop[i].connected() ) {
+					this.csop[i].doDisconnection();
+				}
+				if ( this.rnopList.get( i ).connected() ) {
+					this.rnopList.get( i ).doDisconnection();
+				}
+			}
+		}
+		catch ( Exception e ) {
+			throw new ComponentShutdownException( e );
+		}
+		super.shutdown();
+	}
+
+	@Override
+	public void acceptComputerStaticData(String computerURI,
+			ComputerStaticStateI staticState) throws Exception {
+		return;
+	}
+
+	@Override
+	public void acceptComputerDynamicData(String computerURI,
+			ComputerDynamicStateI currentDynamicState) throws Exception {
+		boolean[][] listCore = currentDynamicState.getCurrentCoreReservations();
+		ArrayList<Boolean> coreStatus = new ArrayList<>();
+		for(int i = 0; i < listCore.length; i++){
+			for(int j = 0; j < listCore.length; j++){
+				coreStatus.add(listCore[i][j]);
+			}
+		}
+		int i = 0;
+		for(Map.Entry<AllocatedCore, Boolean> res : tabCore.get(computerURI).entrySet()){
+			tabCore.get(computerURI).put(res.getKey(), coreStatus.get(i));
+			i++;
+		}
+	}
 
 }
