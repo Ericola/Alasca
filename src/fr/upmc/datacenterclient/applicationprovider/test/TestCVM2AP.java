@@ -44,7 +44,6 @@ public class TestCVM2AP extends AbstractCVM {
     private static final int NB_APPLICATION_PROVIDER = 3;
 
     protected ComputerServicesOutboundPort              csop[];
-    protected ComputerStaticStateDataOutboundPort       cssdop[];
     protected ComputerDynamicStateDataOutboundPort      cdsdop[];
     protected ApplicationSubmissionOutboundPort         asop[];
     protected ApplicationNotificationOutboundPort       anop[];
@@ -146,7 +145,6 @@ public class TestCVM2AP extends AbstractCVM {
     public void shutdown() throws Exception {
         for ( int i = 0 ; i < NB_COMPUTER ; ++i ) {
             csop[i].doDisconnection();
-            cssdop[i].doDisconnection();
             cdsdop[i].doDisconnection();
             asop[i].doDisconnection();
             anop[i].doDisconnection();

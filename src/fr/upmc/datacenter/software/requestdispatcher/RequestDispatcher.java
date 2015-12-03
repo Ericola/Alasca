@@ -199,14 +199,6 @@ public class RequestDispatcher extends AbstractComponent
             throw new ComponentShutdownException( e );
         }
 
-        try {
-            rdnip.doDisconnection();
-            rdsip.doDisconnection();
-        }
-        catch ( Exception e ) {
-            throw new ComponentShutdownException( e );
-        }
-
         super.shutdown();
     }
 

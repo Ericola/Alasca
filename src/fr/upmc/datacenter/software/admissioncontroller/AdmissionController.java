@@ -127,7 +127,7 @@ public class AdmissionController extends AbstractComponent implements ComputerSt
 		rnopList = new HashMap<>();
 		avmop = new ArrayList<>();
 	}
-	
+
 	/**
 	 * Fill map tabCore of all cores from computer(s)
 	 * @throws Exception
@@ -197,7 +197,7 @@ public class AdmissionController extends AbstractComponent implements ComputerSt
 			AllocatedCore[] coreList = new AllocatedCore[ac.size()];
 			for(int i = 0; i < ac.size(); i++)
 				coreList[i] = ac.get(i);
-			
+
 			this.avmop.get( cpt ).allocateCores( coreList );
 			print( ac.size() + " cores allocated." );
 
@@ -284,12 +284,20 @@ public class AdmissionController extends AbstractComponent implements ComputerSt
 				if ( this.avmop.get( i ).connected() ) {
 					this.avmop.get( i ).doDisconnection();
 				}
+
+				if ( this.rnopList.get( acURI + "rdnop" + i ).connected() ) {
+					this.rnopList.get( acURI + "rdnop" + i ).doDisconnection();
+				}
+			}
+			
+			for(int i = 0; i < csop.length; i++){
 				if ( this.csop[i].connected() ) {
 					this.csop[i].doDisconnection();
 				}
-				if ( this.rnopList.get( i ).connected() ) {
-					this.rnopList.get( i ).doDisconnection();
-				}
+
+				if (this.cdsop[i].connected() )
+					this.cdsop[i].connected();
+
 			}
 		}
 		catch ( Exception e ) {

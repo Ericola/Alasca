@@ -34,7 +34,6 @@ import fr.upmc.datacenterclient.applicationprovider.ports.ApplicationSubmissionO
 public class TestCVM extends AbstractCVM {
 
     protected ComputerServicesOutboundPort              csop;
-    protected ComputerStaticStateDataOutboundPort       cssdop;
     protected ComputerDynamicStateDataOutboundPort      cdsdop;
     protected ApplicationSubmissionOutboundPort         asop;
     protected ApplicationNotificationOutboundPort       anop;
@@ -61,18 +60,6 @@ public class TestCVM extends AbstractCVM {
         this.addDeployedComponent( c );
 
         // --------------------------------------------------------------------
-
-        // --------------------------------------------------------------------
-        // Create the computer monitor component and connect its to ports
-        // with the computer component.
-        // --------------------------------------------------------------------
-//        ComputerMonitor cm = new ComputerMonitor( computerURI , true , "cssdop" , "cdsdop" );
-//        this.addDeployedComponent( cm );
-//        this.cssdop = ( ComputerStaticStateDataOutboundPort ) cm.findPortFromURI( "cssdop" );
-//        this.cssdop.doConnection( "cssdip" , DataConnector.class.getCanonicalName() );
-//
-//        this.cdsdop = ( ComputerDynamicStateDataOutboundPort ) cm.findPortFromURI( "cdsdop" );
-//        this.cdsdop.doConnection( "cdsdip" , ControlledDataConnector.class.getCanonicalName() );
 
         // --------------------------------------------------------------------
         // Create and deploy an AdmissionController component
@@ -125,7 +112,6 @@ public class TestCVM extends AbstractCVM {
     @Override
     public void shutdown() throws Exception {
         csop.doDisconnection();
-        cssdop.doDisconnection();
         cdsdop.doDisconnection();
         asop.doDisconnection();
         anop.doDisconnection();
@@ -149,7 +135,7 @@ public class TestCVM extends AbstractCVM {
                     }
                 }
             } ).start();
-            Thread.sleep( 10000000000000L );
+            Thread.sleep( 10000L );
             System.out.println( "shutting down..." );
             test.shutdown();
             System.out.println( "ending..." );
