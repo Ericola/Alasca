@@ -156,9 +156,10 @@ public class AdmissionController extends AbstractComponent {
             // Create controller
             print( "Creating the controller..." );
             Controller controller = new Controller( createURI( "c" ) , createURI( "rd" ) , createURI( "rddsdip" ) );
-
-//            controller.startControlling();
-            controller.getDynamicState();
+            controller.toggleLogging();
+            controller.toggleTracing();
+          
+            controller.startControlling();
 
    
 

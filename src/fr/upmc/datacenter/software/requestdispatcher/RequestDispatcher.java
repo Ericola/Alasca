@@ -2,7 +2,11 @@ package fr.upmc.datacenter.software.requestdispatcher;
 
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.ListIterator;
 import java.util.Map;
 
 import fr.upmc.components.AbstractComponent;
@@ -109,6 +113,9 @@ public class RequestDispatcher extends AbstractComponent
                 requestDispatcherDynamicStateDataInboundPortURI , this );
         this.addPort( this.requestDispatcherDynamicStateDataInboundPort );
         this.requestDispatcherDynamicStateDataInboundPort.publishPort();
+
+        requestStartTimes = new LinkedHashMap<>();
+        requestEndTimes = new LinkedHashMap<>();
     }
 
     /**
@@ -153,13 +160,26 @@ public class RequestDispatcher extends AbstractComponent
         long total = 0;
         long nbRequest = 0;
 
-        for ( Map.Entry<String , Long> entry : requestStartTimes.entrySet() ) {
-            long endTime = requestEndTimes.get( entry.getKey() );
-            total += endTime - entry.getValue();
+        for ( Map.Entry<String , Long> entry : requestEndTimes.entrySet() ) {
+            long startTime = requestStartTimes.get( entry.getKey() );
+            total += entry.getValue() - startTime;
             nbRequest++;
         }
         long avg = nbRequest == 0 ? 0 : total / nbRequest;
-        return new RequestDispatcherDynamicState( this.rdURI , avg );
+        return new RequestDispatcherDynamicState( this.rdURI , avg / 1000000 );
+    }
+    
+    public RequestDispatcherDynamicStateI getRequestProcessingTimeAvg(int history) throws Exception {
+        long total = 0;
+        long nbRequest = 0;
+       
+        for ( Map.Entry<String , Long> entry : requestEndTimes.entrySet() ) {
+            long startTime = requestStartTimes.get( entry.getKey() );
+            total += entry.getValue() - startTime;
+            nbRequest++;
+        }
+        long avg = nbRequest == 0 ? 0 : total / nbRequest;
+        return new RequestDispatcherDynamicState( this.rdURI , avg / 1000000 );
     }
 
     /**
