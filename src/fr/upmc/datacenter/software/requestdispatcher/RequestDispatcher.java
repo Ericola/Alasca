@@ -23,6 +23,7 @@ import fr.upmc.datacenter.software.ports.RequestNotificationOutboundPort;
 import fr.upmc.datacenter.software.ports.RequestSubmissionInboundPort;
 import fr.upmc.datacenter.software.ports.RequestSubmissionOutboundPort;
 import fr.upmc.datacenter.software.requestdispatcher.interfaces.RequestDispatcherDynamicStateI;
+import fr.upmc.datacenter.software.requestdispatcher.interfaces.RequestDispatcherManagementI;
 import fr.upmc.datacenter.software.requestdispatcher.ports.RequestDispatcherDynamicStateDataInboundPort;
 
 /**
@@ -32,7 +33,9 @@ import fr.upmc.datacenter.software.requestdispatcher.ports.RequestDispatcherDyna
  * Request Dispatcher offers the interface RequestSubmissionI and RequestDispatcherI.
  */
 public class RequestDispatcher extends AbstractComponent
-        implements RequestSubmissionHandlerI, RequestNotificationHandlerI {
+        implements RequestSubmissionHandlerI, 
+        RequestNotificationHandlerI,
+        RequestDispatcherManagementI{
 
     /** URI of this request dispatcher RD */
     protected String rdURI;
@@ -124,7 +127,7 @@ public class RequestDispatcher extends AbstractComponent
     @Override
     public void acceptRequestTerminationNotification( RequestI r ) throws Exception {
         assert r != null;
-        this.logMessage(
+        print(
                 "Request dispatcher " + this.rdURI + "  notified the request " + r.getRequestURI() + " has ended." );
         this.rdnop.notifyRequestTermination( r );
 
@@ -137,7 +140,7 @@ public class RequestDispatcher extends AbstractComponent
      */
     @Override
     public void acceptRequestSubmission( RequestI r ) throws Exception {
-        this.logMessage( this.rdURI + " submits request " + r.getRequestURI() );
+        print( this.rdURI + " submits request " + r.getRequestURI() );
         this.rdsopList.get( current ).submitRequest( r );
         current = ( current + 1 ) % rdsopList.size();
         requestStartTimes.put( r.getRequestURI() , System.nanoTime() );
@@ -149,7 +152,7 @@ public class RequestDispatcher extends AbstractComponent
      */
     @Override
     public void acceptRequestSubmissionAndNotify( RequestI r ) throws Exception {
-        this.logMessage( this.rdURI + " submits request " + r.getRequestURI() );
+    	print(" submits request " + r.getRequestURI() );
         this.rdsopList.get( current ).submitRequestAndNotify( r );
         current = ( current + 1 ) % rdsopList.size();
 
@@ -202,8 +205,19 @@ public class RequestDispatcher extends AbstractComponent
         super.shutdown();
     }
 
-    public Boolean isWaitingForTermination() {
 
-        return null;
-    }
+	@Override
+	public boolean isWaitingForTermination() throws Exception {
+		return false;
+	}
+
+	@Override
+	public String connectVm() throws Exception {
+		// TODO Auto-generated method stub
+		return null;
+	}
+	
+	private void print( String s ) {
+		this.logMessage( "[RequestDispatcher" + rdURI + "] " + s );
+	}
 }

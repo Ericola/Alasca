@@ -20,4 +20,10 @@ public class RequestDispatcherManagementOutboundPort extends AbstractOutboundPor
         return ( ( RequestDispatcherManagementI ) this.connector ).isWaitingForTermination();
 
     }
+
+	@Override
+	public String connectVm() throws Exception {
+		  return ( ( RequestDispatcherManagementI ) this.connector ).connectVm();
+
+	}
 }

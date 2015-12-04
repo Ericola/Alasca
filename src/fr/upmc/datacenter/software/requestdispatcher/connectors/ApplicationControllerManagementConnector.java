@@ -11,4 +11,9 @@ public class ApplicationControllerManagementConnector extends AbstractConnector
         return ( ( RequestDispatcherManagementI ) this.offering ).isWaitingForTermination();
 
     }
+
+	@Override
+	public String connectVm() throws Exception {
+		return ( ( RequestDispatcherManagementI ) this.offering ).connectVm();
+	}
 }

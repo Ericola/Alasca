@@ -6,4 +6,6 @@ import fr.upmc.components.interfaces.RequiredI;
 public interface RequestDispatcherManagementI extends OfferedI, RequiredI {
 
     public boolean isWaitingForTermination() throws Exception;
+    
+    public String connectVm() throws Exception;
 }

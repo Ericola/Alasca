@@ -274,12 +274,6 @@ public class AdmissionController extends AbstractComponent implements ComputerSt
 	@Override
 	public void shutdown() throws ComponentShutdownException {
 		try {
-			// if ( this.asip.connected() ) {
-			// this.asip.doDisconnection();
-			// }
-			// if ( this.anip.connected() ) {
-			// this.anip.doDisconnection();
-			// }
 			for ( int i = 0 ; i < cpt ; i++ ) {
 				if ( this.avmop.get( i ).connected() ) {
 					this.avmop.get( i ).doDisconnection();
