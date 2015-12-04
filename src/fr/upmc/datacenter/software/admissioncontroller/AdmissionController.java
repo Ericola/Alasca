@@ -47,7 +47,7 @@ import fr.upmc.datacenterclient.applicationprovider.ports.ApplicationSubmissionI
  */
 public class AdmissionController extends AbstractComponent implements ComputerStateDataConsumerI{
 
-	public static int NB_VM = 2;
+	public static int NB_CORE = 2;
 
 	/** the URI of the component. */
 	protected String acURI;
@@ -160,15 +160,15 @@ public class AdmissionController extends AbstractComponent implements ComputerSt
 		ArrayList<AllocatedCore> tmp;
 		for ( int i = 0 ; i < computerURI.length ; i++) {
 			tmp = new ArrayList<AllocatedCore>();
-			print("Looking for " + NB_VM + " available core in Computer " + computerURI[i] + "...");
+			print("Looking for " + NB_CORE + " available core in Computer " + computerURI[i] + "...");
 			for(Map.Entry<AllocatedCore, Boolean> res : tabCore.get(computerURI[i]).entrySet()){
 				if(!res.getValue()){
 					tmp.add(res.getKey());
 				}
-				if(tmp.size() == NB_VM)
+				if(tmp.size() == NB_CORE)
 					break;
 			}
-			if(tmp.size() == NB_VM){
+			if(tmp.size() == NB_CORE){
 				ac.addAll(tmp);
 				break;
 			}
