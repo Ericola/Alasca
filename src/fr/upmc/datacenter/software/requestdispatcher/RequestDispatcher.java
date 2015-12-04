@@ -25,6 +25,7 @@ import fr.upmc.datacenter.software.ports.RequestSubmissionOutboundPort;
 import fr.upmc.datacenter.software.requestdispatcher.interfaces.RequestDispatcherDynamicStateI;
 import fr.upmc.datacenter.software.requestdispatcher.interfaces.RequestDispatcherManagementI;
 import fr.upmc.datacenter.software.requestdispatcher.ports.RequestDispatcherDynamicStateDataInboundPort;
+import fr.upmc.datacenter.software.requestdispatcher.ports.RequestDispatcherManagementInboundPort;
 
 /**
  * 
@@ -33,177 +34,185 @@ import fr.upmc.datacenter.software.requestdispatcher.ports.RequestDispatcherDyna
  * Request Dispatcher offers the interface RequestSubmissionI and RequestDispatcherI.
  */
 public class RequestDispatcher extends AbstractComponent
-        implements RequestSubmissionHandlerI, 
-        RequestNotificationHandlerI,
-        RequestDispatcherManagementI{
+implements RequestSubmissionHandlerI, 
+RequestNotificationHandlerI,
+RequestDispatcherManagementI{
 
-    /** URI of this request dispatcher RD */
-    protected String rdURI;
+	/** URI of this request dispatcher RD */
+	protected String rdURI;
 
-    /** RequestSubmissionInboundPort */
-    protected RequestSubmissionInboundPort rdsip;
+	/** RequestSubmissionInboundPort */
+	protected RequestSubmissionInboundPort rdsip;
 
-    /** List of OutboundPort to send requests to the connected ApplicationVM */
-    protected List<RequestSubmissionOutboundPort> rdsopList;
+	/** List of OutboundPort to send requests to the connected ApplicationVM */
+	protected List<RequestSubmissionOutboundPort> rdsopList;
 
-    protected RequestNotificationInboundPort  rdnip;
-    /** Outbound port used by the RD to notify tasks' termination to the generator. */
-    protected RequestNotificationOutboundPort rdnop;
+	protected RequestNotificationInboundPort  rdnip;
+	/** Outbound port used by the RD to notify tasks' termination to the generator. */
+	protected RequestNotificationOutboundPort rdnop;
 
-    /** Variable to know the less recent ApplicationVM **/
-    protected int current = 0;
+	/** Variable to know the less recent ApplicationVM **/
+	protected int current = 0;
 
-    /** map associate RequestUri with the startTime in millis */
-    protected Map<String , Long> requestStartTimes;
+	/** map associate RequestUri with the startTime in millis */
+	protected Map<String , Long> requestStartTimes;
 
-    /** map associate RequestUri with the end Time in millis */
-    protected Map<String , Long> requestEndTimes;
+	/** map associate RequestUri with the end Time in millis */
+	protected Map<String , Long> requestEndTimes;
 
-    protected RequestDispatcherDynamicStateDataInboundPort requestDispatcherDynamicStateDataInboundPort;
+	protected RequestDispatcherDynamicStateDataInboundPort requestDispatcherDynamicStateDataInboundPort;
 
-    /**
-     * Create a RequestDispatcher
-     * 
-     * @param rdURI URI of the RequestDispatcher
-     * @param rdsip URI of the RequestSubmissionInboundPort
-     * @param rdsop URI of the RequestSubmissionOutboundPort
-     * @param rdnop URI of the RequestNotificationOutboundPort
-     * @param rdnip URI of the RequestNotificationInboundPort
-     * @throws Exception
-     */
-    public RequestDispatcher( String rdURI , String rdsip , List<String> rdsop , String rdnop , String rdnip ,
-            String requestDispatcherDynamicStateDataInboundPortURI ) throws Exception {
-        super( true , false );
+	/** Inbound port offering the management interface. */
+	protected RequestDispatcherManagementInboundPort rdmip;
 
-        // Preconditions
-        assert rdURI != null;
+	/**
+	 * Create a RequestDispatcher
+	 * 
+	 * @param rdURI URI of the RequestDispatcher
+	 * @param rdsip URI of the RequestSubmissionInboundPort
+	 * @param rdsop URI of the RequestSubmissionOutboundPort
+	 * @param rdnop URI of the RequestNotificationOutboundPort
+	 * @param rdnip URI of the RequestNotificationInboundPort
+	 * @throws Exception
+	 */
+	public RequestDispatcher( String rdURI , String rdsip , String rdmip, List<String> rdsop , String rdnop , String rdnip ,
+			String requestDispatcherDynamicStateDataInboundPortURI ) throws Exception {
+		super( true , false );
 
-        assert rdsip != null;
-        assert rdsop != null;
+		// Preconditions
+		assert rdURI != null;
 
-        assert rdnip != null;
-        assert rdnop != null;
+		assert rdsip != null;
+		assert rdsop != null;
 
-        this.rdURI = rdURI;
+		assert rdnip != null;
+		assert rdnop != null;
 
-        rdsopList = new ArrayList<>();
+		this.rdURI = rdURI;
 
-        // Creates and add ports to the component
-        this.addOfferedInterface( RequestSubmissionI.class );
-        this.rdsip = new RequestSubmissionInboundPort( rdsip , this );
-        this.addPort( this.rdsip );
-        this.rdsip.publishPort();
+		rdsopList = new ArrayList<>();
 
-        this.addOfferedInterface( RequestNotificationI.class );
-        this.rdnip = new RequestNotificationInboundPort( rdnip , this );
-        this.addPort( this.rdnip );
-        this.rdnip.publishPort();
+		// Creates and add ports to the component
+		this.addOfferedInterface( RequestSubmissionI.class );
+		this.rdsip = new RequestSubmissionInboundPort( rdsip , this );
+		this.addPort( this.rdsip );
+		this.rdsip.publishPort();
 
-        for ( int i = 0 ; i < rdsop.size() ; i++ ) {
-            this.addRequiredInterface( RequestSubmissionI.class );
-            this.rdsopList.add( new RequestSubmissionOutboundPort( rdsop.get( i ) , this ) );
-            this.addPort( this.rdsopList.get( i ) );
-            this.rdsopList.get( i ).publishPort();
-        }
+		this.addOfferedInterface( RequestNotificationI.class );
+		this.rdnip = new RequestNotificationInboundPort( rdnip , this );
+		this.addPort( this.rdnip );
+		this.rdnip.publishPort();
 
-        this.addRequiredInterface( RequestNotificationI.class );
-        this.rdnop = new RequestNotificationOutboundPort( rdnop , this );
-        this.addPort( this.rdnop );
-        this.rdnop.publishPort();
+		this.addOfferedInterface( RequestDispatcherManagementI.class);
+		this.rdmip = new RequestDispatcherManagementInboundPort(rdmip, this);
+		this.addPort(this.rdmip);
+		this.rdmip.publishPort();
 
-        this.addOfferedInterface( ControlledDataOfferedI.ControlledPullI.class );
-        this.requestDispatcherDynamicStateDataInboundPort = new RequestDispatcherDynamicStateDataInboundPort(
-                requestDispatcherDynamicStateDataInboundPortURI , this );
-        this.addPort( this.requestDispatcherDynamicStateDataInboundPort );
-        this.requestDispatcherDynamicStateDataInboundPort.publishPort();
+		for ( int i = 0 ; i < rdsop.size() ; i++ ) {
+			this.addRequiredInterface( RequestSubmissionI.class );
+			this.rdsopList.add( new RequestSubmissionOutboundPort( rdsop.get( i ) , this ) );
+			this.addPort( this.rdsopList.get( i ) );
+			this.rdsopList.get( i ).publishPort();
+		}
 
-        requestStartTimes = new LinkedHashMap<>();
-        requestEndTimes = new LinkedHashMap<>();
-    }
+		this.addRequiredInterface( RequestNotificationI.class );
+		this.rdnop = new RequestNotificationOutboundPort( rdnop , this );
+		this.addPort( this.rdnop );
+		this.rdnop.publishPort();
 
-    /**
-     * Notify the Requests termination to the RequestGenerator
-     */
-    @Override
-    public void acceptRequestTerminationNotification( RequestI r ) throws Exception {
-        assert r != null;
-        print(
-                "Request dispatcher " + this.rdURI + "  notified the request " + r.getRequestURI() + " has ended." );
-        this.rdnop.notifyRequestTermination( r );
+		this.addOfferedInterface( ControlledDataOfferedI.ControlledPullI.class );
+		this.requestDispatcherDynamicStateDataInboundPort = new RequestDispatcherDynamicStateDataInboundPort(
+				requestDispatcherDynamicStateDataInboundPortURI , this );
+		this.addPort( this.requestDispatcherDynamicStateDataInboundPort );
+		this.requestDispatcherDynamicStateDataInboundPort.publishPort();
 
-        requestEndTimes.put( r.getRequestURI() , System.nanoTime() );
+		requestStartTimes = new LinkedHashMap<>();
+		requestEndTimes = new LinkedHashMap<>();
+	}
 
-    }
+	/**
+	 * Notify the Requests termination to the RequestGenerator
+	 */
+	@Override
+	public void acceptRequestTerminationNotification( RequestI r ) throws Exception {
+		assert r != null;
+		print(
+				"Request dispatcher " + this.rdURI + "  notified the request " + r.getRequestURI() + " has ended." );
+		this.rdnop.notifyRequestTermination( r );
 
-    /**
-     * Send the Request r to the less recent ApplicationVM
-     */
-    @Override
-    public void acceptRequestSubmission( RequestI r ) throws Exception {
-        print( this.rdURI + " submits request " + r.getRequestURI() );
-        this.rdsopList.get( current ).submitRequest( r );
-        current = ( current + 1 ) % rdsopList.size();
-        requestStartTimes.put( r.getRequestURI() , System.nanoTime() );
-    }
+		requestEndTimes.put( r.getRequestURI() , System.nanoTime() );
 
-    /**
-     * Send the Request r to the less recent ApplicationVM and notify its termination to the
-     * RequestGenerator
-     */
-    @Override
-    public void acceptRequestSubmissionAndNotify( RequestI r ) throws Exception {
-    	print(" submits request " + r.getRequestURI() );
-        this.rdsopList.get( current ).submitRequestAndNotify( r );
-        current = ( current + 1 ) % rdsopList.size();
+	}
 
-        requestStartTimes.put( r.getRequestURI() , System.nanoTime() );
-    }
+	/**
+	 * Send the Request r to the less recent ApplicationVM
+	 */
+	@Override
+	public void acceptRequestSubmission( RequestI r ) throws Exception {
+		print( this.rdURI + " submits request " + r.getRequestURI() );
+		this.rdsopList.get( current ).submitRequest( r );
+		current = ( current + 1 ) % rdsopList.size();
+		requestStartTimes.put( r.getRequestURI() , System.nanoTime() );
+	}
 
-    public RequestDispatcherDynamicStateI getRequestProcessingTimeAvg() throws Exception {
-        long total = 0;
-        long nbRequest = 0;
+	/**
+	 * Send the Request r to the less recent ApplicationVM and notify its termination to the
+	 * RequestGenerator
+	 */
+	@Override
+	public void acceptRequestSubmissionAndNotify( RequestI r ) throws Exception {
+		print(" submits request " + r.getRequestURI() );
+		this.rdsopList.get( current ).submitRequestAndNotify( r );
+		current = ( current + 1 ) % rdsopList.size();
 
-        for ( Map.Entry<String , Long> entry : requestEndTimes.entrySet() ) {
-            long startTime = requestStartTimes.get( entry.getKey() );
-            total += entry.getValue() - startTime;
-            nbRequest++;
-        }
-        long avg = nbRequest == 0 ? 0 : total / nbRequest;
-        return new RequestDispatcherDynamicState( this.rdURI , avg / 1000000 );
-    }
-    
-    public RequestDispatcherDynamicStateI getRequestProcessingTimeAvg(int history) throws Exception {
-        long total = 0;
-        long nbRequest = 0;
-       
-        for ( Map.Entry<String , Long> entry : requestEndTimes.entrySet() ) {
-            long startTime = requestStartTimes.get( entry.getKey() );
-            total += entry.getValue() - startTime;
-            nbRequest++;
-        }
-        long avg = nbRequest == 0 ? 0 : total / nbRequest;
-        return new RequestDispatcherDynamicState( this.rdURI , avg / 1000000 );
-    }
+		requestStartTimes.put( r.getRequestURI() , System.nanoTime() );
+	}
 
-    /**
-     * Disconnect all connected ports of the Request Dispatcher
-     */
-    public void shutdown() throws ComponentShutdownException {
-        try {
-            if ( this.rdnop.connected() ) {
-                this.rdnop.doDisconnection();
-            }
-            for ( int i = 0 ; i < rdsopList.size() ; i++ )
-                if ( this.rdsopList.get( i ).connected() ) {
-                    this.rdsopList.get( i ).doDisconnection();
-                }
-        }
-        catch ( Exception e ) {
-            throw new ComponentShutdownException( e );
-        }
+	public RequestDispatcherDynamicStateI getRequestProcessingTimeAvg() throws Exception {
+		long total = 0;
+		long nbRequest = 0;
 
-        super.shutdown();
-    }
+		for ( Map.Entry<String , Long> entry : requestEndTimes.entrySet() ) {
+			long startTime = requestStartTimes.get( entry.getKey() );
+			total += entry.getValue() - startTime;
+			nbRequest++;
+		}
+		long avg = nbRequest == 0 ? 0 : total / nbRequest;
+		return new RequestDispatcherDynamicState( this.rdURI , avg / 1000000 );
+	}
+
+	public RequestDispatcherDynamicStateI getRequestProcessingTimeAvg(int history) throws Exception {
+		long total = 0;
+		long nbRequest = 0;
+
+		for ( Map.Entry<String , Long> entry : requestEndTimes.entrySet() ) {
+			long startTime = requestStartTimes.get( entry.getKey() );
+			total += entry.getValue() - startTime;
+			nbRequest++;
+		}
+		long avg = nbRequest == 0 ? 0 : total / nbRequest;
+		return new RequestDispatcherDynamicState( this.rdURI , avg / 1000000 );
+	}
+
+	/**
+	 * Disconnect all connected ports of the Request Dispatcher
+	 */
+	public void shutdown() throws ComponentShutdownException {
+		try {
+			if ( this.rdnop.connected() ) {
+				this.rdnop.doDisconnection();
+			}
+			for ( int i = 0 ; i < rdsopList.size() ; i++ )
+				if ( this.rdsopList.get( i ).connected() ) {
+					this.rdsopList.get( i ).doDisconnection();
+				}
+		}
+		catch ( Exception e ) {
+			throw new ComponentShutdownException( e );
+		}
+
+		super.shutdown();
+	}
 
 
 	@Override
@@ -211,12 +220,22 @@ public class RequestDispatcher extends AbstractComponent
 		return false;
 	}
 
+	/**
+	 * Create a new RequestDispatcherSubmissionOutboundPort and return the URI of this port
+	 * (Use for AllocateVm)
+	 */
 	@Override
 	public String connectVm() throws Exception {
-		// TODO Auto-generated method stub
-		return null;
+		
+		// Creation du Port
+		String rdsopURI = rdURI + "rdnop" + rdsopList.size();
+		this.addRequiredInterface( RequestSubmissionI.class );
+		this.rdsopList.add( new RequestSubmissionOutboundPort( rdsopURI , this ) );
+		this.addPort( this.rdsopList.get( rdsopList.size() - 1 ) );
+		this.rdsopList.get( rdsopList.size() - 1 ).publishPort();
+		return rdsopURI;
 	}
-	
+
 	private void print( String s ) {
 		this.logMessage( "[RequestDispatcher" + rdURI + "] " + s );
 	}

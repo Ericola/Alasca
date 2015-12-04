@@ -21,9 +21,12 @@ import fr.upmc.datacenter.software.applicationvm.ports.ApplicationVMManagementOu
 import fr.upmc.datacenter.software.connectors.RequestNotificationConnector;
 import fr.upmc.datacenter.software.connectors.RequestSubmissionConnector;
 import fr.upmc.datacenter.software.controller.Controller;
+import fr.upmc.datacenter.software.ports.RequestNotificationInboundPort;
 import fr.upmc.datacenter.software.ports.RequestNotificationOutboundPort;
 import fr.upmc.datacenter.software.ports.RequestSubmissionOutboundPort;
 import fr.upmc.datacenter.software.requestdispatcher.RequestDispatcher;
+import fr.upmc.datacenter.software.requestdispatcher.connectors.RequestDispatcherManagementConnector;
+import fr.upmc.datacenter.software.requestdispatcher.ports.RequestDispatcherManagementOutboundPort;
 import fr.upmc.datacenterclient.applicationprovider.interfaces.ApplicationNotificationI;
 import fr.upmc.datacenterclient.applicationprovider.interfaces.ApplicationSubmissionI;
 import fr.upmc.datacenterclient.applicationprovider.ports.ApplicationNotificationInboundPort;
@@ -47,7 +50,7 @@ import fr.upmc.datacenterclient.applicationprovider.ports.ApplicationSubmissionI
  */
 public class AdmissionController extends AbstractComponent implements ComputerStateDataConsumerI{
 
-	public static int NB_CORE = 2;
+	public final static int NB_CORE = 2;
 
 	/** the URI of the component. */
 	protected String acURI;
@@ -78,6 +81,13 @@ public class AdmissionController extends AbstractComponent implements ComputerSt
 
 	/** Uri of the computer **/
 	private String[] computerURI;
+	
+	/** Map between RequestDispatcher URIs and the outbound ports to call them.		*/
+	protected Map<String, RequestDispatcherManagementOutboundPort> rdmopList;
+	
+	/** Map between RequestDispatcher URIs and the inbound ports through which request
+	 *  termination notifications are received from each applicationVM.			*/
+	protected Map<String, RequestNotificationInboundPort> rdnipList;
 
 	/**
 	 * Create an admission controller
@@ -126,6 +136,8 @@ public class AdmissionController extends AbstractComponent implements ComputerSt
 
 		rnopList = new HashMap<>();
 		avmop = new ArrayList<>();
+		rdmopList = new HashMap<>();
+		rdnipList = new HashMap<>();
 	}
 
 	/**
@@ -205,11 +217,16 @@ public class AdmissionController extends AbstractComponent implements ComputerSt
 			print( "Creating the requestDispatcher..." );
 			List<String> rdsop = new ArrayList<>();
 			rdsop.add( createURI( "rdsop" ) );
-			RequestDispatcher rd = new RequestDispatcher( createURI( "rd" ) , createURI( "rdsip" ) , rdsop ,
+			RequestDispatcher rd = new RequestDispatcher( createURI( "rd" ) , createURI( "rdsip" ) , createURI( "rdmip" ), rdsop ,
 					createURI( "rdnop" ) , createURI( "rdnip" ) , createURI( "rddsdip" ) );
 			rd.start();
 			String rdnop = createURI( "rdnop" );
 			rnopList.put( rdnop , ( RequestNotificationOutboundPort ) ( rd.findPortFromURI( rdnop ) ) );
+			
+			// Creation Request Dispatcher Management Outbound Port
+			rdmopList.put(createURI("rd"), new RequestDispatcherManagementOutboundPort(createURI("rdmop"), new AbstractComponent() {}));
+			rdmopList.get(createURI("rd")).publishPort();
+			rdmopList.get(createURI("rd")).doConnection(createURI("rdmip"), RequestDispatcherManagementConnector.class.getCanonicalName());
 			AbstractCVM.theCVM.addDeployedComponent( rd );
 
 			// Connect RD with VM
@@ -292,6 +309,11 @@ public class AdmissionController extends AbstractComponent implements ComputerSt
 				if (this.cdsop[i].connected() )
 					this.cdsop[i].connected();
 
+			}
+			
+			for(RequestDispatcherManagementOutboundPort rdmop : rdmopList.values()){
+				if(rdmop.connected())
+					rdmop.doDisconnection();
 			}
 		}
 		catch ( Exception e ) {

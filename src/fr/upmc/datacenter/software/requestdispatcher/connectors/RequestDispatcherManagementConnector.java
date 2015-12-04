@@ -3,7 +3,7 @@ package fr.upmc.datacenter.software.requestdispatcher.connectors;
 import fr.upmc.components.connectors.AbstractConnector;
 import fr.upmc.datacenter.software.requestdispatcher.interfaces.RequestDispatcherManagementI;
 
-public class ApplicationControllerManagementConnector extends AbstractConnector
+public class RequestDispatcherManagementConnector extends AbstractConnector
         implements RequestDispatcherManagementI {
 
     @Override
