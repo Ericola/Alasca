@@ -239,4 +239,13 @@ RequestDispatcherManagementI{
 	private void print( String s ) {
 		this.logMessage( "[RequestDispatcher" + rdURI + "] " + s );
 	}
+
+	/**
+	 * Disconnect an ApplicationVM from the RequestDispatcher
+	 */
+	@Override
+	public void disconnectVm() throws Exception {
+		// 
+		
+	}
 }

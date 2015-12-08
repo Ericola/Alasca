@@ -15,6 +15,10 @@ import fr.upmc.datacenter.hardware.computers.interfaces.ComputerStateDataConsume
 import fr.upmc.datacenter.hardware.computers.interfaces.ComputerStaticStateI;
 import fr.upmc.datacenter.hardware.computers.ports.ComputerDynamicStateDataOutboundPort;
 import fr.upmc.datacenter.hardware.computers.ports.ComputerServicesOutboundPort;
+import fr.upmc.datacenter.software.admissioncontroller.connectors.AdmissionControllerManagementConnector;
+import fr.upmc.datacenter.software.admissioncontroller.interfaces.AdmissionControllerManagementI;
+import fr.upmc.datacenter.software.admissioncontroller.ports.AdmissionControllerManagementInboundPort;
+import fr.upmc.datacenter.software.admissioncontroller.ports.AdmissionControllerManagementOutboundPort;
 import fr.upmc.datacenter.software.applicationvm.ApplicationVM;
 import fr.upmc.datacenter.software.applicationvm.connectors.ApplicationVMManagementConnector;
 import fr.upmc.datacenter.software.applicationvm.ports.ApplicationVMManagementOutboundPort;
@@ -48,7 +52,8 @@ import fr.upmc.datacenterclient.applicationprovider.ports.ApplicationSubmissionI
  * applications. It also offeres the interface <code>ApplicationNotificationI</code> to notify the
  * end of the requestgenerator creation
  */
-public class AdmissionController extends AbstractComponent implements ComputerStateDataConsumerI{
+public class AdmissionController extends AbstractComponent implements 
+ComputerStateDataConsumerI, AdmissionControllerManagementI{
 
 	public final static int NB_CORE = 2;
 
@@ -88,6 +93,9 @@ public class AdmissionController extends AbstractComponent implements ComputerSt
 	/** Map between RequestDispatcher URIs and the inbound ports through which request
 	 *  termination notifications are received from each applicationVM.			*/
 	protected Map<String, RequestNotificationInboundPort> rdnipList;
+	
+	/** Inbound port used by the controlller to manage the AdmissionController */
+	protected AdmissionControllerManagementInboundPort acmip;
 
 	/**
 	 * Create an admission controller
@@ -101,6 +109,7 @@ public class AdmissionController extends AbstractComponent implements ComputerSt
 	 */
 	public AdmissionController( String acURI , String applicationSubmissionInboundPortURI ,
 			String applicationNotificationInboundPortURI, 
+			String AdmissionControllerManagementInboundPortURI,
 			String computerServiceOutboundPortURI[],
 			String ComputerDynamicStateDataOutboundPort[],
 			String computerURI[]) throws Exception {
@@ -115,7 +124,12 @@ public class AdmissionController extends AbstractComponent implements ComputerSt
 		this.anip = new ApplicationNotificationInboundPort( applicationNotificationInboundPortURI , this );
 		this.addPort( anip );
 		this.anip.publishPort();
-
+		
+		this.addOfferedInterface(AdmissionControllerManagementI.class);
+		this.acmip = new AdmissionControllerManagementInboundPort(AdmissionControllerManagementInboundPortURI, this);
+		this.addPort(acmip);
+		this.acmip.publishPort();
+		
 		this.cdsop = new ComputerDynamicStateDataOutboundPort[computerServiceOutboundPortURI.length];
 		this.csop = new ComputerServicesOutboundPort[computerServiceOutboundPortURI.length];
 		this.computerURI = computerURI;
@@ -238,13 +252,15 @@ public class AdmissionController extends AbstractComponent implements ComputerSt
 
 			// Create controller
 			print( "Creating the controller..." );
-			Controller controller = new Controller( createURI( "c" ) , createURI( "rd" ) , createURI( "rddsdip" ) );
+			Controller controller = new Controller( createURI( "c" ) , createURI( "rd" ) , createURI("acmop"), createURI( "rddsdip" ) );
 			controller.toggleLogging();
 			controller.toggleTracing();
 
+			// Connect Controller with AdmissionController
+			AdmissionControllerManagementOutboundPort acmop = (AdmissionControllerManagementOutboundPort) controller.findPortFromURI(createURI("acmop"));
+			acmop.doConnection(acmip.getPortURI(), AdmissionControllerManagementConnector.class.getCanonicalName());
+			
 			controller.startControlling();
-
-
 
 			String res[] = new String[2];
 
@@ -289,6 +305,40 @@ public class AdmissionController extends AbstractComponent implements ComputerSt
 	}
 
 	@Override
+	public void acceptComputerStaticData(String computerURI,
+			ComputerStaticStateI staticState) throws Exception {
+		return;
+	}
+
+	@Override
+	public void acceptComputerDynamicData(String computerURI,
+			ComputerDynamicStateI currentDynamicState) throws Exception {
+		boolean[][] listCore = currentDynamicState.getCurrentCoreReservations();
+		ArrayList<Boolean> coreStatus = new ArrayList<>();
+		for(int i = 0; i < listCore.length; i++){
+			for(int j = 0; j < listCore.length; j++){
+				coreStatus.add(listCore[i][j]);
+			}
+		}
+		int i = 0;
+		for(Map.Entry<AllocatedCore, Boolean> res : tabCore.get(computerURI).entrySet()){
+			tabCore.get(computerURI).put(res.getKey(), coreStatus.get(i));
+			i++;
+		}
+	}
+
+	@Override
+	public void allocateVM(String RequestDispatcherURI) {
+		
+		
+	}
+
+	@Override
+	public void removeVM(String RequestDispatcherURI) {
+		
+	}
+	
+	@Override
 	public void shutdown() throws ComponentShutdownException {
 		try {
 			for ( int i = 0 ; i < cpt ; i++ ) {
@@ -320,29 +370,6 @@ public class AdmissionController extends AbstractComponent implements ComputerSt
 			throw new ComponentShutdownException( e );
 		}
 		super.shutdown();
-	}
-
-	@Override
-	public void acceptComputerStaticData(String computerURI,
-			ComputerStaticStateI staticState) throws Exception {
-		return;
-	}
-
-	@Override
-	public void acceptComputerDynamicData(String computerURI,
-			ComputerDynamicStateI currentDynamicState) throws Exception {
-		boolean[][] listCore = currentDynamicState.getCurrentCoreReservations();
-		ArrayList<Boolean> coreStatus = new ArrayList<>();
-		for(int i = 0; i < listCore.length; i++){
-			for(int j = 0; j < listCore.length; j++){
-				coreStatus.add(listCore[i][j]);
-			}
-		}
-		int i = 0;
-		for(Map.Entry<AllocatedCore, Boolean> res : tabCore.get(computerURI).entrySet()){
-			tabCore.get(computerURI).put(res.getKey(), coreStatus.get(i));
-			i++;
-		}
 	}
 
 }

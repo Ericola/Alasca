@@ -80,7 +80,7 @@ public class TestCVM2Computers extends AbstractCVM {
             cdsop[i] = "cdsdop" + i;
         }
 
-        AdmissionController ac = new AdmissionController( "ac" , "asip" , "anip" , csop, cdsop, computer );
+        AdmissionController ac = new AdmissionController( "ac" , "asip" , "anip" , "acmip", csop, cdsop, computer );
 
         this.csop = new ComputerServicesOutboundPort[NB_COMPUTER];
         this.cdsdop = new ComputerDynamicStateDataOutboundPort[NB_COMPUTER];

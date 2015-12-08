@@ -16,4 +16,10 @@ public class RequestDispatcherManagementConnector extends AbstractConnector
 	public String connectVm() throws Exception {
 		return ( ( RequestDispatcherManagementI ) this.offering ).connectVm();
 	}
+
+	@Override
+	public void disconnectVm() throws Exception {
+		( ( RequestDispatcherManagementI ) this.offering ).disconnectVm();
+		
+	}
 }

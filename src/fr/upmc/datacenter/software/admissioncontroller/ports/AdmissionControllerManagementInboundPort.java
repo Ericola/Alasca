@@ -6,36 +6,67 @@ import fr.upmc.datacenter.hardware.computers.Computer.AllocatedCore;
 import fr.upmc.datacenter.software.admissioncontroller.AdmissionController;
 import fr.upmc.datacenter.software.admissioncontroller.interfaces.AdmissionControllerManagementI;
 import fr.upmc.datacenter.software.applicationvm.interfaces.ApplicationVMManagementI;
+import fr.upmc.datacenter.software.requestdispatcher.RequestDispatcher;
 
 public class AdmissionControllerManagementInboundPort extends AbstractInboundPort
-        implements AdmissionControllerManagementI {
+implements AdmissionControllerManagementI {
 
-    private static final long serialVersionUID = 1L;
+	private static final long serialVersionUID = 1L;
 
-    public AdmissionControllerManagementInboundPort( ComponentI owner ) throws Exception {
-        super( AdmissionControllerManagementI.class , owner );
+	public AdmissionControllerManagementInboundPort( ComponentI owner ) throws Exception {
+		super( AdmissionControllerManagementI.class , owner );
 
-        assert owner instanceof AdmissionControllerManagementI;
-    }
+		assert owner instanceof AdmissionControllerManagementI;
+	}
 
-    public AdmissionControllerManagementInboundPort( String uri , ComponentI owner ) throws Exception {
-        super( uri , AdmissionControllerManagementI.class , owner );
+	public AdmissionControllerManagementInboundPort( String uri , ComponentI owner ) throws Exception {
+		super( uri , AdmissionControllerManagementI.class , owner );
 
-        assert uri != null && owner instanceof AdmissionControllerManagementI;
-    }
+		assert uri != null && owner instanceof AdmissionControllerManagementI;
+	}
 
-    @Override
-    public void freeUpVM() throws Exception {
-        final AdmissionController ac = ( AdmissionController ) this.owner;
-        this.owner.handleRequestAsync( new ComponentI.ComponentService<Void>() {
+	@Override
+	public void freeUpVM() throws Exception {
+		final AdmissionController ac = ( AdmissionController ) this.owner;
+		this.owner.handleRequestAsync( new ComponentI.ComponentService<Void>() {
 
-            @Override
-            public Void call() throws Exception {
-                ac.freeUpVM();
-                return null;
-            }
-        } );
-        
-    }
+			@Override
+			public Void call() throws Exception {
+				ac.freeUpVM();
+				return null;
+			}
+		} );
+
+	}
+
+	@Override
+	public void allocateVM(final String RequestDispatcherURI) throws Exception{
+		final AdmissionController ac = ( AdmissionController ) this.owner;
+
+		this.owner.handleRequestAsync(
+				new ComponentI.ComponentService<Void>() {
+					@Override
+					public Void call() throws Exception {
+						ac.allocateVM(RequestDispatcherURI);
+						return null ;
+					}
+				}) ;
+
+	}
+
+	@Override
+	public void removeVM(final String RequestDispatcherURI) throws Exception {
+		final AdmissionController ac = ( AdmissionController ) this.owner;
+
+		this.owner.handleRequestAsync(
+				new ComponentI.ComponentService<Void>() {
+					@Override
+					public Void call() throws Exception {
+						ac.removeVM(RequestDispatcherURI);
+						return null ;
+					}
+				}) ;
+
+	}
 
 }

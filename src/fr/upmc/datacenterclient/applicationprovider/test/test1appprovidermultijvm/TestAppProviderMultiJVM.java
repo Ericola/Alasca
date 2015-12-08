@@ -121,7 +121,7 @@ public class TestAppProviderMultiJVM extends AbstractDistributedCVM {
             computer[0] = computerURI;
             String cdsop[] = new String[1];
             cdsop[0] = "cdsdop";
-            AdmissionController ac = new AdmissionController( "ac" , "asip" , "anip" , csop, cdsop, computer);
+            AdmissionController ac = new AdmissionController( "ac" , "asip" , "anip" , "acmip", csop, cdsop, computer);
             this.addDeployedComponent( ac );
 
             ac.toggleTracing();

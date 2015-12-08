@@ -26,4 +26,10 @@ public class RequestDispatcherManagementOutboundPort extends AbstractOutboundPor
 		  return ( ( RequestDispatcherManagementI ) this.connector ).connectVm();
 
 	}
+
+	@Override
+	public void disconnectVm() throws Exception {
+		( ( RequestDispatcherManagementI ) this.connector ).disconnectVm();
+		
+	}
 }

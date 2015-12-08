@@ -5,7 +5,7 @@ import fr.upmc.datacenter.hardware.computers.Computer.AllocatedCore;
 import fr.upmc.datacenter.software.admissioncontroller.interfaces.AdmissionControllerManagementI;
 import fr.upmc.datacenter.software.applicationvm.interfaces.ApplicationVMManagementI;
 
-public class ApplicationControllerManagementConnector extends AbstractConnector
+public class AdmissionControllerManagementConnector extends AbstractConnector
         implements AdmissionControllerManagementI {
 
     @Override
@@ -13,4 +13,16 @@ public class ApplicationControllerManagementConnector extends AbstractConnector
         ( ( AdmissionControllerManagementI ) this.offering ).freeUpVM();
 
     }
+
+	@Override
+	public void allocateVM(String RequestDispatcherURI) throws Exception{
+		 ( ( AdmissionControllerManagementI ) this.offering ).allocateVM(RequestDispatcherURI);
+		
+	}
+
+	@Override
+	public void removeVM(String RequestDispatcherURI) throws Exception{
+		( ( AdmissionControllerManagementI ) this.offering ).removeVM(RequestDispatcherURI);
+		
+	}
 }
