@@ -336,24 +336,50 @@ ComputerStateDataConsumerI, AdmissionControllerManagementI{
 
 	@Override
 	public void allocateVM(String RequestDispatcherURI) throws Exception{
-		// Allocation of VM
-		ApplicationVM vm = new ApplicationVM( createVMURI( "vm" ) , createVMURI( "avmip" ) , createVMURI( "rsip" ) ,
-				createVMURI( "rnop" ) );
-		AbstractCVM.theCVM.addDeployedComponent( vm );
+		ArrayList<AllocatedCore> ac = new ArrayList<AllocatedCore>();
+		ArrayList<AllocatedCore> tmp = new ArrayList<>();
+		for ( int i = 0 ; i < computerURI.length ; i++) {
+			tmp = new ArrayList<AllocatedCore>();
+			print("Looking for " + NB_CORE + " available core in Computer " + computerURI[i] + "...");
+			for(Map.Entry<AllocatedCore, Boolean> res : tabCore.get(computerURI[i]).entrySet()){
+				if(!res.getValue()){
+					tmp.add(res.getKey());
+				}
+				if(tmp.size() == NB_CORE)
+					break;
+			}
+			if(tmp.size() == NB_CORE){
+				ac.addAll(tmp);
+				break;
+			}
+			else{
+				if(tmp.size() > ac.size()){
+					ac = new ArrayList<AllocatedCore>();
+					ac.addAll(tmp);
+				}
+			}
+		}
+		if(tmp.size() != 0){
+			// Allocation of VM
+			ApplicationVM vm = new ApplicationVM( createVMURI( "vm" ) , createVMURI( "avmip" ) , createVMURI( "rsip" ) ,
+					createVMURI( "rnop" ) );
+			AbstractCVM.theCVM.addDeployedComponent( vm );
 
-		avmop.add( new ApplicationVMManagementOutboundPort( createVMURI( "avmop" ) , new AbstractComponent() {} ) );
-		avmop.get( cpt ).publishPort();
-		avmop.get( cpt ).doConnection( createVMURI( "avmip" ) ,
-				ApplicationVMManagementConnector.class.getCanonicalName() );
-		vm.start();
-		nbVMCreated++;
-		
-		String RequestNotificationInboundport = this.rdmopList.get(RequestDispatcherURI).connectVm(createVMURI( "rsip" ));
-		// Connected RequestDispatcher -- VM
-		RequestNotificationOutboundPort rnop = ( RequestNotificationOutboundPort ) vm
-				.findPortFromURI( createVMURI( "rnop" ) );
-		rnop.doConnection( RequestNotificationInboundport , RequestNotificationConnector.class.getCanonicalName() );
-
+			avmop.add( new ApplicationVMManagementOutboundPort( createVMURI( "avmop" ) , new AbstractComponent() {} ) );
+			avmop.get( cpt ).publishPort();
+			avmop.get( cpt ).doConnection( createVMURI( "avmip" ) ,
+					ApplicationVMManagementConnector.class.getCanonicalName() );
+			vm.start();
+			nbVMCreated++;
+			String RequestNotificationInboundport = this.rdmopList.get(RequestDispatcherURI).connectVm(createVMURI( "rsip" ));
+			// Connected RequestDispatcher -- VM
+			RequestNotificationOutboundPort rnop = ( RequestNotificationOutboundPort ) vm
+					.findPortFromURI( createVMURI( "rnop" ) );
+			rnop.doConnection( RequestNotificationInboundport , RequestNotificationConnector.class.getCanonicalName() );
+			print("VM Allocated!");
+		} else{
+			print("Can not allocate VM (no Core Available)");
+		}
 	}
 
 	@Override
