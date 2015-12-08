@@ -16,6 +16,7 @@ import fr.upmc.datacenter.hardware.computers.ports.ComputerServicesOutboundPort;
 import fr.upmc.datacenter.hardware.computers.ports.ComputerStaticStateDataOutboundPort;
 import fr.upmc.datacenter.hardware.tests.ComputerMonitor;
 import fr.upmc.datacenter.software.admissioncontroller.AdmissionController;
+import fr.upmc.datacenter.software.requestdispatcher.ports.RequestDispatcherManagementOutboundPort;
 import fr.upmc.datacenterclient.applicationprovider.ApplicationProvider;
 import fr.upmc.datacenterclient.applicationprovider.connectors.ApplicationNotificationConnector;
 import fr.upmc.datacenterclient.applicationprovider.connectors.ApplicationProviderManagementConnector;
@@ -34,12 +35,12 @@ import fr.upmc.datacenterclient.applicationprovider.ports.ApplicationSubmissionO
 public class TestCVM extends AbstractCVM {
 
     protected ComputerServicesOutboundPort              csop;
-    protected ComputerStaticStateDataOutboundPort       cssdop;
     protected ComputerDynamicStateDataOutboundPort      cdsdop;
     protected ApplicationSubmissionOutboundPort         asop;
     protected ApplicationNotificationOutboundPort       anop;
     protected ApplicationProvider                       ap;
     protected ApplicationProviderManagementOutboundPort apmop;
+    protected RequestDispatcherManagementOutboundPort rdmop;
 
     @Override
     public void deploy() throws Exception {
@@ -63,27 +64,22 @@ public class TestCVM extends AbstractCVM {
         // --------------------------------------------------------------------
 
         // --------------------------------------------------------------------
-        // Create the computer monitor component and connect its to ports
-        // with the computer component.
-        // --------------------------------------------------------------------
-        ComputerMonitor cm = new ComputerMonitor( computerURI , true , "cssdop" , "cdsdop" );
-        this.addDeployedComponent( cm );
-        this.cssdop = ( ComputerStaticStateDataOutboundPort ) cm.findPortFromURI( "cssdop" );
-        this.cssdop.doConnection( "cssdip" , DataConnector.class.getCanonicalName() );
-
-        this.cdsdop = ( ComputerDynamicStateDataOutboundPort ) cm.findPortFromURI( "cdsdop" );
-        this.cdsdop.doConnection( "cdsdip" , ControlledDataConnector.class.getCanonicalName() );
-
-        // --------------------------------------------------------------------
         // Create and deploy an AdmissionController component
         // --------------------------------------------------------------------
 
         String csop[] = new String[1];
         csop[0] = "csop";
-        AdmissionController ac = new AdmissionController( "ac" , "asip" , "anip" , csop );
+        String computer[] = new String[1];
+        computer[0] = computerURI;
+        String cdsop[] = new String[1];
+        cdsop[0] = "cdsdop";
+        AdmissionController ac = new AdmissionController( "ac" , "asip" , "anip" , "acmip", csop, cdsop, computer);
         this.addDeployedComponent( ac );
         this.csop = ( ComputerServicesOutboundPort ) ac.findPortFromURI( "csop" );
         this.csop.doConnection( "csip" , ComputerServicesConnector.class.getCanonicalName() );
+        this.cdsdop = ( ComputerDynamicStateDataOutboundPort ) ac.findPortFromURI( "cdsdop" );
+        this.cdsdop.doConnection( "cdsdip" , ControlledDataConnector.class.getCanonicalName() );
+        ac.fillCore();
         ac.toggleTracing();
         ac.toggleLogging();
 
@@ -118,7 +114,6 @@ public class TestCVM extends AbstractCVM {
     @Override
     public void shutdown() throws Exception {
         csop.doDisconnection();
-        cssdop.doDisconnection();
         cdsdop.doDisconnection();
         asop.doDisconnection();
         anop.doDisconnection();
@@ -142,7 +137,7 @@ public class TestCVM extends AbstractCVM {
                     }
                 }
             } ).start();
-            Thread.sleep( 10000000000000L );
+            Thread.sleep( 10000L );
             System.out.println( "shutting down..." );
             test.shutdown();
             System.out.println( "ending..." );

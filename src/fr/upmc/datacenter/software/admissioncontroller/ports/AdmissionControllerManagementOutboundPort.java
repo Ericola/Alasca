@@ -20,4 +20,16 @@ public class AdmissionControllerManagementOutboundPort extends AbstractOutboundP
         ( ( AdmissionControllerManagementI ) this.connector ).freeUpVM();;
 
     }
+
+	@Override
+	public void allocateVM(String RequestDispatcherURI) throws Exception {
+		 ( ( AdmissionControllerManagementI ) this.connector ).allocateVM(RequestDispatcherURI);
+		
+	}
+
+	@Override
+	public void removeVM(String RequestDispatcherURI) throws Exception {
+		 ( ( AdmissionControllerManagementI ) this.connector ).removeVM(RequestDispatcherURI);
+		
+	}
 }

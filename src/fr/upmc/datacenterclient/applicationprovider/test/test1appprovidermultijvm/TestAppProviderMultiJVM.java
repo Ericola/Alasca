@@ -113,14 +113,15 @@ public class TestAppProviderMultiJVM extends AbstractDistributedCVM {
                     numberOfCores , "csip" , "cssdip" , "cdsdip" );
             this.addDeployedComponent( c );
 
-            // Computer Monitor
-            cm = new ComputerMonitor( computerURI , true , "cssdop" , "cdsdop" );
-            this.addDeployedComponent( cm );
 
             // AdmissionController
             String csop[] = new String[1];
             csop[0] = "csop";
-            ac = new AdmissionController( "ac" , "asip" , "anip" , csop );
+            String computer[] = new String[1];
+            computer[0] = computerURI;
+            String cdsop[] = new String[1];
+            cdsop[0] = "cdsdop";
+            AdmissionController ac = new AdmissionController( "ac" , "asip" , "anip" , "acmip", csop, cdsop, computer);
             this.addDeployedComponent( ac );
 
             ac.toggleTracing();
@@ -139,17 +140,15 @@ public class TestAppProviderMultiJVM extends AbstractDistributedCVM {
     public void interconnect() throws Exception {
 
         if ( thisJVMURI.equals( PROVIDER_JVM_URI ) ) {
-            // Connexion Computer - Computer Monitor
-            this.cssdop = ( ComputerStaticStateDataOutboundPort ) cm.findPortFromURI( "cssdop" );
-            cssdop.doConnection( "cssdip" , DataConnector.class.getCanonicalName() );
-
-            this.cdsdop = ( ComputerDynamicStateDataOutboundPort ) cm.findPortFromURI( "cdsdop" );
-            cdsdop.doConnection( "cdsdip" , ControlledDataConnector.class.getCanonicalName() );
+           
 
             // Connexion Computer - AdmissionController
             this.csop = ( ComputerServicesOutboundPort ) ac.findPortFromURI( "csop" );
-
             this.csop.doConnection( "csip" , ComputerServicesConnector.class.getCanonicalName() );
+            
+            this.cdsdop = ( ComputerDynamicStateDataOutboundPort ) ac.findPortFromURI( "cdsdop" );
+            cdsdop.doConnection( "cdsdip" , ControlledDataConnector.class.getCanonicalName() );
+            ac.fillCore();
 
         }
         else if ( thisJVMURI.equals( CONSUMER_JVM_URI ) ) {

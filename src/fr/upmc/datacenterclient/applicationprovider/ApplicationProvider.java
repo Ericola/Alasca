@@ -180,9 +180,7 @@ public class ApplicationProvider extends AbstractComponent {
             if ( this.anop.connected() ) {
                 this.anop.doDisconnection();
             }
-            // if ( this.apmip.connected() ) {
-            // this.apmip.doDisconnection();
-            // }
+      
         }
         catch ( Exception e ) {
             throw new ComponentShutdownException( e );
