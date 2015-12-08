@@ -54,7 +54,7 @@ public class RequestDispatcher extends AbstractComponent
     protected Map<String , Long> requestStartTimes;
 
     /** map associate RequestUri with the end Time in millis */
-    protected Map<String , Long> requestEndTimes;
+    protected List<RequestTime> requestEndTimes;
 
     protected RequestDispatcherDynamicStateDataInboundPort requestDispatcherDynamicStateDataInboundPort;
 
@@ -114,8 +114,9 @@ public class RequestDispatcher extends AbstractComponent
         this.addPort( this.requestDispatcherDynamicStateDataInboundPort );
         this.requestDispatcherDynamicStateDataInboundPort.publishPort();
 
-        requestStartTimes = new LinkedHashMap<>();
-        requestEndTimes = new LinkedHashMap<>();
+        requestStartTimes = new HashMap<>();
+        requestEndTimes = new ArrayList<>();
+
     }
 
     /**
@@ -128,7 +129,7 @@ public class RequestDispatcher extends AbstractComponent
                 "Request dispatcher " + this.rdURI + "  notified the request " + r.getRequestURI() + " has ended." );
         this.rdnop.notifyRequestTermination( r );
 
-        requestEndTimes.put( r.getRequestURI() , System.nanoTime() );
+        requestEndTimes.add( new RequestTime( r.getRequestURI() , System.nanoTime() ) );
 
     }
 
@@ -141,6 +142,7 @@ public class RequestDispatcher extends AbstractComponent
         this.rdsopList.get( current ).submitRequest( r );
         current = ( current + 1 ) % rdsopList.size();
         requestStartTimes.put( r.getRequestURI() , System.nanoTime() );
+
     }
 
     /**
@@ -154,30 +156,36 @@ public class RequestDispatcher extends AbstractComponent
         current = ( current + 1 ) % rdsopList.size();
 
         requestStartTimes.put( r.getRequestURI() , System.nanoTime() );
+
     }
 
     public RequestDispatcherDynamicStateI getRequestProcessingTimeAvg() throws Exception {
         long total = 0;
         long nbRequest = 0;
-
-        for ( Map.Entry<String , Long> entry : requestEndTimes.entrySet() ) {
-            long startTime = requestStartTimes.get( entry.getKey() );
-            total += entry.getValue() - startTime;
+        ListIterator<RequestTime> it = requestEndTimes.listIterator( requestEndTimes.size());
+        while ( it.hasPrevious() ) {
+            RequestTime endRequest = it.previous();
+            long startTime = requestStartTimes.get( endRequest.requestURI );
+            total += endRequest.time - startTime;
             nbRequest++;
         }
+
         long avg = nbRequest == 0 ? 0 : total / nbRequest;
         return new RequestDispatcherDynamicState( this.rdURI , avg / 1000000 );
     }
-    
-    public RequestDispatcherDynamicStateI getRequestProcessingTimeAvg(int history) throws Exception {
+
+    public RequestDispatcherDynamicStateI getRequestProcessingTimeAvg( int history ) throws Exception {
         long total = 0;
         long nbRequest = 0;
-       
-        for ( Map.Entry<String , Long> entry : requestEndTimes.entrySet() ) {
-            long startTime = requestStartTimes.get( entry.getKey() );
-            total += entry.getValue() - startTime;
-            nbRequest++;
+        int i = 0;
+        ListIterator<RequestTime> it = requestEndTimes.listIterator( requestEndTimes.size());
+        while ( i < history && it.hasPrevious() ) {
+            RequestTime endRequest = it.previous();
+            long startTime = requestStartTimes.get( endRequest.requestURI );
+            total += endRequest.time - startTime;
+            nbRequest++; // = history
         }
+
         long avg = nbRequest == 0 ? 0 : total / nbRequest;
         return new RequestDispatcherDynamicState( this.rdURI , avg / 1000000 );
     }
@@ -213,5 +221,17 @@ public class RequestDispatcher extends AbstractComponent
     public Boolean isWaitingForTermination() {
 
         return null;
+    }
+
+    private class RequestTime {
+
+        public String requestURI;
+        public Long   time;
+
+        public RequestTime( String requestURI , Long time ) {
+            this.requestURI = requestURI;
+            this.time = time;
+        }
+
     }
 }

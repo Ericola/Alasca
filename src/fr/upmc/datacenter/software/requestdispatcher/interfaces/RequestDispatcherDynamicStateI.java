@@ -9,4 +9,5 @@ public interface RequestDispatcherDynamicStateI extends DataOfferedI.DataI, Data
     public String getRequestDispatcherURI();
 
     public double getRequestProcessingAvg();
+    
 }
