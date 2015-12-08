@@ -86,16 +86,18 @@ ComputerStateDataConsumerI, AdmissionControllerManagementI{
 
 	/** Uri of the computer **/
 	private String[] computerURI;
-	
+
 	/** Map between RequestDispatcher URIs and the outbound ports to call them.		*/
 	protected Map<String, RequestDispatcherManagementOutboundPort> rdmopList;
-	
+
 	/** Map between RequestDispatcher URIs and the inbound ports through which request
 	 *  termination notifications are received from each applicationVM.			*/
 	protected Map<String, RequestNotificationInboundPort> rdnipList;
-	
+
 	/** Inbound port used by the controlller to manage the AdmissionController */
 	protected AdmissionControllerManagementInboundPort acmip;
+
+	private int nbVMCreated = 0;
 
 	/**
 	 * Create an admission controller
@@ -124,12 +126,12 @@ ComputerStateDataConsumerI, AdmissionControllerManagementI{
 		this.anip = new ApplicationNotificationInboundPort( applicationNotificationInboundPortURI , this );
 		this.addPort( anip );
 		this.anip.publishPort();
-		
+
 		this.addOfferedInterface(AdmissionControllerManagementI.class);
 		this.acmip = new AdmissionControllerManagementInboundPort(AdmissionControllerManagementInboundPortURI, this);
 		this.addPort(acmip);
 		this.acmip.publishPort();
-		
+
 		this.cdsop = new ComputerDynamicStateDataOutboundPort[computerServiceOutboundPortURI.length];
 		this.csop = new ComputerServicesOutboundPort[computerServiceOutboundPortURI.length];
 		this.computerURI = computerURI;
@@ -236,7 +238,7 @@ ComputerStateDataConsumerI, AdmissionControllerManagementI{
 			rd.start();
 			String rdnop = createURI( "rdnop" );
 			rnopList.put( rdnop , ( RequestNotificationOutboundPort ) ( rd.findPortFromURI( rdnop ) ) );
-			
+
 			// Creation Request Dispatcher Management Outbound Port
 			rdmopList.put(createURI("rd"), new RequestDispatcherManagementOutboundPort(createURI("rdmop"), new AbstractComponent() {}));
 			rdmopList.get(createURI("rd")).publishPort();
@@ -259,7 +261,7 @@ ComputerStateDataConsumerI, AdmissionControllerManagementI{
 			// Connect Controller with AdmissionController
 			AdmissionControllerManagementOutboundPort acmop = (AdmissionControllerManagementOutboundPort) controller.findPortFromURI(createURI("acmop"));
 			acmop.doConnection(acmip.getPortURI(), AdmissionControllerManagementConnector.class.getCanonicalName());
-			
+
 			controller.startControlling();
 
 			String res[] = new String[2];
@@ -300,6 +302,11 @@ ComputerStateDataConsumerI, AdmissionControllerManagementI{
 		return acURI + uri + cpt;
 	}
 
+	/** Use for allocating new Vm */
+	private String createVMURI(String uri){
+		return acURI + uri + nbVMCreated;
+	}
+
 	private void print( String s ) {
 		this.logMessage( "[AdmissionController] " + s );
 	}
@@ -328,16 +335,32 @@ ComputerStateDataConsumerI, AdmissionControllerManagementI{
 	}
 
 	@Override
-	public void allocateVM(String RequestDispatcherURI) {
+	public void allocateVM(String RequestDispatcherURI) throws Exception{
+		// Allocation of VM
+		ApplicationVM vm = new ApplicationVM( createVMURI( "vm" ) , createVMURI( "avmip" ) , createVMURI( "rsip" ) ,
+				createVMURI( "rnop" ) );
+		AbstractCVM.theCVM.addDeployedComponent( vm );
+
+		avmop.add( new ApplicationVMManagementOutboundPort( createVMURI( "avmop" ) , new AbstractComponent() {} ) );
+		avmop.get( cpt ).publishPort();
+		avmop.get( cpt ).doConnection( createVMURI( "avmip" ) ,
+				ApplicationVMManagementConnector.class.getCanonicalName() );
+		vm.start();
+		nbVMCreated++;
 		
-		
+		String RequestNotificationInboundport = this.rdmopList.get(RequestDispatcherURI).connectVm(createVMURI( "rsip" ));
+		// Connected RequestDispatcher -- VM
+		RequestNotificationOutboundPort rnop = ( RequestNotificationOutboundPort ) vm
+				.findPortFromURI( createVMURI( "rnop" ) );
+		rnop.doConnection( RequestNotificationInboundport , RequestNotificationConnector.class.getCanonicalName() );
+
 	}
 
 	@Override
-	public void removeVM(String RequestDispatcherURI) {
-		
+	public void removeVM(String RequestDispatcherURI) throws Exception{
+
 	}
-	
+
 	@Override
 	public void shutdown() throws ComponentShutdownException {
 		try {
@@ -350,7 +373,7 @@ ComputerStateDataConsumerI, AdmissionControllerManagementI{
 					this.rnopList.get( acURI + "rdnop" + i ).doDisconnection();
 				}
 			}
-			
+
 			for(int i = 0; i < csop.length; i++){
 				if ( this.csop[i].connected() ) {
 					this.csop[i].doDisconnection();
@@ -360,7 +383,7 @@ ComputerStateDataConsumerI, AdmissionControllerManagementI{
 					this.cdsop[i].connected();
 
 			}
-			
+
 			for(RequestDispatcherManagementOutboundPort rdmop : rdmopList.values()){
 				if(rdmop.connected())
 					rdmop.doDisconnection();

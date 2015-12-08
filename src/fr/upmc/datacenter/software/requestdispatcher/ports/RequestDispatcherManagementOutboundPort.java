@@ -22,8 +22,8 @@ public class RequestDispatcherManagementOutboundPort extends AbstractOutboundPor
     }
 
 	@Override
-	public String connectVm() throws Exception {
-		  return ( ( RequestDispatcherManagementI ) this.connector ).connectVm();
+	public String connectVm(String RequestSubmissionInboundPortURI) throws Exception {
+		  return ( ( RequestDispatcherManagementI ) this.connector ).connectVm(RequestSubmissionInboundPortURI);
 
 	}
 

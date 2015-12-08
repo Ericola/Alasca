@@ -13,6 +13,7 @@ import fr.upmc.components.AbstractComponent;
 import fr.upmc.components.exceptions.ComponentShutdownException;
 import fr.upmc.datacenter.hardware.processors.ports.ProcessorDynamicStateDataInboundPort;
 import fr.upmc.datacenter.interfaces.ControlledDataOfferedI;
+import fr.upmc.datacenter.software.connectors.RequestSubmissionConnector;
 import fr.upmc.datacenter.software.interfaces.RequestI;
 import fr.upmc.datacenter.software.interfaces.RequestNotificationHandlerI;
 import fr.upmc.datacenter.software.interfaces.RequestNotificationI;
@@ -53,6 +54,9 @@ RequestDispatcherManagementI{
 
 	/** Variable to know the less recent ApplicationVM **/
 	protected int current = 0;
+
+	/** Variable to know the number of ApplicationVM which has been connected to this requestDispatcher */
+	protected int nbVmConnected = 0;
 
 	/** map associate RequestUri with the startTime in millis */
 	protected Map<String , Long> requestStartTimes;
@@ -128,6 +132,7 @@ RequestDispatcherManagementI{
 
 		requestStartTimes = new LinkedHashMap<>();
 		requestEndTimes = new LinkedHashMap<>();
+		nbVmConnected = rdsop.size();
 	}
 
 	/**
@@ -221,19 +226,25 @@ RequestDispatcherManagementI{
 	}
 
 	/**
-	 * Create a new RequestDispatcherSubmissionOutboundPort and return the URI of this port
-	 * (Use for AllocateVm)
+	 * Create a new RequestDispatcherSubmissionOutboundPort and return 
+	 * the URI of requestNotificationInboundPort
+	 * (Use for AllocateVm to connect the new VM and this requestDispatcher)
 	 */
 	@Override
-	public String connectVm() throws Exception {
-		
+	public String connectVm(String RequestSubmissionInboundPortURI) throws Exception {
+
 		// Creation du Port
-		String rdsopURI = rdURI + "rdnop" + rdsopList.size();
+		String rdsopURI = rdURI + "rdsop" + nbVmConnected ;
+		nbVmConnected++;
 		this.addRequiredInterface( RequestSubmissionI.class );
 		this.rdsopList.add( new RequestSubmissionOutboundPort( rdsopURI , this ) );
 		this.addPort( this.rdsopList.get( rdsopList.size() - 1 ) );
 		this.rdsopList.get( rdsopList.size() - 1 ).publishPort();
-		return rdsopURI;
+
+		// Connect RD with VM
+		RequestSubmissionOutboundPort rsop = this.rdsopList.get( rdsopList.size() - 1 );
+		rsop.doConnection( RequestSubmissionInboundPortURI, RequestSubmissionConnector.class.getCanonicalName() );
+		return rdnip.getPortURI();
 	}
 
 	private void print( String s ) {
@@ -246,6 +257,6 @@ RequestDispatcherManagementI{
 	@Override
 	public void disconnectVm() throws Exception {
 		// 
-		
+
 	}
 }
