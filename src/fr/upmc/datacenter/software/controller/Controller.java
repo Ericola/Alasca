@@ -28,6 +28,7 @@ public class Controller extends AbstractComponent {
 	/** OutboundPort uses to communicate with the AdmissionController */
 	protected AdmissionControllerManagementOutboundPort acmop;
 
+	boolean toto = false;
 	public Controller( String cURI , String requestDispatcherURI , String admissionControllerManagementOutboundPortURI, String rddsdip ) throws Exception {
 		super(true, true );
 		this.cURI = cURI;
@@ -45,10 +46,13 @@ public class Controller extends AbstractComponent {
 		this.acmop = new AdmissionControllerManagementOutboundPort(admissionControllerManagementOutboundPortURI, this);
 		this.addPort(this.acmop);
 		this.acmop.publishPort();
+		
+		
 	}
 
 	public void startControlling() throws Exception {
 
+	    
 		this.pullingFuture = this.scheduleTaskAtFixedRate( new ComponentI.ComponentTask() {
 
 			@Override
@@ -59,6 +63,13 @@ public class Controller extends AbstractComponent {
 					print( "timestamp      : " + rdds.getTimeStamp() );
 					print( "timestamper id : " + rdds.getTimeStamperId() );
 					print( "request time average : " + rdds.getRequestProcessingAvg()+" ms" );
+					
+					if(!toto)					{
+					 acmop.allocateVM( rdds.getRequestDispatcherURI() );
+					 toto = true;
+					}
+					   
+				
 
 				}
 				catch ( Exception e ) {

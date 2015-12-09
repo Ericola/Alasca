@@ -137,7 +137,7 @@ public class TestCVM extends AbstractCVM {
                     }
                 }
             } ).start();
-            Thread.sleep( 10000L );
+            Thread.sleep( 100000L );
             System.out.println( "shutting down..." );
             test.shutdown();
             System.out.println( "ending..." );
