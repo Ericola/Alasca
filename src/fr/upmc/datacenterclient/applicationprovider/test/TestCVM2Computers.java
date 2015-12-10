@@ -79,8 +79,11 @@ public class TestCVM2Computers extends AbstractCVM {
             computer[i] = "computer" + i;
             cdsop[i] = "cdsdop" + i;
         }
-
-        AdmissionController ac = new AdmissionController( "ac" , "asip" , "anip" , "acmip", csop, cdsop, computer );
+        final int[] nbAvailableCoresPerComputer = new int[NB_COMPUTER];
+        for ( int i = 0 ; i < NB_COMPUTER ; ++i )     
+            nbAvailableCoresPerComputer[i] = numberOfProcessors * numberOfCores; 
+        
+        AdmissionController ac = new AdmissionController( "ac" , "asip" , "anip" , "acmip", csop, cdsop, computer, nbAvailableCoresPerComputer );
 
         this.csop = new ComputerServicesOutboundPort[NB_COMPUTER];
         this.cdsdop = new ComputerDynamicStateDataOutboundPort[NB_COMPUTER];
@@ -90,7 +93,7 @@ public class TestCVM2Computers extends AbstractCVM {
             this.cdsdop[i] = ( ComputerDynamicStateDataOutboundPort ) ac.findPortFromURI( cdsop[i] );
             this.cdsdop[i].doConnection( "cdsdip" + i , ControlledDataConnector.class.getCanonicalName() );
         }
-        ac.fillCore();
+        
         ac.toggleTracing();
         ac.toggleLogging();
         this.addDeployedComponent( ac );

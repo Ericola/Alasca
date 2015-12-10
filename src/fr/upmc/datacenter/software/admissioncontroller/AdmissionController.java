@@ -53,7 +53,7 @@ import fr.upmc.datacenterclient.applicationprovider.ports.ApplicationSubmissionI
  * end of the requestgenerator creation
  */
 public class AdmissionController extends AbstractComponent
-        implements ComputerStateDataConsumerI, AdmissionControllerManagementI {
+        implements AdmissionControllerManagementI {
 
     public final static int NB_CORE = 2;
 
@@ -81,8 +81,8 @@ public class AdmissionController extends AbstractComponent
 
     private Map<String , RequestNotificationOutboundPort> rnopList;
 
-    /** Map containing the ressources (core) and their state (true reserved, false not reserved) */
-    private Map<String , Map<AllocatedCore , Boolean>> tabCore;
+    /** array associate the index with the number of available cores */
+    private int[] nbAvailablesCores;
 
     /** Uri of the computer **/
     private String[] computerURI;
@@ -115,7 +115,7 @@ public class AdmissionController extends AbstractComponent
     public AdmissionController( String acURI , String applicationSubmissionInboundPortURI ,
             String applicationNotificationInboundPortURI , String AdmissionControllerManagementInboundPortURI ,
             String computerServiceOutboundPortURI[] , String ComputerDynamicStateDataOutboundPort[] ,
-            String computerURI[] ) throws Exception {
+            String computerURI[] , int[] nbAvailableCoresPerComputer ) throws Exception {
         super( 2 , 2 );
         this.acURI = acURI;
         this.addOfferedInterface( ApplicationSubmissionI.class );
@@ -149,7 +149,7 @@ public class AdmissionController extends AbstractComponent
         }
 
         // Allocation Hashmap
-        this.tabCore = new HashMap<String , Map<AllocatedCore , Boolean>>();
+        nbAvailablesCores = nbAvailableCoresPerComputer;
 
         rnopList = new HashMap<>();
         avmop = new ArrayList<>();
@@ -157,23 +157,22 @@ public class AdmissionController extends AbstractComponent
         rdnipList = new HashMap<>();
     }
 
-    /**
-     * Fill map tabCore of all cores from computer(s)
-     * 
-     * @throws Exception
-     */
-    public void fillCore() throws Exception {
-        for ( int i = 0 ; i < csop.length ; i++ ) {
-            AllocatedCore[] listCores = csop[i].allocateCores( 50 );
-            HashMap<AllocatedCore , Boolean> listCoresFromComputer = new HashMap<AllocatedCore , Boolean>();
-            listCoresFromComputer = new HashMap<AllocatedCore , Boolean>();
-            for ( int j = 0 ; j < listCores.length ; j++ ) {
-                listCoresFromComputer.put( listCores[j] , false );
+    
+    private Integer getAvailableCores() {
+        int max = 0;
+        Integer index = null;
+        for ( int i = 0 ; i < nbAvailablesCores.length ; i++ ) {
+            if ( nbAvailablesCores[i] == NB_CORE ) {
+                return i;
             }
-            this.tabCore.put( computerURI[i] , listCoresFromComputer );
+            if ( nbAvailablesCores[i] > max ) {
+                max = nbAvailablesCores[i];
+                index = i;
+            }
         }
+        return index;
     }
-
+    
     /**
      * Receive an application
      * 
@@ -186,31 +185,14 @@ public class AdmissionController extends AbstractComponent
 
         // Verifier que des resources sont disponibles
         print( "Looking for available resources..." );
-        ArrayList<AllocatedCore> ac = new ArrayList<AllocatedCore>();
-        ArrayList<AllocatedCore> tmp;
-        for ( int i = 0 ; i < computerURI.length ; i++ ) {
-            tmp = new ArrayList<AllocatedCore>();
-            print( "Looking for " + NB_CORE + " available core in Computer " + computerURI[i] + "..." );
-            for ( Map.Entry<AllocatedCore , Boolean> res : tabCore.get( computerURI[i] ).entrySet() ) {
-                if ( !res.getValue() ) {
-                    tmp.add( res.getKey() );
-                }
-                if ( tmp.size() == NB_CORE )
-                    break;
-            }
-            if ( tmp.size() == NB_CORE ) {
-                ac.addAll( tmp );
-                break;
-            }
-            else {
-                if ( tmp.size() > ac.size() ) {
-                    ac = new ArrayList<AllocatedCore>();
-                    ac.addAll( tmp );
-                }
-            }
-        }
-        if ( ac.size() != 0 ) {
-            print( "Resources found! (" + ac.size() + " available Core(s))" );
+        Integer index = getAvailableCores();
+
+        AllocatedCore[] ac;
+        if ( index != null ) {
+            ac = this.csop[index].allocateCores( NB_CORE );
+            nbAvailablesCores[index] = nbAvailablesCores[index] - ac.length;
+          
+            print( "Resources found! (" + ac.length + " available Core(s))" );
 
             // Creation d'une VM
             print( "Creating an applicationVM..." );
@@ -223,13 +205,10 @@ public class AdmissionController extends AbstractComponent
             avmop.get( cpt ).doConnection( createURI( "avmip" ) ,
                     ApplicationVMManagementConnector.class.getCanonicalName() );
             vm.start();
+           
             // AllocateCore des computers aux VMs
-            AllocatedCore[] coreList = new AllocatedCore[ac.size()];
-            for ( int i = 0 ; i < ac.size() ; i++ )
-                coreList[i] = ac.get( i );
-
-            this.avmop.get( cpt ).allocateCores( coreList );
-            print( ac.size() + " cores allocated." );
+            this.avmop.get( cpt ).allocateCores( ac );
+            print( ac.length + " cores allocated." );
 
             // Création d'un requestdispatcher
             print( "Creating the requestDispatcher..." );
@@ -318,54 +297,19 @@ public class AdmissionController extends AbstractComponent
         this.logMessage( "[AdmissionController] " + s );
     }
 
-    @Override
-    public void acceptComputerStaticData( String computerURI , ComputerStaticStateI staticState ) throws Exception {
-        return;
-    }
 
-    @Override
-    public void acceptComputerDynamicData( String computerURI , ComputerDynamicStateI currentDynamicState )
-            throws Exception {
-        boolean[][] listCore = currentDynamicState.getCurrentCoreReservations();
-        ArrayList<Boolean> coreStatus = new ArrayList<>();
-        for ( int i = 0 ; i < listCore.length ; i++ ) {
-            for ( int j = 0 ; j < listCore.length ; j++ ) {
-                coreStatus.add( listCore[i][j] );
-            }
-        }
-        int i = 0;
-        for ( Map.Entry<AllocatedCore , Boolean> res : tabCore.get( computerURI ).entrySet() ) {
-            tabCore.get( computerURI ).put( res.getKey() , coreStatus.get( i ) );
-            i++;
-        }
-    }
-
+  
     @Override
     public void allocateVM( String RequestDispatcherURI ) throws Exception {
-        ArrayList<AllocatedCore> ac = new ArrayList<AllocatedCore>();
-        ArrayList<AllocatedCore> tmp = new ArrayList<>();
-        for ( int i = 0 ; i < computerURI.length ; i++ ) {
-            tmp = new ArrayList<AllocatedCore>();
-            print( "Looking for " + NB_CORE + " available core in Computer " + computerURI[i] + "..." );
-            for ( Map.Entry<AllocatedCore , Boolean> res : tabCore.get( computerURI[i] ).entrySet() ) {
-                if ( !res.getValue() ) {
-                    tmp.add( res.getKey() );
-                }
-                if ( tmp.size() == NB_CORE )
-                    break;
-            }
-            if ( tmp.size() == NB_CORE ) {
-                ac.addAll( tmp );
-                break;
-            }
-            else {
-                if ( tmp.size() > ac.size() ) {
-                    ac = new ArrayList<AllocatedCore>();
-                    ac.addAll( tmp );
-                }
-            }
-        }
-        if ( tmp.size() != 0 ) {
+        // Verifier que des resources sont disponibles
+        print( "Looking for available resources..." );
+        Integer index = getAvailableCores();
+
+        AllocatedCore[] ac;
+        if ( index != null ) {
+            ac = this.csop[index].allocateCores( NB_CORE );
+            nbAvailablesCores[index] = nbAvailablesCores[index] - ac.length;
+
             // Allocation of VM
             ApplicationVM vm = new ApplicationVM( createVMURI( "vm" ) , createVMURI( "avmip" ) , createVMURI( "rsip" ) ,
                     createVMURI( "rnop" ) );
@@ -375,13 +319,10 @@ public class AdmissionController extends AbstractComponent
             avmop.get( avmop.size() - 1 ).publishPort();
             avmop.get( avmop.size() - 1 ).doConnection( createVMURI( "avmip" ) ,
                     ApplicationVMManagementConnector.class.getCanonicalName() );
-          
-            //AllocatedCore to VM
-            AllocatedCore[] coreList = new AllocatedCore[ac.size()];
-            for ( int i = 0 ; i < ac.size() ; i++ )
-                coreList[i] = ac.get( i );
-            avmop.get( avmop.size() - 1 ).allocateCores(coreList);
-            print( ac.size() + " cores allocated." );
+
+            // AllocatedCore to VM 
+            avmop.get( avmop.size() - 1 ).allocateCores( ac );
+            print( ac.length + " cores allocated." );
             String RequestNotificationInboundport = this.rdmopList.get( RequestDispatcherURI )
                     .connectVm( createVMURI( "rsip" ) );
             // Connected RequestDispatcher -- VM

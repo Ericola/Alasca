@@ -30,7 +30,7 @@ public class Controller extends AbstractComponent {
 
 	
 	protected Long lastAllocatedVM = 0l;
-	protected static final long DURATION_BETWEEN_ADJUSTMENT = 5000000000L;
+	protected static final long DURATION_BETWEEN_ADJUSTMENT = 1000000000L;
 	
 	public Controller( String cURI , String requestDispatcherURI , String admissionControllerManagementOutboundPortURI, String rddsdip ) throws Exception {
 		super(true, true );

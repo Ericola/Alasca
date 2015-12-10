@@ -50,7 +50,7 @@ public class TestCVM extends AbstractCVM {
         // --------------------------------------------------------------------
         String computerURI = "computer0";
         int numberOfProcessors = 2;
-        int numberOfCores = 2;
+        int numberOfCores = 20;
         Set<Integer> admissibleFrequencies = new HashSet<Integer>();
         admissibleFrequencies.add( 1500 ); // Cores can run at 1,5 GHz
         admissibleFrequencies.add( 3000 ); // and at 3 GHz
@@ -72,14 +72,18 @@ public class TestCVM extends AbstractCVM {
         String computer[] = new String[1];
         computer[0] = computerURI;
         String cdsop[] = new String[1];
-        cdsop[0] = "cdsdop";
-        AdmissionController ac = new AdmissionController( "ac" , "asip" , "anip" , "acmip", csop, cdsop, computer);
+        cdsop[0] = "cdsdop"
+                ;
+        final int[] nbAvailableCoresPerComputer = new int[1];
+        nbAvailableCoresPerComputer[0] = numberOfProcessors * numberOfCores;
+        
+        AdmissionController ac = new AdmissionController( "ac" , "asip" , "anip" , "acmip", csop, cdsop, computer, nbAvailableCoresPerComputer);
         this.addDeployedComponent( ac );
         this.csop = ( ComputerServicesOutboundPort ) ac.findPortFromURI( "csop" );
         this.csop.doConnection( "csip" , ComputerServicesConnector.class.getCanonicalName() );
         this.cdsdop = ( ComputerDynamicStateDataOutboundPort ) ac.findPortFromURI( "cdsdop" );
         this.cdsdop.doConnection( "cdsdip" , ControlledDataConnector.class.getCanonicalName() );
-        ac.fillCore();
+ 
         ac.toggleTracing();
         ac.toggleLogging();
 

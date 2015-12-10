@@ -121,7 +121,13 @@ public class TestAppProviderMultiJVM extends AbstractDistributedCVM {
             computer[0] = computerURI;
             String cdsop[] = new String[1];
             cdsop[0] = "cdsdop";
-            AdmissionController ac = new AdmissionController( "ac" , "asip" , "anip" , "acmip", csop, cdsop, computer);
+            
+            
+            final int[] nbAvailableCoresPerComputer = new int[1];  
+            nbAvailableCoresPerComputer[0] = numberOfProcessors * numberOfCores; 
+            
+            
+            AdmissionController ac = new AdmissionController( "ac" , "asip" , "anip" , "acmip", csop, cdsop, computer, nbAvailableCoresPerComputer);
             this.addDeployedComponent( ac );
 
             ac.toggleTracing();
@@ -148,7 +154,6 @@ public class TestAppProviderMultiJVM extends AbstractDistributedCVM {
             
             this.cdsdop = ( ComputerDynamicStateDataOutboundPort ) ac.findPortFromURI( "cdsdop" );
             cdsdop.doConnection( "cdsdip" , ControlledDataConnector.class.getCanonicalName() );
-            ac.fillCore();
 
         }
         else if ( thisJVMURI.equals( CONSUMER_JVM_URI ) ) {
