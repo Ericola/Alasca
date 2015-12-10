@@ -116,7 +116,7 @@ public class AdmissionController extends AbstractComponent
             String applicationNotificationInboundPortURI , String AdmissionControllerManagementInboundPortURI ,
             String computerServiceOutboundPortURI[] , String ComputerDynamicStateDataOutboundPort[] ,
             String computerURI[] ) throws Exception {
-        super( false , true );
+        super( 2 , 2 );
         this.acURI = acURI;
         this.addOfferedInterface( ApplicationSubmissionI.class );
         this.asip = new ApplicationSubmissionInboundPort( applicationSubmissionInboundPortURI , this );
@@ -311,7 +311,7 @@ public class AdmissionController extends AbstractComponent
 
     /** Use for allocating new Vm */
     private String createVMURI( String uri ) {
-        return acURI + uri + nbVMCreated;
+        return acURI + uri + cpt + nbVMCreated;
     }
 
     private void print( String s ) {
@@ -372,17 +372,26 @@ public class AdmissionController extends AbstractComponent
             AbstractCVM.theCVM.addDeployedComponent( vm );
 
             avmop.add( new ApplicationVMManagementOutboundPort( createVMURI( "avmop" ) , new AbstractComponent() {} ) );
-            avmop.get( cpt ).publishPort();
-            avmop.get( cpt ).doConnection( createVMURI( "avmip" ) ,
+            avmop.get( avmop.size() - 1 ).publishPort();
+            avmop.get( avmop.size() - 1 ).doConnection( createVMURI( "avmip" ) ,
                     ApplicationVMManagementConnector.class.getCanonicalName() );
-            vm.start();
-            nbVMCreated++;
+          
+            //AllocatedCore to VM
+            AllocatedCore[] coreList = new AllocatedCore[ac.size()];
+            for ( int i = 0 ; i < ac.size() ; i++ )
+                coreList[i] = ac.get( i );
+            avmop.get( avmop.size() - 1 ).allocateCores(coreList);
+            print( ac.size() + " cores allocated." );
             String RequestNotificationInboundport = this.rdmopList.get( RequestDispatcherURI )
                     .connectVm( createVMURI( "rsip" ) );
             // Connected RequestDispatcher -- VM
             RequestNotificationOutboundPort rnop = ( RequestNotificationOutboundPort ) vm
                     .findPortFromURI( createVMURI( "rnop" ) );
             rnop.doConnection( RequestNotificationInboundport , RequestNotificationConnector.class.getCanonicalName() );
+            nbVMCreated++;
+            vm.start();
+            vm.toggleLogging();
+            vm.toggleTracing();
             print( "VM Allocated!" );
         }
         else {
