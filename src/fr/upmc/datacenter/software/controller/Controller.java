@@ -28,7 +28,10 @@ public class Controller extends AbstractComponent {
 	/** OutboundPort uses to communicate with the AdmissionController */
 	protected AdmissionControllerManagementOutboundPort acmop;
 
-	boolean toto = false;
+	
+	protected Long lastAllocatedVM = 0l;
+	protected static final long DURATION_BETWEEN_ADJUSTMENT = 5000000000L;
+	
 	public Controller( String cURI , String requestDispatcherURI , String admissionControllerManagementOutboundPortURI, String rddsdip ) throws Exception {
 		super(true, true );
 		this.cURI = cURI;
@@ -64,12 +67,10 @@ public class Controller extends AbstractComponent {
 					print( "timestamper id : " + rdds.getTimeStamperId() );
 					print( "request time average : " + rdds.getRequestProcessingAvg()+" ms" );
 					
-					if(!toto)					{
+					if ( System.nanoTime() - lastAllocatedVM > DURATION_BETWEEN_ADJUSTMENT && rdds.getRequestProcessingAvg() > 2000  ) {
 					 acmop.allocateVM( rdds.getRequestDispatcherURI() );
-					 toto = true;
+					 lastAllocatedVM = System.nanoTime();
 					}
-					   
-				
 
 				}
 				catch ( Exception e ) {
