@@ -2,12 +2,14 @@ package fr.upmc.datacenter.software.admissioncontroller;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
 import fr.upmc.components.AbstractComponent;
 import fr.upmc.components.cvm.AbstractCVM;
 import fr.upmc.components.exceptions.ComponentShutdownException;
+import fr.upmc.components.ports.OutboundPortI;
 import fr.upmc.datacenter.hardware.computers.Computer.AllocatedCore;
 import fr.upmc.datacenter.hardware.computers.interfaces.ComputerDynamicStateI;
 import fr.upmc.datacenter.hardware.computers.interfaces.ComputerServicesI;
@@ -15,6 +17,12 @@ import fr.upmc.datacenter.hardware.computers.interfaces.ComputerStateDataConsume
 import fr.upmc.datacenter.hardware.computers.interfaces.ComputerStaticStateI;
 import fr.upmc.datacenter.hardware.computers.ports.ComputerDynamicStateDataOutboundPort;
 import fr.upmc.datacenter.hardware.computers.ports.ComputerServicesOutboundPort;
+import fr.upmc.datacenter.hardware.processors.UnacceptableFrequencyException;
+import fr.upmc.datacenter.hardware.processors.UnavailableFrequencyException;
+import fr.upmc.datacenter.hardware.processors.connectors.ProcessorManagementConnector;
+import fr.upmc.datacenter.hardware.processors.interfaces.ProcessorManagementI;
+import fr.upmc.datacenter.hardware.processors.ports.ProcessorManagementInboundPort;
+import fr.upmc.datacenter.hardware.processors.ports.ProcessorManagementOutboundPort;
 import fr.upmc.datacenter.software.admissioncontroller.connectors.AdmissionControllerManagementConnector;
 import fr.upmc.datacenter.software.admissioncontroller.interfaces.AdmissionControllerManagementI;
 import fr.upmc.datacenter.software.admissioncontroller.ports.AdmissionControllerManagementInboundPort;
@@ -52,8 +60,7 @@ import fr.upmc.datacenterclient.applicationprovider.ports.ApplicationSubmissionI
  * applications. It also offeres the interface <code>ApplicationNotificationI</code> to notify the
  * end of the requestgenerator creation
  */
-public class AdmissionController extends AbstractComponent
-        implements AdmissionControllerManagementI {
+public class AdmissionController extends AbstractComponent implements AdmissionControllerManagementI {
 
     public final static int NB_CORE = 2;
 
@@ -81,7 +88,7 @@ public class AdmissionController extends AbstractComponent
 
     private Map<String , RequestNotificationOutboundPort> rnopList;
 
-    /** array associate the index with the number of available cores */
+    /** array associate the index of the computer with the number of available cores */
     private int[] nbAvailablesCores;
 
     /** Uri of the computer **/
@@ -101,6 +108,18 @@ public class AdmissionController extends AbstractComponent
 
     private int nbVMCreated = 0;
 
+    private int currentCSOP = 0;
+
+    /** indexes are computers and values are whether it's used or not */
+    private boolean computerUsed[];
+
+    private final Integer coresPerComputers;
+
+    /** map associate processor URIs with their outboundport */
+    private Map<String , ProcessorManagementOutboundPort> pmops;
+
+    private List<AllocatedCore> allocatedCores;
+
     /**
      * Create an admission controller
      * 
@@ -115,7 +134,8 @@ public class AdmissionController extends AbstractComponent
     public AdmissionController( String acURI , String applicationSubmissionInboundPortURI ,
             String applicationNotificationInboundPortURI , String AdmissionControllerManagementInboundPortURI ,
             String computerServiceOutboundPortURI[] , String ComputerDynamicStateDataOutboundPort[] ,
-            String computerURI[] , int[] nbAvailableCoresPerComputer ) throws Exception {
+            String computerURI[] , int[] nbAvailableCoresPerComputer , Map<String , String> pmipURIs )
+                    throws Exception {
         super( 2 , 2 );
         this.acURI = acURI;
         this.addOfferedInterface( ApplicationSubmissionI.class );
@@ -148,21 +168,39 @@ public class AdmissionController extends AbstractComponent
             this.cdsop[i].publishPort();
         }
 
+        pmops = new HashMap<>();
+        int i = 0;
+        for ( Map.Entry<String , String> entry : pmipURIs.entrySet() ) {
+            this.addRequiredInterface( ProcessorManagementI.class );
+            ProcessorManagementOutboundPort pmop = new ProcessorManagementOutboundPort( acURI + "pmop" + i , this );
+            pmops.put( entry.getKey() , pmop );
+            this.addPort( pmop );
+            pmop.publishPort();
+            pmop.doConnection( entry.getValue() , ProcessorManagementConnector.class.getCanonicalName() );
+        }
+
         // Allocation Hashmap
         nbAvailablesCores = nbAvailableCoresPerComputer;
+
+        coresPerComputers = nbAvailableCoresPerComputer[0];
 
         rnopList = new HashMap<>();
         avmop = new ArrayList<>();
         rdmopList = new HashMap<>();
         rdnipList = new HashMap<>();
+        allocatedCores = new ArrayList<>();
+
     }
 
-    
-    private Integer getAvailableCores() {
+    private boolean isUsed( int computerIndex ) {
+        return nbAvailablesCores[computerIndex] < coresPerComputers;
+    }
+
+    private Integer getAvailableCores( int nbCores ) {
         int max = 0;
         Integer index = null;
         for ( int i = 0 ; i < nbAvailablesCores.length ; i++ ) {
-            if ( nbAvailablesCores[i] == NB_CORE ) {
+            if ( nbAvailablesCores[i] == nbCores ) {
                 return i;
             }
             if ( nbAvailablesCores[i] > max ) {
@@ -172,7 +210,7 @@ public class AdmissionController extends AbstractComponent
         }
         return index;
     }
-    
+
     /**
      * Receive an application
      * 
@@ -185,13 +223,18 @@ public class AdmissionController extends AbstractComponent
 
         // Verifier que des resources sont disponibles
         print( "Looking for available resources..." );
-        Integer index = getAvailableCores();
+        Integer index = getAvailableCores( NB_CORE );
 
         AllocatedCore[] ac;
         if ( index != null ) {
             ac = this.csop[index].allocateCores( NB_CORE );
             nbAvailablesCores[index] = nbAvailablesCores[index] - ac.length;
-          
+
+            // Add allocated cores to the allocatedCores list
+            for ( int i = 0 ; i < ac.length ; i++ ) {
+                allocatedCores.add( ac[i] );
+            }
+
             print( "Resources found! (" + ac.length + " available Core(s))" );
 
             // Creation d'une VM
@@ -205,7 +248,7 @@ public class AdmissionController extends AbstractComponent
             avmop.get( cpt ).doConnection( createURI( "avmip" ) ,
                     ApplicationVMManagementConnector.class.getCanonicalName() );
             vm.start();
-           
+
             // AllocateCore des computers aux VMs
             this.avmop.get( cpt ).allocateCores( ac );
             print( ac.length + " cores allocated." );
@@ -297,18 +340,21 @@ public class AdmissionController extends AbstractComponent
         this.logMessage( "[AdmissionController] " + s );
     }
 
-
-  
     @Override
     public void allocateVM( String RequestDispatcherURI ) throws Exception {
         // Verifier que des resources sont disponibles
         print( "Looking for available resources..." );
-        Integer index = getAvailableCores();
+        Integer index = getAvailableCores( NB_CORE );
 
         AllocatedCore[] ac;
         if ( index != null ) {
             ac = this.csop[index].allocateCores( NB_CORE );
             nbAvailablesCores[index] = nbAvailablesCores[index] - ac.length;
+
+            // Add allocated cores to the allocatedCores list
+            for ( int i = 0 ; i < ac.length ; i++ ) {
+                allocatedCores.add( ac[i] );
+            }
 
             // Allocation of VM
             ApplicationVM vm = new ApplicationVM( createVMURI( "vm" ) , createVMURI( "avmip" ) , createVMURI( "rsip" ) ,
@@ -320,7 +366,7 @@ public class AdmissionController extends AbstractComponent
             avmop.get( avmop.size() - 1 ).doConnection( createVMURI( "avmip" ) ,
                     ApplicationVMManagementConnector.class.getCanonicalName() );
 
-            // AllocatedCore to VM 
+            // AllocatedCore to VM
             avmop.get( avmop.size() - 1 ).allocateCores( ac );
             print( ac.length + " cores allocated." );
             String RequestNotificationInboundport = this.rdmopList.get( RequestDispatcherURI )
@@ -377,6 +423,31 @@ public class AdmissionController extends AbstractComponent
             throw new ComponentShutdownException( e );
         }
         super.shutdown();
+    }
+
+    @Override
+    public boolean addCores( int nbCores ) throws Exception {
+        // parcourir les computers utilisés
+        print( "Looking for available resources..." );
+        boolean ok = false;
+        int nbAllocated = 0;
+
+        while ( !isUsed( currentCSOP ) )
+            currentCSOP = ( currentCSOP + 1 ) % csop.length;
+
+        ok = ( ( nbAllocated = csop[currentCSOP].allocateCores( nbCores ).length ) > 0 );
+        currentCSOP = ( currentCSOP + 1 ) % csop.length;
+        print( nbAllocated + " cores allocated on the computer " + currentCSOP );
+
+        return ok;
+    }
+
+    @Override
+    public void increaseFrequency() throws  Exception {
+        // parcourir les processeurs utilisés
+        for ( AllocatedCore a : allocatedCores ) {
+            pmops.get( a.processorURI ).setCoreFrequency( a.coreNo , 3000 );
+        }
     }
 
 }

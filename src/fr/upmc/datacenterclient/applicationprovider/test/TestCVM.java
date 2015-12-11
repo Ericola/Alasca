@@ -14,6 +14,8 @@ import fr.upmc.datacenter.hardware.computers.connectors.ComputerServicesConnecto
 import fr.upmc.datacenter.hardware.computers.ports.ComputerDynamicStateDataOutboundPort;
 import fr.upmc.datacenter.hardware.computers.ports.ComputerServicesOutboundPort;
 import fr.upmc.datacenter.hardware.computers.ports.ComputerStaticStateDataOutboundPort;
+import fr.upmc.datacenter.hardware.processors.Processor;
+import fr.upmc.datacenter.hardware.processors.Processor.ProcessorPortTypes;
 import fr.upmc.datacenter.hardware.tests.ComputerMonitor;
 import fr.upmc.datacenter.software.admissioncontroller.AdmissionController;
 import fr.upmc.datacenter.software.requestdispatcher.ports.RequestDispatcherManagementOutboundPort;
@@ -49,7 +51,7 @@ public class TestCVM extends AbstractCVM {
         // each with 2 cores.
         // --------------------------------------------------------------------
         String computerURI = "computer0";
-        int numberOfProcessors = 2;
+        int numberOfProcessors = 4;
         int numberOfCores = 20;
         Set<Integer> admissibleFrequencies = new HashSet<Integer>();
         admissibleFrequencies.add( 1500 ); // Cores can run at 1,5 GHz
@@ -60,6 +62,15 @@ public class TestCVM extends AbstractCVM {
         Computer c = new Computer( computerURI , admissibleFrequencies , processingPower , 1500 , 1500 ,
                 numberOfProcessors , numberOfCores , "csip" , "cssdip" , "cdsdip" );
         this.addDeployedComponent( c );
+    
+        Map<Integer , String> processorURIs = c.getStaticState().getProcessorURIs();
+
+        Map<String , String> pmipURIs = new HashMap<>(); // map associate processor uri with uri of inbound port
+        for ( Map.Entry<Integer , String> entry : processorURIs.entrySet() ) {
+            Map<ProcessorPortTypes , String> pPortsList = c.getStaticState().getProcessorPortMap()
+                    .get( entry.getValue() );
+            pmipURIs.put( entry.getValue() ,pPortsList.get( Processor.ProcessorPortTypes.MANAGEMENT ));
+        }
 
         // --------------------------------------------------------------------
 
@@ -77,7 +88,7 @@ public class TestCVM extends AbstractCVM {
         final int[] nbAvailableCoresPerComputer = new int[1];
         nbAvailableCoresPerComputer[0] = numberOfProcessors * numberOfCores;
         
-        AdmissionController ac = new AdmissionController( "ac" , "asip" , "anip" , "acmip", csop, cdsop, computer, nbAvailableCoresPerComputer);
+        AdmissionController ac = new AdmissionController( "ac" , "asip" , "anip" , "acmip", csop, cdsop, computer, nbAvailableCoresPerComputer, pmipURIs);
         this.addDeployedComponent( ac );
         this.csop = ( ComputerServicesOutboundPort ) ac.findPortFromURI( "csop" );
         this.csop.doConnection( "csip" , ComputerServicesConnector.class.getCanonicalName() );

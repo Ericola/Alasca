@@ -25,4 +25,15 @@ public class AdmissionControllerManagementConnector extends AbstractConnector
 		( ( AdmissionControllerManagementI ) this.offering ).removeVM(RequestDispatcherURI);
 		
 	}
+
+    @Override
+    public boolean addCores( int nbCores ) throws Exception {   
+        return ( ( AdmissionControllerManagementI ) this.offering ).addCores(nbCores);
+    }
+
+    @Override
+    public void increaseFrequency() throws Exception {
+        ( ( AdmissionControllerManagementI ) this.offering ).increaseFrequency();
+        
+    }
 }

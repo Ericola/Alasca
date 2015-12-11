@@ -8,6 +8,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.ListIterator;
 import java.util.Map;
+import java.util.PriorityQueue;
 
 import javax.naming.ldap.StartTlsRequest;
 
@@ -40,7 +41,7 @@ public class RequestDispatcher extends AbstractComponent
 
 implements RequestSubmissionHandlerI, RequestNotificationHandlerI, RequestDispatcherManagementI {
 
-	public static final int NB_REQUEST = 50;
+	public static final int NB_REQUEST = 5;
 	/** URI of this request dispatcher RD */
 	protected String        rdURI;
 
@@ -82,6 +83,7 @@ implements RequestSubmissionHandlerI, RequestNotificationHandlerI, RequestDispat
 
 	/** map associate request URI with the index of the applicationVM */
 	protected Map<String , RequestSubmissionOutboundPort> requestApplicationVM;
+	
 
 	/**
 	 * Create a RequestDispatcher
@@ -187,6 +189,8 @@ implements RequestSubmissionHandlerI, RequestNotificationHandlerI, RequestDispat
 
 		current = ( current + 1 ) % rdsopList.size();
 		requestStartTimes.put( r.getRequestURI() , System.nanoTime() );
+		
+		print( "la requete est envoyée au rdsop numéro : " + current);
 	}
 
 	/**
@@ -287,8 +291,8 @@ implements RequestSubmissionHandlerI, RequestNotificationHandlerI, RequestDispat
 		this.addRequiredInterface( RequestSubmissionI.class );
 		RequestSubmissionOutboundPort r = new RequestSubmissionOutboundPort( rdsopURI , this );
 		this.rdsopList.add( r );
-		this.addPort( rdsopList.get(rdsopList.size() - 1) );
-		rdsopList.get(rdsopList.size() - 1).localPublishPort();
+		this.addPort( r );
+		r.localPublishPort();
 
 		print("Connecting VM and RequestDispatcher...");
 		// Connect RD with VM

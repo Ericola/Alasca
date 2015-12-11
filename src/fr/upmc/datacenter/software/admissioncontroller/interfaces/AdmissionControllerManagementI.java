@@ -6,8 +6,12 @@ import fr.upmc.components.interfaces.RequiredI;
 public interface AdmissionControllerManagementI extends OfferedI, RequiredI {
 
     public void freeUpVM() throws Exception;
-    
-    public void allocateVM(String RequestDispatcherURI) throws Exception;
-    
-    public void removeVM(String RequestDispatcherURI) throws Exception;
+
+    public boolean addCores( int nbCores ) throws Exception;
+
+    public void allocateVM( String RequestDispatcherURI ) throws Exception;
+
+    public void removeVM( String RequestDispatcherURI ) throws Exception;
+
+    public void increaseFrequency() throws Exception;
 }

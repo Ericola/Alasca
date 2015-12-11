@@ -127,7 +127,7 @@ public class TestAppProviderMultiJVM extends AbstractDistributedCVM {
             nbAvailableCoresPerComputer[0] = numberOfProcessors * numberOfCores; 
             
             
-            AdmissionController ac = new AdmissionController( "ac" , "asip" , "anip" , "acmip", csop, cdsop, computer, nbAvailableCoresPerComputer);
+            AdmissionController ac = new AdmissionController( "ac" , "asip" , "anip" , "acmip", csop, cdsop, computer, nbAvailableCoresPerComputer, null);
             this.addDeployedComponent( ac );
 
             ac.toggleTracing();

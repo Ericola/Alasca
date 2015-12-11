@@ -19,83 +19,87 @@ import fr.upmc.datacenter.software.requestdispatcher.ports.RequestDispatcherDyna
 
 public class Controller extends AbstractComponent {
 
-	/** the URI of the component. */
-	protected String                                        cURI;
-	protected ScheduledFuture<?>                            pullingFuture;
+    /** the URI of the component. */
+    protected String             cURI;
+    protected ScheduledFuture<?> pullingFuture;
 
-	protected RequestDispatcherDynamicStateDataOutboundPort requestDispatcherDynamicStateDataOutboundPort;
+    protected RequestDispatcherDynamicStateDataOutboundPort requestDispatcherDynamicStateDataOutboundPort;
 
-	/** OutboundPort uses to communicate with the AdmissionController */
-	protected AdmissionControllerManagementOutboundPort acmop;
+    /** OutboundPort uses to communicate with the AdmissionController */
+    protected AdmissionControllerManagementOutboundPort acmop;
 
-	
-	protected Long lastAllocatedVM = 0l;
-	protected static final long DURATION_BETWEEN_ADJUSTMENT = 1000000000L;
-	
-	public Controller( String cURI , String requestDispatcherURI , String admissionControllerManagementOutboundPortURI, String rddsdip ) throws Exception {
-		super(true, true );
-		this.cURI = cURI;
-		this.requestDispatcherDynamicStateDataOutboundPort = new RequestDispatcherDynamicStateDataOutboundPort( this ,
-				requestDispatcherURI );
-		this.addRequiredInterface(DataRequiredI.PullI.class) ;
-		this.addOfferedInterface(DataRequiredI.PushI.class);
-		this.addRequiredInterface(ControlledDataRequiredI.ControlledPullI.class);
-		this.addPort( this.requestDispatcherDynamicStateDataOutboundPort );
-		this.requestDispatcherDynamicStateDataOutboundPort.publishPort();
-		this.requestDispatcherDynamicStateDataOutboundPort.doConnection( rddsdip ,
-				DataConnector.class.getCanonicalName() );
+    protected Long              lastAllocatedVM             = 0l;
+    protected static final long DURATION_BETWEEN_ADJUSTMENT = 1000000000L;
 
-		this.addRequiredInterface(AdmissionControllerManagementI.class);
-		this.acmop = new AdmissionControllerManagementOutboundPort(admissionControllerManagementOutboundPortURI, this);
-		this.addPort(this.acmop);
-		this.acmop.publishPort();
-		
-		
-	}
+    public Controller( String cURI , String requestDispatcherURI , String admissionControllerManagementOutboundPortURI ,
+            String rddsdip ) throws Exception {
+        super( true , true );
+        this.cURI = cURI;
+        this.requestDispatcherDynamicStateDataOutboundPort = new RequestDispatcherDynamicStateDataOutboundPort( this ,
+                requestDispatcherURI );
+        this.addRequiredInterface( DataRequiredI.PullI.class );
+        this.addOfferedInterface( DataRequiredI.PushI.class );
+        this.addRequiredInterface( ControlledDataRequiredI.ControlledPullI.class );
+        this.addPort( this.requestDispatcherDynamicStateDataOutboundPort );
+        this.requestDispatcherDynamicStateDataOutboundPort.publishPort();
+        this.requestDispatcherDynamicStateDataOutboundPort.doConnection( rddsdip ,
+                DataConnector.class.getCanonicalName() );
 
-	public void startControlling() throws Exception {
+        this.addRequiredInterface( AdmissionControllerManagementI.class );
+        this.acmop = new AdmissionControllerManagementOutboundPort( admissionControllerManagementOutboundPortURI ,
+                this );
+        this.addPort( this.acmop );
+        this.acmop.publishPort();
 
-	    
-		this.pullingFuture = this.scheduleTaskAtFixedRate( new ComponentI.ComponentTask() {
+    }
 
-			@Override
-			public void run() {
-				try {
+    public void startControlling() throws Exception {
 
-					RequestDispatcherDynamicStateI rdds = getDynamicState();
-					print( "timestamp      : " + rdds.getTimeStamp() );
-					print( "timestamper id : " + rdds.getTimeStamperId() );
-					print( "request time average : " + rdds.getRequestProcessingAvg()+" ms" );
-					
-					if ( System.nanoTime() - lastAllocatedVM > DURATION_BETWEEN_ADJUSTMENT && rdds.getRequestProcessingAvg() > 2000  ) {
-					 acmop.allocateVM( rdds.getRequestDispatcherURI() );
-					 lastAllocatedVM = System.nanoTime();
-					}
+        this.pullingFuture = this.scheduleTaskAtFixedRate( new ComponentI.ComponentTask() {
 
-				}
-				catch ( Exception e ) {
-					e.printStackTrace();
-				}
-			}
-		} , 1l , 1l , TimeUnit.SECONDS );
-	}
+            @Override
+            public void run() {
+                try {
 
-	public RequestDispatcherDynamicStateI getDynamicState() throws Exception {
-		return ( RequestDispatcherDynamicStateI ) requestDispatcherDynamicStateDataOutboundPort.request();
-	}
+                    RequestDispatcherDynamicStateI rdds = getDynamicState();
+                    print( "timestamp      : " + rdds.getTimeStamp() );
+                    print( "timestamper id : " + rdds.getTimeStamperId() );
+                    print( "request time average : " + rdds.getRequestProcessingAvg() + " ms" );
 
-	private void print( String s ) {
-		this.logMessage( "[Controller] " + s );
-	}
+                    if ( System.nanoTime() - lastAllocatedVM > DURATION_BETWEEN_ADJUSTMENT
+                            && rdds.getRequestProcessingAvg() > 1000 ) {
+                        acmop.increaseFrequency();
+                        acmop.addCores( 2 );
+                        acmop.allocateVM( rdds.getRequestDispatcherURI() );
 
-	@Override
-	public void shutdown() throws ComponentShutdownException {
-		try {
-			if(this.acmop.connected())
-				this.acmop.doDisconnection();
-		}catch ( Exception e ) {
-			throw new ComponentShutdownException( e );
-		}
-		super.shutdown();
-	}
+                        lastAllocatedVM = System.nanoTime();
+                    }
+
+                }
+                catch ( Exception e ) {
+                    e.printStackTrace();
+                }
+            }
+        } , 1l , 1l , TimeUnit.SECONDS );
+    }
+
+    public RequestDispatcherDynamicStateI getDynamicState() throws Exception {
+        return ( RequestDispatcherDynamicStateI ) requestDispatcherDynamicStateDataOutboundPort.request();
+    }
+
+    private void print( String s ) {
+        this.logMessage( "[Controller] " + s );
+    }
+
+    @Override
+    public void shutdown() throws ComponentShutdownException {
+        try {
+            if ( this.acmop.connected() )
+                this.acmop.doDisconnection();
+        }
+        catch ( Exception e ) {
+            throw new ComponentShutdownException( e );
+        }
+        super.shutdown();
+    }
 }
