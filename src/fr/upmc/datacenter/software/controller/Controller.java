@@ -1,5 +1,7 @@
 package fr.upmc.datacenter.software.controller;
 
+import java.io.FileWriter;
+import java.io.IOException;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 
@@ -7,12 +9,9 @@ import fr.upmc.components.AbstractComponent;
 import fr.upmc.components.ComponentI;
 import fr.upmc.components.connectors.DataConnector;
 import fr.upmc.components.exceptions.ComponentShutdownException;
-import fr.upmc.components.interfaces.DataOfferedI;
 import fr.upmc.components.interfaces.DataRequiredI;
-import fr.upmc.datacenter.hardware.computers.Computer;
 import fr.upmc.datacenter.interfaces.ControlledDataRequiredI;
 import fr.upmc.datacenter.software.admissioncontroller.interfaces.AdmissionControllerManagementI;
-import fr.upmc.datacenter.software.admissioncontroller.ports.AdmissionControllerManagementInboundPort;
 import fr.upmc.datacenter.software.admissioncontroller.ports.AdmissionControllerManagementOutboundPort;
 import fr.upmc.datacenter.software.requestdispatcher.interfaces.RequestDispatcherDynamicStateI;
 import fr.upmc.datacenter.software.requestdispatcher.ports.RequestDispatcherDynamicStateDataOutboundPort;
@@ -27,6 +26,8 @@ public class Controller extends AbstractComponent {
 
     /** OutboundPort uses to communicate with the AdmissionController */
     protected AdmissionControllerManagementOutboundPort acmop;
+    protected final static String                       Filename  = "Courbe.txt";
+    public static int                                   nbMoyRecu = 0;
 
     protected Long              lastAllocatedVM             = 0l;
     protected static final long DURATION_BETWEEN_ADJUSTMENT = 1000000000L;
@@ -50,6 +51,8 @@ public class Controller extends AbstractComponent {
                 this );
         this.addPort( this.acmop );
         this.acmop.publishPort();
+        FileWriter f = new FileWriter( Filename , false );
+        f.close();
 
     }
 
@@ -65,14 +68,24 @@ public class Controller extends AbstractComponent {
                     print( "timestamp      : " + rdds.getTimeStamp() );
                     print( "timestamper id : " + rdds.getTimeStamperId() );
                     print( "request time average : " + rdds.getRequestProcessingAvg() + " ms" );
+                    if ( rdds.getRequestProcessingAvg() != 0 ) {
+                        try {
+                            FileWriter fw = new FileWriter( Filename , true );
+                            fw.write( nbMoyRecu + " " + rdds.getRequestProcessingAvg() + "\n" );
+                            nbMoyRecu++;
+                            fw.close();
+                        }
+                        catch ( IOException exception ) {
+                            System.out.println( "Erreur lors de l'ecriture : " + exception.getMessage() );
+                        }
+                    }
 
                     if ( System.nanoTime() - lastAllocatedVM > DURATION_BETWEEN_ADJUSTMENT
-                            && rdds.getRequestProcessingAvg() > 1000 ) {
+                            && rdds.getRequestProcessingAvg() > 2000 ) {
                         acmop.increaseFrequency();
-                        acmop.addCores( 2 );
                         acmop.allocateVM( rdds.getRequestDispatcherURI() );
-
                         lastAllocatedVM = System.nanoTime();
+                        acmop.addCores( 2 );
                     }
 
                 }
@@ -102,4 +115,5 @@ public class Controller extends AbstractComponent {
         }
         super.shutdown();
     }
+
 }
