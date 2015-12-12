@@ -12,6 +12,7 @@ import java.util.Map;
 import javax.naming.ldap.StartTlsRequest;
 
 import fr.upmc.components.AbstractComponent;
+import fr.upmc.components.cvm.AbstractCVM;
 import fr.upmc.components.exceptions.ComponentShutdownException;
 import fr.upmc.datacenter.hardware.processors.ports.ProcessorDynamicStateDataInboundPort;
 import fr.upmc.datacenter.interfaces.ControlledDataOfferedI;
@@ -27,8 +28,10 @@ import fr.upmc.datacenter.software.ports.RequestSubmissionInboundPort;
 import fr.upmc.datacenter.software.ports.RequestSubmissionOutboundPort;
 import fr.upmc.datacenter.software.requestdispatcher.interfaces.RequestDispatcherDynamicStateI;
 import fr.upmc.datacenter.software.requestdispatcher.interfaces.RequestDispatcherManagementI;
+import fr.upmc.datacenter.software.requestdispatcher.interfaces.RequestDispatcherVMEndingNotificationI;
 import fr.upmc.datacenter.software.requestdispatcher.ports.RequestDispatcherDynamicStateDataInboundPort;
 import fr.upmc.datacenter.software.requestdispatcher.ports.RequestDispatcherManagementInboundPort;
+import fr.upmc.datacenter.software.requestdispatcher.ports.RequestDispatcherVMEndingNotificationOutboundPort;
 
 /**
  * 
@@ -47,13 +50,18 @@ implements RequestSubmissionHandlerI, RequestNotificationHandlerI, RequestDispat
 	/** RequestSubmissionInboundPort */
 	protected RequestSubmissionInboundPort rdsip;
 
+	/** InboundPort uses to get the notification task end (by VM) */
+	protected RequestNotificationInboundPort  rnip;
+	
 	/** List of OutboundPort to send requests to the connected ApplicationVM */
 	protected List<RequestSubmissionOutboundPort> rdsopList;
 
-	protected RequestNotificationInboundPort  rdnip;
-	/** Outbound port used by the RD to notify tasks' termination to the generator. */
-	protected RequestNotificationOutboundPort rdnop;
+	/** Outbound port used by the RD to notify tasks' end to the generator. */
+	protected RequestNotificationOutboundPort rnop;
 
+	/** Outbound port uses to notify that a VM has finished all his task and is waiting to be shutdown */
+	protected RequestDispatcherVMEndingNotificationOutboundPort rdvenop;
+	
 	/** Variable to know the less recent ApplicationVM **/
 	protected int current = 0;
 
@@ -83,18 +91,20 @@ implements RequestSubmissionHandlerI, RequestNotificationHandlerI, RequestDispat
 	/** map associate request URI with the index of the applicationVM */
 	protected Map<String , RequestSubmissionOutboundPort> requestApplicationVM;
 
+	/** List of RequestSubmissionOubboundPort waiting for termination */
+	protected List<RequestSubmissionOutboundPort> rsopTerminations;
 	/**
 	 * Create a RequestDispatcher
 	 * 
 	 * @param rdURI URI of the RequestDispatcher
 	 * @param rdsip URI of the RequestSubmissionInboundPort
 	 * @param rdsop URI of the RequestSubmissionOutboundPort
-	 * @param rdnop URI of the RequestNotificationOutboundPort
-	 * @param rdnip URI of the RequestNotificationInboundPort
+	 * @param rnop URI of the RequestNotificationOutboundPort
+	 * @param rnip URI of the RequestNotificationInboundPort
 	 * @throws Exception
 	 */
-	public RequestDispatcher( String rdURI , String rdsip , String rdmip , List<String> rdsop , String rdnop ,
-			String rdnip , String requestDispatcherDynamicStateDataInboundPortURI ) throws Exception {
+	public RequestDispatcher( String rdURI , String rdsip , String rdmip , List<String> rdsop ,
+			String rdvenop , String rnop , String rnip , String requestDispatcherDynamicStateDataInboundPortURI ) throws Exception {
 		super( 3 , 3 );
 
 		// Preconditions
@@ -103,8 +113,8 @@ implements RequestSubmissionHandlerI, RequestNotificationHandlerI, RequestDispat
 		assert rdsip != null;
 		assert rdsop != null;
 
-		assert rdnip != null;
-		assert rdnop != null;
+		assert rnip != null;
+		assert rnop != null;
 
 		this.rdURI = rdURI;
 
@@ -117,9 +127,9 @@ implements RequestSubmissionHandlerI, RequestNotificationHandlerI, RequestDispat
 		this.rdsip.publishPort();
 
 		this.addOfferedInterface( RequestNotificationI.class );
-		this.rdnip = new RequestNotificationInboundPort( rdnip , this );
-		this.addPort( this.rdnip );
-		this.rdnip.publishPort();
+		this.rnip = new RequestNotificationInboundPort( rnip , this );
+		this.addPort( this.rnip );
+		this.rnip.publishPort();
 
 		this.addOfferedInterface( RequestDispatcherManagementI.class );
 		this.rdmip = new RequestDispatcherManagementInboundPort( rdmip , this );
@@ -134,9 +144,14 @@ implements RequestSubmissionHandlerI, RequestNotificationHandlerI, RequestDispat
 		}
 
 		this.addRequiredInterface( RequestNotificationI.class );
-		this.rdnop = new RequestNotificationOutboundPort( rdnop , this );
-		this.addPort( this.rdnop );
-		this.rdnop.publishPort();
+		this.rnop = new RequestNotificationOutboundPort( rnop , this );
+		this.addPort( this.rnop );
+		this.rnop.publishPort();
+		
+		this.addRequiredInterface(RequestDispatcherVMEndingNotificationI.class);
+		this.rdvenop = new RequestDispatcherVMEndingNotificationOutboundPort(rdvenop, this);
+		this.addPort(this.rdvenop);
+		this.rdvenop.publishPort();
 
 		this.addOfferedInterface( ControlledDataOfferedI.ControlledPullI.class );
 		this.requestDispatcherDynamicStateDataInboundPort = new RequestDispatcherDynamicStateDataInboundPort(
@@ -148,7 +163,7 @@ implements RequestSubmissionHandlerI, RequestNotificationHandlerI, RequestDispat
 		requestEndTimes = new ArrayList<>();
 		nbRequestInQueueOrInProgress = new HashMap<>();
 		requestApplicationVM = new HashMap<>();
-
+		rsopTerminations = new ArrayList<>();
 		nbVmConnected = rdsop.size();
 
 		// initialize nbRequestInQueueOrInProgress
@@ -196,7 +211,7 @@ implements RequestSubmissionHandlerI, RequestNotificationHandlerI, RequestDispat
 	public void acceptRequestTerminationNotification( RequestI r ) throws Exception {
 		assert r != null;
 		print( "Request dispatcher " + this.rdURI + "  notified the request " + r.getRequestURI() + " has ended." );
-		this.rdnop.notifyRequestTermination( r );
+		this.rnop.notifyRequestTermination( r );
 
 		RequestSubmissionOutboundPort rdsop = requestApplicationVM.get( r.getRequestURI() );
 		nbRequestInQueueOrInProgress.put( rdsop , nbRequestInQueueOrInProgress.get( rdsop ) - 1 );
@@ -244,6 +259,7 @@ implements RequestSubmissionHandlerI, RequestNotificationHandlerI, RequestDispat
 		}
 
 		long avg = nbRequest == 0 ? 0 : total / nbRequest;
+		print("nbRequest : " + nbRequest);
 		return new RequestDispatcherDynamicState( this.rdURI , avg / 1000000 );
 
 	}
@@ -253,8 +269,8 @@ implements RequestSubmissionHandlerI, RequestNotificationHandlerI, RequestDispat
 	 */
 	public void shutdown() throws ComponentShutdownException {
 		try {
-			if ( this.rdnop.connected() ) {
-				this.rdnop.doDisconnection();
+			if ( this.rnop.connected() ) {
+				this.rnop.doDisconnection();
 			}
 			for ( int i = 0 ; i < rdsopList.size() ; i++ )
 				if ( this.rdsopList.get( i ).connected() ) {
@@ -298,7 +314,7 @@ implements RequestSubmissionHandlerI, RequestNotificationHandlerI, RequestDispat
 		// update
 		nbRequestInQueueOrInProgress.put( r , 0 );
 
-		return rdnip.getPortURI();
+		return rnip.getPortURI();
 	}
 
 	private void print( String s ) {

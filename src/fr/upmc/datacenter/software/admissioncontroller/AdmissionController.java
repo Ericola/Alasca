@@ -30,7 +30,10 @@ import fr.upmc.datacenter.software.ports.RequestNotificationOutboundPort;
 import fr.upmc.datacenter.software.ports.RequestSubmissionOutboundPort;
 import fr.upmc.datacenter.software.requestdispatcher.RequestDispatcher;
 import fr.upmc.datacenter.software.requestdispatcher.connectors.RequestDispatcherManagementConnector;
+import fr.upmc.datacenter.software.requestdispatcher.interfaces.RequestDispatcherVMEndingNotificationI;
 import fr.upmc.datacenter.software.requestdispatcher.ports.RequestDispatcherManagementOutboundPort;
+import fr.upmc.datacenter.software.requestdispatcher.ports.RequestDispatcherVMEndingNotificationInboundPort;
+import fr.upmc.datacenter.software.requestdispatcher.ports.RequestDispatcherVMEndingNotificationOutboundPort;
 import fr.upmc.datacenterclient.applicationprovider.interfaces.ApplicationNotificationI;
 import fr.upmc.datacenterclient.applicationprovider.interfaces.ApplicationSubmissionI;
 import fr.upmc.datacenterclient.applicationprovider.ports.ApplicationNotificationInboundPort;
@@ -53,7 +56,7 @@ import fr.upmc.datacenterclient.applicationprovider.ports.ApplicationSubmissionI
  * end of the requestgenerator creation
  */
 public class AdmissionController extends AbstractComponent
-        implements AdmissionControllerManagementI {
+        implements AdmissionControllerManagementI,  RequestDispatcherVMEndingNotificationI{
 
     public final static int NB_CORE = 2;
 
@@ -67,7 +70,11 @@ public class AdmissionController extends AbstractComponent
      * The inbound port used to be notified when the requestgenerator is created (by the AP)
      */
     protected ApplicationNotificationInboundPort anip;
-
+    /**
+     * The inbound port used to be notified the end of a VM (by RD)
+     */
+    protected RequestDispatcherVMEndingNotificationInboundPort rdvenip;
+    
     /** The outbound port used to allocate core to the vm */
     protected List<ApplicationVMManagementOutboundPort> avmop;
 
@@ -90,11 +97,12 @@ public class AdmissionController extends AbstractComponent
     /** Map between RequestDispatcher URIs and the outbound ports to call them. */
     protected Map<String , RequestDispatcherManagementOutboundPort> rdmopList;
 
+    protected RequestDispatcherVMEndingNotificationInboundPort rdnop;
     /**
      * Map between RequestDispatcher URIs and the inbound ports through which request termination
      * notifications are received from each applicationVM.
      */
-    protected Map<String , RequestNotificationInboundPort> rdnipList;
+    protected Map<String , RequestNotificationInboundPort> rnipList;
 
     /** Inbound port used by the controlller to manage the AdmissionController */
     protected AdmissionControllerManagementInboundPort acmip;
@@ -112,7 +120,7 @@ public class AdmissionController extends AbstractComponent
      * @param computerURI URI of computer(s)
      * @throws Exception
      */
-    public AdmissionController( String acURI , String applicationSubmissionInboundPortURI ,
+    public AdmissionController( String acURI , String applicationSubmissionInboundPortURI , String requestDispatcherVMEndingNotificationInboundPortURI,
             String applicationNotificationInboundPortURI , String AdmissionControllerManagementInboundPortURI ,
             String computerServiceOutboundPortURI[] , String ComputerDynamicStateDataOutboundPort[] ,
             String computerURI[] , int[] nbAvailableCoresPerComputer ) throws Exception {
@@ -132,7 +140,12 @@ public class AdmissionController extends AbstractComponent
         this.acmip = new AdmissionControllerManagementInboundPort( AdmissionControllerManagementInboundPortURI , this );
         this.addPort( acmip );
         this.acmip.publishPort();
-
+        
+        this.addOfferedInterface(RequestDispatcherVMEndingNotificationI.class);
+        this.rdvenip = new RequestDispatcherVMEndingNotificationInboundPort(requestDispatcherVMEndingNotificationInboundPortURI, this);
+        this.addPort(rdvenip);
+        this.rdvenip.publishPort();
+        
         this.cdsop = new ComputerDynamicStateDataOutboundPort[computerServiceOutboundPortURI.length];
         this.csop = new ComputerServicesOutboundPort[computerServiceOutboundPortURI.length];
         this.computerURI = computerURI;
@@ -154,7 +167,7 @@ public class AdmissionController extends AbstractComponent
         rnopList = new HashMap<>();
         avmop = new ArrayList<>();
         rdmopList = new HashMap<>();
-        rdnipList = new HashMap<>();
+        rnipList = new HashMap<>();
     }
 
     
@@ -215,7 +228,7 @@ public class AdmissionController extends AbstractComponent
             List<String> rdsop = new ArrayList<>();
             rdsop.add( createURI( "rdsop" ) );
             RequestDispatcher rd = new RequestDispatcher( createURI( "rd" ) , createURI( "rdsip" ) ,
-                    createURI( "rdmip" ) , rdsop , createURI( "rdnop" ) , createURI( "rdnip" ) ,
+                    createURI( "rdmip" ) , rdsop , createURI( "rdvenop" ), createURI( "rdnop" ) , createURI( "rdnip" ) ,
                     createURI( "rddsdip" ) );
             rd.start();
             String rdnop = createURI( "rdnop" );
@@ -229,6 +242,10 @@ public class AdmissionController extends AbstractComponent
                     RequestDispatcherManagementConnector.class.getCanonicalName() );
             AbstractCVM.theCVM.addDeployedComponent( rd );
 
+            //Connect RD with AC
+            RequestDispatcherVMEndingNotificationOutboundPort rdvenop = (RequestDispatcherVMEndingNotificationOutboundPort) rd.findPortFromURI(createURI( "rdvenop" ));
+            rdvenop.doConnection(rdvenip.getPortURI(), RequestDispatcherManagementConnector.class.getCanonicalName());
+            
             // Connect RD with VM
             RequestSubmissionOutboundPort rsop = ( RequestSubmissionOutboundPort ) rd.findPortFromURI( rdsop.get( 0 ) );
             rsop.doConnection( createURI( "rsip" ) , RequestSubmissionConnector.class.getCanonicalName() );
@@ -344,6 +361,13 @@ public class AdmissionController extends AbstractComponent
     public void removeVM( String RequestDispatcherURI ) throws Exception {
         rdmopList.get( RequestDispatcherURI ).disconnectVm();
     }
+    
+    @Override
+	public void notifyAdmissionControllerVMEnd(
+			String RequestSubmissionInboundPortURI) throws Exception {
+		// TODO Auto-generated method stub
+		
+	}
 
     @Override
     public void shutdown() throws ComponentShutdownException {
