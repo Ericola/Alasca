@@ -16,9 +16,9 @@ public class RequestDispatcherVMEndingNotificationOutboundPort extends AbstractO
     }
 
 	@Override
-	public void notifyAdmissionControllerVMEnd(
+	public void notifyAdmissionControllerVMFinishRequest(
 			String RequestSubmissionInboundPortURI) throws Exception {
-		( ( RequestDispatcherVMEndingNotificationI ) this.connector ).notifyAdmissionControllerVMEnd(RequestSubmissionInboundPortURI);
+		( ( RequestDispatcherVMEndingNotificationI ) this.connector ).notifyAdmissionControllerVMFinishRequest(RequestSubmissionInboundPortURI);
 		
 	}
 }

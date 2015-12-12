@@ -52,7 +52,7 @@ implements RequestSubmissionHandlerI, RequestNotificationHandlerI, RequestDispat
 
 	/** InboundPort uses to get the notification task end (by VM) */
 	protected RequestNotificationInboundPort  rnip;
-	
+
 	/** List of OutboundPort to send requests to the connected ApplicationVM */
 	protected List<RequestSubmissionOutboundPort> rdsopList;
 
@@ -61,7 +61,7 @@ implements RequestSubmissionHandlerI, RequestNotificationHandlerI, RequestDispat
 
 	/** Outbound port uses to notify that a VM has finished all his task and is waiting to be shutdown */
 	protected RequestDispatcherVMEndingNotificationOutboundPort rdvenop;
-	
+
 	/** Variable to know the less recent ApplicationVM **/
 	protected int current = 0;
 
@@ -91,8 +91,8 @@ implements RequestSubmissionHandlerI, RequestNotificationHandlerI, RequestDispat
 	/** map associate request URI with the index of the applicationVM */
 	protected Map<String , RequestSubmissionOutboundPort> requestApplicationVM;
 
-	/** List of RequestSubmissionOubboundPort waiting for termination */
-	protected List<RequestSubmissionOutboundPort> rsopTerminations;
+	/** List of RequestSubmissionOubboundPort waiting for ending */
+	protected List<RequestSubmissionOutboundPort> rsopWaitingRequestFinishList;
 	/**
 	 * Create a RequestDispatcher
 	 * 
@@ -147,7 +147,7 @@ implements RequestSubmissionHandlerI, RequestNotificationHandlerI, RequestDispat
 		this.rnop = new RequestNotificationOutboundPort( rnop , this );
 		this.addPort( this.rnop );
 		this.rnop.publishPort();
-		
+
 		this.addRequiredInterface(RequestDispatcherVMEndingNotificationI.class);
 		this.rdvenop = new RequestDispatcherVMEndingNotificationOutboundPort(rdvenop, this);
 		this.addPort(this.rdvenop);
@@ -163,7 +163,7 @@ implements RequestSubmissionHandlerI, RequestNotificationHandlerI, RequestDispat
 		requestEndTimes = new ArrayList<>();
 		nbRequestInQueueOrInProgress = new HashMap<>();
 		requestApplicationVM = new HashMap<>();
-		rsopTerminations = new ArrayList<>();
+		rsopWaitingRequestFinishList = new ArrayList<>();
 		nbVmConnected = rdsop.size();
 
 		// initialize nbRequestInQueueOrInProgress
@@ -191,7 +191,7 @@ implements RequestSubmissionHandlerI, RequestNotificationHandlerI, RequestDispat
 		RequestSubmissionOutboundPort rdsop = this.rdsopList.get( current );
 		acceptRequest( r , rdsop );
 		rdsop.submitRequestAndNotify( r );
-	
+
 	}
 
 	private void acceptRequest( RequestI r , RequestSubmissionOutboundPort rdsop ) throws Exception {
@@ -219,6 +219,13 @@ implements RequestSubmissionHandlerI, RequestNotificationHandlerI, RequestDispat
 		requestEndTimes.add( new RequestTime( r.getRequestURI() , System.nanoTime() ) );
 
 		updateRequestStates();
+		if(rsopWaitingRequestFinishList.contains(rdsop) && nbRequestInQueueOrInProgress.get(rdsop) == 0){
+			nbRequestInQueueOrInProgress.remove(rdsop);
+			rsopWaitingRequestFinishList.remove(rdsop);
+			rdsop.doDisconnection();
+			print("VM has finished all its requests. Sending notification to ApplicationController...");
+			rdvenop.notifyAdmissionControllerVMFinishRequest(rdsop.getServerPortURI());
+		}
 	}
 
 	// public RequestDispatcherDynamicStateI getRequestProcessingTimeAvg() throws Exception {
@@ -326,7 +333,9 @@ implements RequestSubmissionHandlerI, RequestNotificationHandlerI, RequestDispat
 	 */
 	@Override
 	public void disconnectVm() throws Exception {
-
+		RequestSubmissionOutboundPort rsop= this.rdsopList.remove(0);
+		rsopWaitingRequestFinishList.add(rsop);
+		print("Waiting for VM terminating all its requests");
 	}
 
 	private class RequestTime {

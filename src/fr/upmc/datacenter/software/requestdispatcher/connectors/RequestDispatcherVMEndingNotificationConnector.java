@@ -7,9 +7,9 @@ public class RequestDispatcherVMEndingNotificationConnector extends AbstractConn
 	implements RequestDispatcherVMEndingNotificationI {
 
 	@Override
-	public void notifyAdmissionControllerVMEnd(
+	public void notifyAdmissionControllerVMFinishRequest(
 			String RequestSubmissionInboundPortURI) throws Exception {
-		( (RequestDispatcherVMEndingNotificationI) this.offering).notifyAdmissionControllerVMEnd(RequestSubmissionInboundPortURI);
+		( (RequestDispatcherVMEndingNotificationI) this.offering).notifyAdmissionControllerVMFinishRequest(RequestSubmissionInboundPortURI);
 	}
 	
 	

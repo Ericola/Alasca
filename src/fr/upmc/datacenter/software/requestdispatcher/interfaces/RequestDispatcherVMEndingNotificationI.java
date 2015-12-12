@@ -5,7 +5,7 @@ import fr.upmc.components.interfaces.RequiredI;
 
 public interface RequestDispatcherVMEndingNotificationI extends OfferedI, RequiredI{
 	
-	public void notifyAdmissionControllerVMEnd(String RequestSubmissionInboundPortURI) throws Exception;
+	public void notifyAdmissionControllerVMFinishRequest(String RequestSubmissionInboundPortURI) throws Exception;
 
 }
 

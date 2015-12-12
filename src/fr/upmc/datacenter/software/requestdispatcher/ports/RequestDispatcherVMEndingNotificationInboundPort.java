@@ -24,7 +24,7 @@ implements RequestDispatcherVMEndingNotificationI{
     }
 
 	@Override
-	public void notifyAdmissionControllerVMEnd(
+	public void notifyAdmissionControllerVMFinishRequest(
 		 final String RequestSubmissionInboundPortURI) throws Exception {
 		
 		final AdmissionController arh = ( AdmissionController ) this.owner;
@@ -33,7 +33,7 @@ implements RequestDispatcherVMEndingNotificationI{
 				new ComponentI.ComponentService<Void>() {
 					@Override
 					public Void call() throws Exception {
-						arh.notifyAdmissionControllerVMEnd(RequestSubmissionInboundPortURI);
+						arh.notifyAdmissionControllerVMFinishRequest(RequestSubmissionInboundPortURI);
 						return null ;
 					}
 				}) ;

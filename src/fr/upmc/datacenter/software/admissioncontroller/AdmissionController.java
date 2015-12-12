@@ -27,6 +27,7 @@ import fr.upmc.datacenter.software.connectors.RequestSubmissionConnector;
 import fr.upmc.datacenter.software.controller.Controller;
 import fr.upmc.datacenter.software.ports.RequestNotificationInboundPort;
 import fr.upmc.datacenter.software.ports.RequestNotificationOutboundPort;
+import fr.upmc.datacenter.software.ports.RequestSubmissionInboundPort;
 import fr.upmc.datacenter.software.ports.RequestSubmissionOutboundPort;
 import fr.upmc.datacenter.software.requestdispatcher.RequestDispatcher;
 import fr.upmc.datacenter.software.requestdispatcher.connectors.RequestDispatcherManagementConnector;
@@ -97,12 +98,10 @@ public class AdmissionController extends AbstractComponent
     /** Map between RequestDispatcher URIs and the outbound ports to call them. */
     protected Map<String , RequestDispatcherManagementOutboundPort> rdmopList;
 
-    protected RequestDispatcherVMEndingNotificationInboundPort rdnop;
     /**
-     * Map between RequestDispatcher URIs and the inbound ports through which request termination
-     * notifications are received from each applicationVM.
+     * Map between RequestSubmissionInboundPort URIs and the inboundPort
      */
-    protected Map<String , RequestNotificationInboundPort> rnipList;
+    protected Map<String , RequestSubmissionInboundPort> rsipList;
 
     /** Inbound port used by the controlller to manage the AdmissionController */
     protected AdmissionControllerManagementInboundPort acmip;
@@ -167,7 +166,7 @@ public class AdmissionController extends AbstractComponent
         rnopList = new HashMap<>();
         avmop = new ArrayList<>();
         rdmopList = new HashMap<>();
-        rnipList = new HashMap<>();
+        rsipList = new HashMap<>();
     }
 
     
@@ -218,6 +217,7 @@ public class AdmissionController extends AbstractComponent
             avmop.get( cpt ).doConnection( createURI( "avmip" ) ,
                     ApplicationVMManagementConnector.class.getCanonicalName() );
             vm.start();
+            rsipList.put(createURI( "rsip" ), (RequestSubmissionInboundPort) vm.findPortFromURI(createURI( "rsip" )));
            
             // AllocateCore des computers aux VMs
             this.avmop.get( cpt ).allocateCores( ac );
@@ -342,6 +342,7 @@ public class AdmissionController extends AbstractComponent
             print( ac.length + " cores allocated." );
             String RequestNotificationInboundport = this.rdmopList.get( RequestDispatcherURI )
                     .connectVm( createVMURI( "rsip" ) );
+            rsipList.put(createVMURI( "rsip" ), (RequestSubmissionInboundPort) vm.findPortFromURI(createVMURI( "rsip" )));
             // Connected RequestDispatcher -- VM
             RequestNotificationOutboundPort rnop = ( RequestNotificationOutboundPort ) vm
                     .findPortFromURI( createVMURI( "rnop" ) );
@@ -363,10 +364,10 @@ public class AdmissionController extends AbstractComponent
     }
     
     @Override
-	public void notifyAdmissionControllerVMEnd(
+	public void notifyAdmissionControllerVMFinishRequest(
 			String RequestSubmissionInboundPortURI) throws Exception {
-		// TODO Auto-generated method stub
-		
+		print("Shutting down VM...");
+		rsipList.get(RequestSubmissionInboundPortURI).getOwner().shutdown();	
 	}
 
     @Override
