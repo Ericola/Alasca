@@ -31,6 +31,7 @@ import fr.upmc.datacenter.software.ports.RequestSubmissionInboundPort;
 import fr.upmc.datacenter.software.ports.RequestSubmissionOutboundPort;
 import fr.upmc.datacenter.software.requestdispatcher.RequestDispatcher;
 import fr.upmc.datacenter.software.requestdispatcher.connectors.RequestDispatcherManagementConnector;
+import fr.upmc.datacenter.software.requestdispatcher.connectors.RequestDispatcherVMEndingNotificationConnector;
 import fr.upmc.datacenter.software.requestdispatcher.interfaces.RequestDispatcherVMEndingNotificationI;
 import fr.upmc.datacenter.software.requestdispatcher.ports.RequestDispatcherManagementOutboundPort;
 import fr.upmc.datacenter.software.requestdispatcher.ports.RequestDispatcherVMEndingNotificationInboundPort;
@@ -244,7 +245,7 @@ public class AdmissionController extends AbstractComponent
 
             //Connect RD with AC
             RequestDispatcherVMEndingNotificationOutboundPort rdvenop = (RequestDispatcherVMEndingNotificationOutboundPort) rd.findPortFromURI(createURI( "rdvenop" ));
-            rdvenop.doConnection(rdvenip.getPortURI(), RequestDispatcherManagementConnector.class.getCanonicalName());
+            rdvenop.doConnection(rdvenip.getPortURI(), RequestDispatcherVMEndingNotificationConnector.class.getCanonicalName());
             
             // Connect RD with VM
             RequestSubmissionOutboundPort rsop = ( RequestSubmissionOutboundPort ) rd.findPortFromURI( rdsop.get( 0 ) );

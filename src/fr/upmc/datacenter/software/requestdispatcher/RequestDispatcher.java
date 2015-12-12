@@ -105,7 +105,7 @@ implements RequestSubmissionHandlerI, RequestNotificationHandlerI, RequestDispat
 	 */
 	public RequestDispatcher( String rdURI , String rdsip , String rdmip , List<String> rdsop ,
 			String rdvenop , String rnop , String rnip , String requestDispatcherDynamicStateDataInboundPortURI ) throws Exception {
-		super( 3 , 3 );
+		super( 2 , 2 );
 
 		// Preconditions
 		assert rdURI != null;
@@ -266,7 +266,6 @@ implements RequestSubmissionHandlerI, RequestNotificationHandlerI, RequestDispat
 		}
 
 		long avg = nbRequest == 0 ? 0 : total / nbRequest;
-		print("nbRequest : " + nbRequest);
 		return new RequestDispatcherDynamicState( this.rdURI , avg / 1000000 );
 
 	}

@@ -31,7 +31,8 @@ public class Controller extends AbstractComponent {
 
 	protected Long lastAllocatedVM = 0l;
 	protected static final long DURATION_BETWEEN_ADJUSTMENT = 1000000000L;
-
+	boolean x = false;
+	
 	public Controller( String cURI , String requestDispatcherURI , String admissionControllerManagementOutboundPortURI, String rddsdip ) throws Exception {
 		super(true, true );
 		this.cURI = cURI;
@@ -81,9 +82,11 @@ public class Controller extends AbstractComponent {
 						}
 					}
 
-					if ( System.nanoTime() - lastAllocatedVM > DURATION_BETWEEN_ADJUSTMENT && rdds.getRequestProcessingAvg() > 2000  ) {
+					if ( System.nanoTime() - lastAllocatedVM > DURATION_BETWEEN_ADJUSTMENT && rdds.getRequestProcessingAvg() > 2000 && !x  ) {
 						acmop.allocateVM( rdds.getRequestDispatcherURI() );
 						lastAllocatedVM = System.nanoTime();
+						acmop.removeVM(rdds.getRequestDispatcherURI());
+						x=true;
 					}
 
 				}
