@@ -82,10 +82,10 @@ public class Controller extends AbstractComponent {
 
                     if ( System.nanoTime() - lastAllocatedVM > DURATION_BETWEEN_ADJUSTMENT
                             && rdds.getRequestProcessingAvg() > 2000 ) {
-                        acmop.increaseFrequency();
-                        acmop.allocateVM( rdds.getRequestDispatcherURI() );
+//                        acmop.increaseFrequency();
+//                        acmop.allocateVM( rdds.getRequestDispatcherURI() );
                         lastAllocatedVM = System.nanoTime();
-                        acmop.addCores( 2 );
+//                        acmop.addCores( 2 );
                     }
 
                 }
