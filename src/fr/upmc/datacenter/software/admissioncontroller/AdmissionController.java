@@ -216,7 +216,7 @@ public class AdmissionController extends AbstractComponent
 
     private Integer getAvailableCores( int nbCores ) {
         int max = 0;
-        Integer index = null;
+        Integer index = -1;
         for ( int i = 0 ; i < nbAvailablesCores.length ; i++ ) {
             if ( nbAvailablesCores[i] == nbCores ) {
                 return i;
@@ -372,9 +372,8 @@ public class AdmissionController extends AbstractComponent
         // Verifier que des resources sont disponibles
         print( "Looking for available resources..." );
         Integer index = getAvailableCores( NB_CORE );
-
         AllocatedCore[] ac;
-        if ( index != null ) {
+        if ( index != -1 ) {
             ac = this.csop[index].allocateCores( NB_CORE );
             nbAvailablesCores[index] = nbAvailablesCores[index] - ac.length;
 
@@ -411,7 +410,7 @@ public class AdmissionController extends AbstractComponent
             print( "VM Allocated!" );
         }
         else {
-            print( "Can not allocate VM (no Core Available)" );
+            print( "Could not allocate VM (no Core Available)" );
         }
     }
 
@@ -472,8 +471,9 @@ public class AdmissionController extends AbstractComponent
 
         ok = ( ( nbAllocated = csop[currentCSOP].allocateCores( nbCores ).length ) > 0 );
         currentCSOP = ( currentCSOP + 1 ) % csop.length;
+        nbAvailablesCores[currentCSOP] = nbAvailablesCores[currentCSOP] - nbAllocated;
         print( nbAllocated + " cores allocated on the computer " + currentCSOP );
-
+        
         return ok;
     }
 
