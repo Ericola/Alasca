@@ -79,26 +79,20 @@ public class TestCVM2AP extends AbstractCVM {
 
         String csop[] = new String[NB_COMPUTER];
         String computer[] = new String[NB_COMPUTER];
-        String cdsop[] = new String[NB_COMPUTER];
         for ( int i = 0 ; i < NB_COMPUTER ; ++i ){
-            csop[i] = "csop" + i;
             computer[i] = "computer" + i;
-            cdsop[i] = "cdsdop" + i;
         }
         final int[] nbAvailableCoresPerComputer = new int[NB_COMPUTER];
         for ( int i = 0 ; i < NB_COMPUTER ; ++i )     
             nbAvailableCoresPerComputer[i] = numberOfProcessors * numberOfCores; 
 
         //TODO pmipURIs
-        AdmissionController ac = new AdmissionController( "ac" , "asip" , "rdvenip", "anip" , "acmip", csop, cdsop, computer, nbAvailableCoresPerComputer, null );
+        AdmissionController ac = new AdmissionController( "ac" , "asip" , "rdvenip", "anip" , "acmip", csop, computer, nbAvailableCoresPerComputer, null );
 
         this.csop = new ComputerServicesOutboundPort[NB_COMPUTER];
-        this.cdsdop = new ComputerDynamicStateDataOutboundPort[NB_COMPUTER];
         for ( int i = 0 ; i < NB_COMPUTER ; ++i ) {
             this.csop[i] = ( ComputerServicesOutboundPort ) ac.findPortFromURI( "csop" + i );
             this.csop[i].doConnection( "csip" + i , ComputerServicesConnector.class.getCanonicalName() );
-            this.cdsdop[i] = ( ComputerDynamicStateDataOutboundPort ) ac.findPortFromURI( cdsop[i] );
-            this.cdsdop[i].doConnection( "cdsdip" + i , ControlledDataConnector.class.getCanonicalName() );
         }
 
         ac.toggleTracing();
