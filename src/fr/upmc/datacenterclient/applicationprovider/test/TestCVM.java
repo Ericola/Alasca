@@ -6,17 +6,14 @@ import java.util.Map;
 import java.util.Set;
 
 import fr.upmc.components.AbstractComponent;
-import fr.upmc.components.connectors.DataConnector;
 import fr.upmc.components.cvm.AbstractCVM;
 import fr.upmc.datacenter.connectors.ControlledDataConnector;
 import fr.upmc.datacenter.hardware.computers.Computer;
 import fr.upmc.datacenter.hardware.computers.connectors.ComputerServicesConnector;
 import fr.upmc.datacenter.hardware.computers.ports.ComputerDynamicStateDataOutboundPort;
 import fr.upmc.datacenter.hardware.computers.ports.ComputerServicesOutboundPort;
-import fr.upmc.datacenter.hardware.computers.ports.ComputerStaticStateDataOutboundPort;
 import fr.upmc.datacenter.hardware.processors.Processor;
 import fr.upmc.datacenter.hardware.processors.Processor.ProcessorPortTypes;
-import fr.upmc.datacenter.hardware.tests.ComputerMonitor;
 import fr.upmc.datacenter.software.admissioncontroller.AdmissionController;
 import fr.upmc.datacenter.software.requestdispatcher.ports.RequestDispatcherManagementOutboundPort;
 import fr.upmc.datacenterclient.applicationprovider.ApplicationProvider;
@@ -28,11 +25,10 @@ import fr.upmc.datacenterclient.applicationprovider.ports.ApplicationProviderMan
 import fr.upmc.datacenterclient.applicationprovider.ports.ApplicationSubmissionOutboundPort;
 
 /**
- * This runs on a single JVM :
- * - 1 computers with 2 processors of 2 cores,
- * - 1 admission controller that create a requestdispatcher and an applicationVM 
- * - 1 applications provider which send application to the admission controller and after getting the permission
- * creates a requestGenerator and connects it to the requestdispatcher of the admission controller
+ * This runs on a single JVM : - 1 computers with 2 processors of 2 cores, - 1 admission controller
+ * that create a requestdispatcher and an applicationVM - 1 applications provider which send
+ * application to the admission controller and after getting the permission creates a
+ * requestGenerator and connects it to the requestdispatcher of the admission controller
  */
 public class TestCVM extends AbstractCVM {
 
@@ -42,7 +38,7 @@ public class TestCVM extends AbstractCVM {
     protected ApplicationNotificationOutboundPort       anop;
     protected ApplicationProvider                       ap;
     protected ApplicationProviderManagementOutboundPort apmop;
-    protected RequestDispatcherManagementOutboundPort rdmop;
+    protected RequestDispatcherManagementOutboundPort   rdmop;
 
     @Override
     public void deploy() throws Exception {
@@ -51,7 +47,7 @@ public class TestCVM extends AbstractCVM {
         // each with 2 cores.
         // --------------------------------------------------------------------
         String computerURI = "computer0";
-        int numberOfProcessors = 4;
+        int numberOfProcessors = 2;
         int numberOfCores = 20;
         Set<Integer> admissibleFrequencies = new HashSet<Integer>();
         admissibleFrequencies.add( 1500 ); // Cores can run at 1,5 GHz
@@ -62,17 +58,17 @@ public class TestCVM extends AbstractCVM {
         Computer c = new Computer( computerURI , admissibleFrequencies , processingPower , 1500 , 1500 ,
                 numberOfProcessors , numberOfCores , "csip" , "cssdip" , "cdsdip" );
         this.addDeployedComponent( c );
-    
-        Map<Integer , String> processorURIs = c.getStaticState().getProcessorURIs();
 
-        Map<String , String> pmipURIs = new HashMap<>(); // map associate processor uri with uri of inbound port
+        // --------------------------------------------------------------------
+
+        Map<Integer , String> processorURIs = c.getStaticState().getProcessorURIs();
+        Map<String , String> pmipURIs = new HashMap<>(); // map associate processor uri with uri of
+                                                         // inbound port
         for ( Map.Entry<Integer , String> entry : processorURIs.entrySet() ) {
             Map<ProcessorPortTypes , String> pPortsList = c.getStaticState().getProcessorPortMap()
                     .get( entry.getValue() );
-            pmipURIs.put( entry.getValue() ,pPortsList.get( Processor.ProcessorPortTypes.MANAGEMENT ));
+            pmipURIs.put( entry.getValue() , pPortsList.get( Processor.ProcessorPortTypes.MANAGEMENT ) );
         }
-
-        // --------------------------------------------------------------------
 
         // --------------------------------------------------------------------
         // Create and deploy an AdmissionController component
@@ -83,22 +79,22 @@ public class TestCVM extends AbstractCVM {
         String computer[] = new String[1];
         computer[0] = computerURI;
         String cdsop[] = new String[1];
-        cdsop[0] = "cdsdop"
-                ;
+        cdsop[0] = "cdsdop";
         final int[] nbAvailableCoresPerComputer = new int[1];
         nbAvailableCoresPerComputer[0] = numberOfProcessors * numberOfCores;
-        
-        AdmissionController ac = new AdmissionController( "ac" , "asip" , "anip" , "acmip", csop, cdsop, computer, nbAvailableCoresPerComputer, pmipURIs);
+
+        AdmissionController ac = new AdmissionController( "ac" , "asip" , "rdvenip" , "anip" , "acmip" , csop , cdsop ,
+                computer , nbAvailableCoresPerComputer , pmipURIs );
         this.addDeployedComponent( ac );
         this.csop = ( ComputerServicesOutboundPort ) ac.findPortFromURI( "csop" );
         this.csop.doConnection( "csip" , ComputerServicesConnector.class.getCanonicalName() );
         this.cdsdop = ( ComputerDynamicStateDataOutboundPort ) ac.findPortFromURI( "cdsdop" );
         this.cdsdop.doConnection( "cdsdip" , ControlledDataConnector.class.getCanonicalName() );
- 
+
         ac.toggleTracing();
         ac.toggleLogging();
 
-        ap = new ApplicationProvider( "ap" , "asop" , "anop", "apmip" );
+        ap = new ApplicationProvider( "ap" , "asop" , "anop" , "apmip" );
         this.addDeployedComponent( ap );
         ap.toggleTracing();
         ap.toggleLogging();
@@ -136,7 +132,7 @@ public class TestCVM extends AbstractCVM {
     }
 
     public static void main( String[] args ) {
-      final  TestCVM test = new TestCVM();
+        final TestCVM test = new TestCVM();
         try {
             test.deploy();
             test.start();
@@ -152,10 +148,11 @@ public class TestCVM extends AbstractCVM {
                     }
                 }
             } ).start();
-            Thread.sleep( 100000L );
+            Thread.sleep( 50000L );
             System.out.println( "shutting down..." );
             test.shutdown();
             System.out.println( "ending..." );
+
             System.exit( 0 );
         }
         catch ( Exception e ) {
