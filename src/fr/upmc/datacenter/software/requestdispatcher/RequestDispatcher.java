@@ -44,7 +44,7 @@ public class RequestDispatcher extends AbstractComponent
 
 implements RequestSubmissionHandlerI, RequestNotificationHandlerI, RequestDispatcherManagementI {
 
-	public static final int NB_REQUEST = 5;
+	public static final int NB_REQUEST = 15;
 	/** URI of this request dispatcher RD */
 	protected String        rdURI;
 

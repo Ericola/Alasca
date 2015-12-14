@@ -128,6 +128,7 @@ public class TestAppProviderMultiJVM extends AbstractDistributedCVM {
             
             
 
+            //TODO pmipURIs
             AdmissionController ac = new AdmissionController( "ac" , "asip" , "rdvenip", "anip" , "acmip", csop, cdsop, computer, nbAvailableCoresPerComputer, null);
             this.addDeployedComponent( ac );
 

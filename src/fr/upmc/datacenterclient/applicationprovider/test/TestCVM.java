@@ -47,7 +47,7 @@ public class TestCVM extends AbstractCVM {
         // each with 2 cores.
         // --------------------------------------------------------------------
         String computerURI = "computer0";
-        int numberOfProcessors = 2;
+        int numberOfProcessors = 4;
         int numberOfCores = 20;
         Set<Integer> admissibleFrequencies = new HashSet<Integer>();
         admissibleFrequencies.add( 1500 ); // Cores can run at 1,5 GHz
@@ -148,7 +148,7 @@ public class TestCVM extends AbstractCVM {
                     }
                 }
             } ).start();
-            Thread.sleep( 50000L );
+            Thread.sleep( 500000L );
             System.out.println( "shutting down..." );
             test.shutdown();
             System.out.println( "ending..." );
