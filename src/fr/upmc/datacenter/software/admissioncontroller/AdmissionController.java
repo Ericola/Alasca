@@ -92,9 +92,6 @@ public class AdmissionController extends AbstractComponent
     /** the outbound port of the computer service */
     protected ComputerServicesOutboundPort[] csop;
 
-    /** the outbound port of the ComputerDynamicStateOutboundPort service */
-    protected ComputerDynamicStateDataOutboundPort[] cdsop;
-
     private int cpt = 0;
 
     private Map<String , RequestNotificationOutboundPort> rnopList;
@@ -143,8 +140,7 @@ public class AdmissionController extends AbstractComponent
      */
     public AdmissionController( String acURI , String applicationSubmissionInboundPortURI ,
             String requestDispatcherVMEndingNotificationInboundPortURI , String applicationNotificationInboundPortURI ,
-            String AdmissionControllerManagementInboundPortURI , String computerServiceOutboundPortURI[] ,
-            String ComputerDynamicStateDataOutboundPort[] , String computerURI[] , int[] nbAvailableCoresPerComputer ,
+            String AdmissionControllerManagementInboundPortURI , String computerServiceOutboundPortURI[] , String computerURI[] , int[] nbAvailableCoresPerComputer ,
             Map<String , String> pmipURIs ) throws Exception {
         super( 2 , 2 );
         this.acURI = acURI;
@@ -169,7 +165,6 @@ public class AdmissionController extends AbstractComponent
         this.addPort( rdvenip );
         this.rdvenip.publishPort();
 
-        this.cdsop = new ComputerDynamicStateDataOutboundPort[computerServiceOutboundPortURI.length];
         this.csop = new ComputerServicesOutboundPort[computerServiceOutboundPortURI.length];
         this.computerURI = computerURI;
         for ( int i = 0 ; i < computerServiceOutboundPortURI.length ; i++ ) {
@@ -177,22 +172,18 @@ public class AdmissionController extends AbstractComponent
             this.csop[i] = new ComputerServicesOutboundPort( computerServiceOutboundPortURI[i] , this );
             this.addPort( csop[i] );
             this.csop[i].publishPort();
-            this.addRequiredInterface( ComputerDynamicStateI.class );
-            this.cdsop[i] = new ComputerDynamicStateDataOutboundPort( ComputerDynamicStateDataOutboundPort[i] , this ,
-                    computerURI[i] );
-            this.addPort( cdsop[i] );
-            this.cdsop[i].publishPort();
         }
 
         pmops = new HashMap<>();
         int i = 0;
+        this.addRequiredInterface( ProcessorManagementI.class );
         for ( Map.Entry<String , String> entry : pmipURIs.entrySet() ) {
-            this.addRequiredInterface( ProcessorManagementI.class );
             ProcessorManagementOutboundPort pmop = new ProcessorManagementOutboundPort( acURI + "pmop" + i , this );
             pmops.put( entry.getKey() , pmop );
             this.addPort( pmop );
             pmop.publishPort();
             pmop.doConnection( entry.getValue() , ProcessorManagementConnector.class.getCanonicalName() );
+            i++;
         }
 
         // Allocation Hashmap
@@ -216,7 +207,7 @@ public class AdmissionController extends AbstractComponent
 
     private Integer getAvailableCores( int nbCores ) {
         int max = 0;
-        Integer index = null;
+        Integer index = -1;
         for ( int i = 0 ; i < nbAvailablesCores.length ; i++ ) {
             if ( nbAvailablesCores[i] == nbCores ) {
                 return i;
@@ -372,9 +363,8 @@ public class AdmissionController extends AbstractComponent
         // Verifier que des resources sont disponibles
         print( "Looking for available resources..." );
         Integer index = getAvailableCores( NB_CORE );
-
         AllocatedCore[] ac;
-        if ( index != null ) {
+        if ( index != -1 ) {
             ac = this.csop[index].allocateCores( NB_CORE );
             nbAvailablesCores[index] = nbAvailablesCores[index] - ac.length;
 
@@ -411,7 +401,7 @@ public class AdmissionController extends AbstractComponent
             print( "VM Allocated!" );
         }
         else {
-            print( "Can not allocate VM (no Core Available)" );
+            print( "Could not allocate VM (no Core Available)" );
         }
     }
 
@@ -443,10 +433,6 @@ public class AdmissionController extends AbstractComponent
                 if ( this.csop[i].connected() ) {
                     this.csop[i].doDisconnection();
                 }
-
-                if ( this.cdsop[i].connected() )
-                    this.cdsop[i].connected();
-
             }
 
             for ( RequestDispatcherManagementOutboundPort rdmop : rdmopList.values() ) {
@@ -472,8 +458,9 @@ public class AdmissionController extends AbstractComponent
 
         ok = ( ( nbAllocated = csop[currentCSOP].allocateCores( nbCores ).length ) > 0 );
         currentCSOP = ( currentCSOP + 1 ) % csop.length;
+        nbAvailablesCores[currentCSOP] = nbAvailablesCores[currentCSOP] - nbAllocated;
         print( nbAllocated + " cores allocated on the computer " + currentCSOP );
-
+        
         return ok;
     }
 
