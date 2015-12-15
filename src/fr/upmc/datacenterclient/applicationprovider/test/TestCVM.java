@@ -48,7 +48,7 @@ public class TestCVM extends AbstractCVM {
         // --------------------------------------------------------------------
         String computerURI = "computer0";
         int numberOfProcessors = 4;
-        int numberOfCores = 20;
+        int numberOfCores = 8;
         Set<Integer> admissibleFrequencies = new HashSet<Integer>();
         admissibleFrequencies.add( 1500 ); // Cores can run at 1,5 GHz
         admissibleFrequencies.add( 3000 ); // and at 3 GHz

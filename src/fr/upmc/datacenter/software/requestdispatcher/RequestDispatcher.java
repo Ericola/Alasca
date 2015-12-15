@@ -1,6 +1,8 @@
 package fr.upmc.datacenter.software.requestdispatcher;
 
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -17,6 +19,8 @@ import fr.upmc.components.cvm.AbstractCVM;
 import fr.upmc.components.exceptions.ComponentShutdownException;
 import fr.upmc.datacenter.hardware.processors.ports.ProcessorDynamicStateDataInboundPort;
 import fr.upmc.datacenter.interfaces.ControlledDataOfferedI;
+import fr.upmc.datacenter.interfaces.PushModeControllerI;
+import fr.upmc.datacenter.software.applicationvm.ApplicationVM;
 import fr.upmc.datacenter.software.connectors.RequestSubmissionConnector;
 import fr.upmc.datacenter.software.interfaces.RequestI;
 import fr.upmc.datacenter.software.interfaces.RequestNotificationHandlerI;
@@ -29,6 +33,7 @@ import fr.upmc.datacenter.software.ports.RequestSubmissionInboundPort;
 import fr.upmc.datacenter.software.ports.RequestSubmissionOutboundPort;
 import fr.upmc.datacenter.software.requestdispatcher.interfaces.RequestDispatcherDynamicStateI;
 import fr.upmc.datacenter.software.requestdispatcher.interfaces.RequestDispatcherManagementI;
+import fr.upmc.datacenter.software.requestdispatcher.interfaces.RequestDispatcherStateDataConsumerI;
 import fr.upmc.datacenter.software.requestdispatcher.interfaces.RequestDispatcherVMEndingNotificationI;
 import fr.upmc.datacenter.software.requestdispatcher.ports.RequestDispatcherDynamicStateDataInboundPort;
 import fr.upmc.datacenter.software.requestdispatcher.ports.RequestDispatcherManagementInboundPort;
@@ -42,8 +47,12 @@ import fr.upmc.datacenter.software.requestdispatcher.ports.RequestDispatcherVMEn
  */
 public class RequestDispatcher extends AbstractComponent
 
-implements RequestSubmissionHandlerI, RequestNotificationHandlerI, RequestDispatcherManagementI {
+implements RequestSubmissionHandlerI, RequestNotificationHandlerI, RequestDispatcherManagementI,  PushModeControllerI {
 
+    public static enum      RequestDispatcherPortTypes {
+       MANAGEMENT, DYNAMIC_STATE
+    }
+    
 	public static final int NB_REQUEST = 15;
 	/** URI of this request dispatcher RD */
 	protected String        rdURI;
@@ -95,6 +104,11 @@ implements RequestSubmissionHandlerI, RequestNotificationHandlerI, RequestDispat
 
 	/** List of RequestSubmissionOubboundPort waiting for ending */
 	protected List<RequestSubmissionOutboundPort> rsopWaitingRequestFinishList;
+	
+
+	/** map associate vm uri with requestSubmissionOutboundPort **/
+	protected Map<RequestSubmissionOutboundPort, String > vmrsop;
+	
 	/**
 	 * Create a RequestDispatcher
 	 * 
@@ -105,7 +119,7 @@ implements RequestSubmissionHandlerI, RequestNotificationHandlerI, RequestDispat
 	 * @param rnip URI of the RequestNotificationInboundPort
 	 * @throws Exception
 	 */
-	public RequestDispatcher( String rdURI , String rdsip , String rdmip , List<String> rdsop ,
+	public RequestDispatcher( String rdURI , String rdsip , String rdmip , List<String> rdsop , List<String> vmURIs,
 			String rdvenop , String rnop , String rnip , String requestDispatcherDynamicStateDataInboundPortURI ) throws Exception {
 		super( 2 , 2 );
 
@@ -138,11 +152,13 @@ implements RequestSubmissionHandlerI, RequestNotificationHandlerI, RequestDispat
 		this.addPort( this.rdmip );
 		this.rdmip.publishPort();
 
+		this.addRequiredInterface( RequestSubmissionI.class );
+		vmrsop = new HashMap<>();
 		for ( int i = 0 ; i < rdsop.size() ; i++ ) {
-			this.addRequiredInterface( RequestSubmissionI.class );
 			this.rdsopList.add( new RequestSubmissionOutboundPort( rdsop.get( i ) , this ) );
 			this.addPort( this.rdsopList.get( i ) );
 			this.rdsopList.get( i ).publishPort();
+			vmrsop.put( rdsopList.get( i ) , vmURIs.get( i ) );
 		}
 
 		this.addRequiredInterface( RequestNotificationI.class );
@@ -167,6 +183,8 @@ implements RequestSubmissionHandlerI, RequestNotificationHandlerI, RequestDispat
 		requestApplicationVM = new HashMap<>();
 		rsopWaitingRequestFinishList = new ArrayList<>();
 		nbVmConnected = rdsop.size();
+
+
 
 		// initialize nbRequestInQueueOrInProgress
 		for ( RequestSubmissionOutboundPort r : rdsopList ) {
@@ -226,9 +244,11 @@ implements RequestSubmissionHandlerI, RequestNotificationHandlerI, RequestDispat
 		if(rsopWaitingRequestFinishList.contains(rdsop) && nbRequestInQueueOrInProgress.get(rdsop) == 0){
 			nbRequestInQueueOrInProgress.remove(rdsop);
 			rsopWaitingRequestFinishList.remove(rdsop);
+			vmrsop.remove( rdsop );
 			rdsop.doDisconnection();
 			print("VM has finished all its requests. Sending notification to ApplicationController...");
 			rdvenop.notifyAdmissionControllerVMFinishRequest(rdsop.getServerPortURI());
+			
 		}
 	}
 
@@ -273,6 +293,10 @@ implements RequestSubmissionHandlerI, RequestNotificationHandlerI, RequestDispat
 		return new RequestDispatcherDynamicState( this.rdURI , avg / 1000000 );
 
 	}
+	
+	
+	
+	
 
 	/**
 	 * Disconnect all connected ports of the Request Dispatcher
@@ -305,7 +329,7 @@ implements RequestSubmissionHandlerI, RequestNotificationHandlerI, RequestDispat
 	 * requestDispatcher)
 	 */
 	@Override
-	public String connectVm( String RequestSubmissionInboundPortURI ) throws Exception {
+	public String connectVm(String vmURI, String RequestSubmissionInboundPortURI ) throws Exception {
 
 		// Creation du Port
 		String rdsopURI = rdURI + "rdsop" + nbVmConnected;
@@ -324,6 +348,7 @@ implements RequestSubmissionHandlerI, RequestNotificationHandlerI, RequestDispat
 		// update
 		nbRequestInQueueOrInProgress.put( r , 0 );
 
+		vmrsop.put( r , vmURI );
 		return rnip.getPortURI();
 	}
 
@@ -352,5 +377,37 @@ implements RequestSubmissionHandlerI, RequestNotificationHandlerI, RequestDispat
 		}
 
 	}
+
+    @Override
+    public String getMostBusyVMURI() throws Exception {
+        int min = Integer.MAX_VALUE;
+        RequestSubmissionOutboundPort minRDSOP = null;
+        for (RequestSubmissionOutboundPort rdsop : rdsopList) {
+            int t = nbRequestInQueueOrInProgress.get( rdsop );
+            if (t < min) {
+                min = t;
+                minRDSOP = rdsop;
+            }
+        }
+        return vmrsop.get( minRDSOP ); 
+    }
+
+    @Override
+    public void startUnlimitedPushing( int interval ) throws Exception {
+        // TODO Auto-generated method stub
+        
+    }
+
+    @Override
+    public void startLimitedPushing( int interval , int n ) throws Exception {
+        // TODO Auto-generated method stub
+        
+    }
+
+    @Override
+    public void stopPushing() throws Exception {
+        // TODO Auto-generated method stub
+        
+    }
 
 }

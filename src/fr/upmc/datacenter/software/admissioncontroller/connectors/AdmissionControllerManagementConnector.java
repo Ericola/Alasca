@@ -14,26 +14,26 @@ public class AdmissionControllerManagementConnector extends AbstractConnector
 
     }
 
-	@Override
-	public void allocateVM(String RequestDispatcherURI) throws Exception{
-		 ( ( AdmissionControllerManagementI ) this.offering ).allocateVM(RequestDispatcherURI);
-		
-	}
+    @Override
+    public void allocateVM( String RequestDispatcherURI ) throws Exception {
+        ( ( AdmissionControllerManagementI ) this.offering ).allocateVM( RequestDispatcherURI );
 
-	@Override
-	public void removeVM(String RequestDispatcherURI) throws Exception{
-		( ( AdmissionControllerManagementI ) this.offering ).removeVM(RequestDispatcherURI);
-		
-	}
+    }
 
     @Override
-    public boolean addCores( int nbCores ) throws Exception {   
-        return ( ( AdmissionControllerManagementI ) this.offering ).addCores(nbCores);
+    public void removeVM( String RequestDispatcherURI ) throws Exception {
+        ( ( AdmissionControllerManagementI ) this.offering ).removeVM( RequestDispatcherURI );
+
+    }
+
+    @Override
+    public boolean addCores( String rdURI , int nbCores ) throws Exception {
+        return ( ( AdmissionControllerManagementI ) this.offering ).addCores( rdURI , nbCores );
     }
 
     @Override
     public void increaseFrequency() throws Exception {
         ( ( AdmissionControllerManagementI ) this.offering ).increaseFrequency();
-        
+
     }
 }

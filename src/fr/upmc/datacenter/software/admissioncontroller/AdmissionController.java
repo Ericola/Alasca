@@ -89,6 +89,9 @@ public class AdmissionController extends AbstractComponent
     /** The outbound port used to allocate core to the vm */
     protected List<ApplicationVMManagementOutboundPort> avmop;
 
+    /** map associate vm submission inbound port uri with its management outbound port */
+    protected Map<String , ApplicationVMManagementOutboundPort> avmopMap;
+
     /** the outbound port of the computer service */
     protected ComputerServicesOutboundPort[] csop;
 
@@ -115,7 +118,7 @@ public class AdmissionController extends AbstractComponent
 
     private int nbVMCreated = 0;
 
-    private int currentCSOP = 0;
+    private int currentAVMOP = 0;
 
     /** indexes are computers and values are whether it's used or not */
     private boolean computerUsed[];
@@ -126,6 +129,9 @@ public class AdmissionController extends AbstractComponent
     private Map<String , ProcessorManagementOutboundPort> pmops;
 
     private List<AllocatedCore> allocatedCores;
+
+    /** map associate avmop with csop index **/
+    private Map<ApplicationVMManagementOutboundPort , Integer> avmopComp;
 
     /**
      * Create an admission controller
@@ -140,8 +146,9 @@ public class AdmissionController extends AbstractComponent
      */
     public AdmissionController( String acURI , String applicationSubmissionInboundPortURI ,
             String requestDispatcherVMEndingNotificationInboundPortURI , String applicationNotificationInboundPortURI ,
-            String AdmissionControllerManagementInboundPortURI , String computerServiceOutboundPortURI[] , String computerURI[] , int[] nbAvailableCoresPerComputer ,
-            Map<String , String> pmipURIs ) throws Exception {
+            String AdmissionControllerManagementInboundPortURI , String computerServiceOutboundPortURI[] ,
+            String computerURI[] , int[] nbAvailableCoresPerComputer , Map<String , String> pmipURIs )
+                    throws Exception {
         super( 2 , 2 );
         this.acURI = acURI;
         this.addOfferedInterface( ApplicationSubmissionI.class );
@@ -194,8 +201,10 @@ public class AdmissionController extends AbstractComponent
         rnopList = new HashMap<>();
         avmop = new ArrayList<>();
         rdmopList = new HashMap<>();
+        avmopComp = new HashMap<>();
 
         rsipList = new HashMap<>();
+        avmopMap = new HashMap<>();
         allocatedCores = new ArrayList<>();
 
     }
@@ -248,18 +257,22 @@ public class AdmissionController extends AbstractComponent
 
             // Creation d'une VM
             print( "Creating an applicationVM..." );
-            ApplicationVM vm = new ApplicationVM( createURI( "vm" ) , createURI( "avmip" ) , createURI( "rsip" ) ,
+            String vmURI = createURI( "vm" );
+            ApplicationVM vm = new ApplicationVM( vmURI , createURI( "avmip" ) , createURI( "rsip" ) ,
                     createURI( "rnop" ) );
             AbstractCVM.theCVM.addDeployedComponent( vm );
-
-            avmop.add( new ApplicationVMManagementOutboundPort( createURI( "avmop" ) , new AbstractComponent() {} ) );
+            ApplicationVMManagementOutboundPort avmopTemp = new ApplicationVMManagementOutboundPort(
+                    createURI( "avmop" ) , new AbstractComponent() {} );
+            avmop.add( avmopTemp );
             avmop.get( cpt ).publishPort();
             avmop.get( cpt ).doConnection( createURI( "avmip" ) ,
                     ApplicationVMManagementConnector.class.getCanonicalName() );
             vm.start();
-
+            avmopMap.put( vmURI , avmopTemp );
             rsipList.put( createURI( "rsip" ) ,
                     ( RequestSubmissionInboundPort ) vm.findPortFromURI( createURI( "rsip" ) ) );
+
+            avmopComp.put( avmopTemp , index );
 
             // AllocateCore des computers aux VMs
             this.avmop.get( cpt ).allocateCores( ac );
@@ -269,8 +282,10 @@ public class AdmissionController extends AbstractComponent
             print( "Creating the requestDispatcher..." );
             List<String> rdsop = new ArrayList<>();
             rdsop.add( createURI( "rdsop" ) );
+            List<String> vmURIs = new ArrayList<>();
+            vmURIs.add( vmURI );
             RequestDispatcher rd = new RequestDispatcher( createURI( "rd" ) , createURI( "rdsip" ) ,
-                    createURI( "rdmip" ) , rdsop , createURI( "rdvenop" ) , createURI( "rdnop" ) ,
+                    createURI( "rdmip" ) , rdsop , vmURIs , createURI( "rdvenop" ) , createURI( "rdnop" ) ,
                     createURI( "rdnip" ) , createURI( "rddsdip" ) );
             rd.start();
             String rdnop = createURI( "rdnop" );
@@ -374,20 +389,24 @@ public class AdmissionController extends AbstractComponent
             }
 
             // Allocation of VM
-            ApplicationVM vm = new ApplicationVM( createVMURI( "vm" ) , createVMURI( "avmip" ) , createVMURI( "rsip" ) ,
+            String vmURI = createVMURI( "vm" );
+            ApplicationVM vm = new ApplicationVM( vmURI , createVMURI( "avmip" ) , createVMURI( "rsip" ) ,
                     createVMURI( "rnop" ) );
             AbstractCVM.theCVM.addDeployedComponent( vm );
-
-            avmop.add( new ApplicationVMManagementOutboundPort( createVMURI( "avmop" ) , new AbstractComponent() {} ) );
+            ApplicationVMManagementOutboundPort avmopTemp = new ApplicationVMManagementOutboundPort(
+                    createVMURI( "avmop" ) , new AbstractComponent() {} );
+            avmop.add( avmopTemp );
             avmop.get( avmop.size() - 1 ).publishPort();
             avmop.get( avmop.size() - 1 ).doConnection( createVMURI( "avmip" ) ,
                     ApplicationVMManagementConnector.class.getCanonicalName() );
+            avmopMap.put( vmURI , avmop.get( avmop.size() - 1 ) );
+            avmopComp.put( avmopTemp , index );
 
             // AllocatedCore to VM
             avmop.get( avmop.size() - 1 ).allocateCores( ac );
             print( ac.length + " cores allocated." );
-            String RequestNotificationInboundport = this.rdmopList.get( RequestDispatcherURI )
-                    .connectVm( createVMURI( "rsip" ) );
+            String RequestNotificationInboundport = this.rdmopList.get( RequestDispatcherURI ).connectVm( vmURI ,
+                    createVMURI( "rsip" ) );
             rsipList.put( createVMURI( "rsip" ) ,
                     ( RequestSubmissionInboundPort ) vm.findPortFromURI( createVMURI( "rsip" ) ) );
             // Connected RequestDispatcher -- VM
@@ -447,20 +466,25 @@ public class AdmissionController extends AbstractComponent
     }
 
     @Override
-    public boolean addCores( int nbCores ) throws Exception {
+    public boolean addCores( String rdURI , int nbCores ) throws Exception {
         // parcourir les computers utilisés
-        print( "Looking for available resources..." );
+        print( "Looking for available resources (addCores)..." );
         boolean ok = false;
         int nbAllocated = 0;
+        String s = rdmopList.get( rdURI ).getMostBusyVMURI();
 
-        while ( !isUsed( currentCSOP ) )
-            currentCSOP = ( currentCSOP + 1 ) % csop.length;
+        int compIndex = avmopComp.get( avmopMap.get( s ) );
+        AllocatedCore[] ac = csop[compIndex].allocateCores( nbCores );
+        ok = ( ( nbAllocated = ac.length ) > 0 );
 
-        ok = ( ( nbAllocated = csop[currentCSOP].allocateCores( nbCores ).length ) > 0 );
-        currentCSOP = ( currentCSOP + 1 ) % csop.length;
-        nbAvailablesCores[currentCSOP] = nbAvailablesCores[currentCSOP] - nbAllocated;
-        print( nbAllocated + " cores allocated on the computer " + currentCSOP );
-        
+        if ( ok ) {
+            avmopMap.get( s ).allocateCores( ac );
+            print( nbAllocated + " cores allocated on the computer " + currentAVMOP );
+        }
+        else
+            print( "No core available on the computer  " + compIndex );
+        nbAvailablesCores[compIndex] = nbAvailablesCores[compIndex] - nbAllocated;
+
         return ok;
     }
 

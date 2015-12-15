@@ -71,14 +71,14 @@ public class AdmissionControllerManagementInboundPort extends AbstractInboundPor
     }
 
     @Override
-    public boolean addCores( final int nbCores ) throws Exception {
+    public boolean addCores( final String rdURI, final int nbCores ) throws Exception {
         final AdmissionController ac = ( AdmissionController ) this.owner;
 
         return this.owner.handleRequestSync( new ComponentService<Boolean>() {
 
             @Override
             public Boolean call() throws Exception {
-                return ac.addCores( nbCores );
+                return ac.addCores( rdURI, nbCores );
             }
         } );
     }

@@ -7,7 +7,9 @@ public interface RequestDispatcherManagementI extends OfferedI, RequiredI {
 
     public boolean isWaitingForTermination() throws Exception;
     
-    public String connectVm(String RequestSubmissionInboundPortURI) throws Exception;
+    public String connectVm(String vmURI, String RequestSubmissionInboundPortURI) throws Exception;
     
     public void disconnectVm() throws Exception;
+    
+    public String getMostBusyVMURI() throws Exception;
 }

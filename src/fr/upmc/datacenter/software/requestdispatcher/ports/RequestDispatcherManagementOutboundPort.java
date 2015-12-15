@@ -22,8 +22,8 @@ public class RequestDispatcherManagementOutboundPort extends AbstractOutboundPor
     }
 
 	@Override
-	public String connectVm(String RequestSubmissionInboundPortURI) throws Exception {
-		  return ( ( RequestDispatcherManagementI ) this.connector ).connectVm(RequestSubmissionInboundPortURI);
+	public String connectVm(String vmURI, String RequestSubmissionInboundPortURI) throws Exception {
+		  return ( ( RequestDispatcherManagementI ) this.connector ).connectVm(vmURI, RequestSubmissionInboundPortURI);
 
 	}
 
@@ -32,4 +32,9 @@ public class RequestDispatcherManagementOutboundPort extends AbstractOutboundPor
 		( ( RequestDispatcherManagementI ) this.connector ).disconnectVm();
 		
 	}
+
+    @Override
+    public String getMostBusyVMURI() throws Exception {
+        return ( ( RequestDispatcherManagementI ) this.connector ).getMostBusyVMURI();
+    }
 }

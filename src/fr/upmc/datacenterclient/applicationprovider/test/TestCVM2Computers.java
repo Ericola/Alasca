@@ -50,8 +50,8 @@ public class TestCVM2Computers extends AbstractCVM {
         // Create and deploy NB_COMPUTER computer component with its 2 processors and
         // each with 2 cores.
         // --------------------------------------------------------------------
-        int numberOfProcessors = 2;
-        int numberOfCores = 2;
+        int numberOfProcessors = 4;
+        int numberOfCores = 8;
         Set<Integer> admissibleFrequencies = new HashSet<Integer>();
         admissibleFrequencies.add( 1500 ); // Cores can run at 1,5 GHz
         admissibleFrequencies.add( 3000 ); // and at 3 GHz
