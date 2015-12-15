@@ -318,7 +318,7 @@ public class AdmissionController extends AbstractComponent
                     createURI( "rddsdip" ) );
             controller.toggleLogging();
             controller.toggleTracing();
-
+            controller.start();
             // Connect Controller with AdmissionController
             AdmissionControllerManagementOutboundPort acmop = ( AdmissionControllerManagementOutboundPort ) controller
                     .findPortFromURI( createURI( "acmop" ) );
