@@ -427,12 +427,17 @@ public class AdmissionController extends AbstractComponent
     @Override
     public void removeVM( String RequestDispatcherURI ) throws Exception {
         rdmopList.get( RequestDispatcherURI ).disconnectVm();
+        
+
     }
 
     @Override
     public void notifyAdmissionControllerVMFinishRequest( String RequestSubmissionInboundPortURI ) throws Exception {
         print( "Shutting down VM..." );
         rsipList.get( RequestSubmissionInboundPortURI ).getOwner().shutdown();
+
+        // update available cores
+        
     }
 
     @Override
