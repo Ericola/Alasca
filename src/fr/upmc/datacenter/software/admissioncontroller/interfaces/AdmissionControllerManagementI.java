@@ -13,5 +13,9 @@ public interface AdmissionControllerManagementI extends OfferedI, RequiredI {
 
     public void removeVM( String RequestDispatcherURI ) throws Exception;
 
-    public void increaseFrequency() throws Exception;
+    public void setFrequency( Integer f ) throws Exception;
+    
+
+    
+    
 }

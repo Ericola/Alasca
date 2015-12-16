@@ -32,8 +32,9 @@ public class AdmissionControllerManagementConnector extends AbstractConnector
     }
 
     @Override
-    public void increaseFrequency() throws Exception {
-        ( ( AdmissionControllerManagementI ) this.offering ).increaseFrequency();
+    public void setFrequency( Integer f) throws Exception {
+        ( ( AdmissionControllerManagementI ) this.offering ).setFrequency( f );
 
     }
+
 }
