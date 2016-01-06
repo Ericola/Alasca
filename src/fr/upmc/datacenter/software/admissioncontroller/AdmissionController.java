@@ -73,6 +73,7 @@ public class AdmissionController extends AbstractComponent
      * The inbound port used to be notified when the requestgenerator is created (by the AP)
      */
     protected ApplicationNotificationInboundPort               anip;
+   
     /**
      * The inbound port used to be notified the end of a VM (by RD)
      */

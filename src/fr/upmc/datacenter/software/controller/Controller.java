@@ -2,6 +2,7 @@ package fr.upmc.datacenter.software.controller;
 
 import java.io.FileWriter;
 import java.io.IOException;
+import java.util.Map;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 
@@ -29,16 +30,22 @@ public class Controller extends AbstractComponent implements RequestDispatcherSt
     protected String             cURI;
     protected ScheduledFuture<?> pullingFuture;
 
+    /**
+     * map associate the difference of the avg request processing between two adjustement with the
+     * number of cores to allocate
+     **/
+    protected Integer[] ladder;
+
     protected RequestDispatcherDynamicStateDataOutboundPort requestDispatcherDynamicStateDataOutboundPort;
 
     /** OutboundPort uses to communicate with the AdmissionController */
     protected AdmissionControllerManagementOutboundPort acmop;
     protected final static String                       Filename  = "Courbe.txt";
     public static int                                   nbMoyRecu = 0;
+    protected Long   lastAdaptation = 0l;
+    protected double lastAVGTime    = 0;
 
-    protected Long lastAdaptation = 0l;
-
-    boolean x = false;
+    private boolean x = false;
 
     protected Integer[] frequencies;
 
@@ -67,6 +74,8 @@ public class Controller extends AbstractComponent implements RequestDispatcherSt
         }
         this.frequencies = frequencies;
 
+        ladder = new Integer[] {  2 , 2 , 2 , 3  , 3 , 4 , 5 };
+
     }
 
     public void startControlling() throws Exception {
@@ -91,30 +100,46 @@ public class Controller extends AbstractComponent implements RequestDispatcherSt
                             // WE ARE ABOVE THE THRESHOLD ------------------------------------
                             if ( rdds.getRequestProcessingAvg() > THRESHOLD_AVG_ADJUSTMENT_MS ) {
 
+                                int nbCoresToAllocate = 2;
+                             
+                                if ( lastAVGTime != 0){          
+                                    int i = ( int ) ( ( rdds.getRequestProcessingAvg() - lastAVGTime ) / 1000 );
+                                    nbCoresToAllocate =
+                                            i >= ladder.length ? ladder[ladder.length - 1]
+                                            : i > 0 ? ladder[i] 
+                                            : ladder[0] ;
+                                            System.out.println( "ladder["+i+"] = " + nbCoresToAllocate );
+                                }
+                                System.out.println( "ladder[0] = " + nbCoresToAllocate );
+
+                                
                                 acmop.setFrequency( frequencies[frequencies.length - 1] );
 
                                 // Trying to add cores.. if no more cores available we add a new VM
-                                System.out.println( "Trying to add cores..." );
+                                System.out.println( "Trying to add cores..." + nbCoresToAllocate );
                                 if ( !acmop.addCores( rdds.getRequestDispatcherURI() , 2 ) ) {
                                     System.out.println( "Trying to add a new VM..." );
                                     acmop.allocateVM( rdds.getRequestDispatcherURI() );
                                 }
-                               
+
                                 adaptation = true;
                                 lastAdaptation = System.nanoTime();
+                                lastAVGTime = rdds.getRequestProcessingAvg();
                             }
 
                             // WE ARE BELOW THE MINIMUM THRESHOLD ------------------------------
                             if ( rdds.getRequestProcessingAvg() < MIN_THRESHOLD_AVG_ADJUSTMENT_MS ) {
                                 acmop.removeVM( rdds.getRequestDispatcherURI() );
                                 acmop.setFrequency( frequencies[0] );
-                               
+
                                 adaptation = true;
                                 lastAdaptation = System.nanoTime();
+                                lastAVGTime = rdds.getRequestProcessingAvg();
                             }
-                  
+
                         }
                     }
+
 
                     if ( TRACE_GRAPH ) { // Trace the graph if required
                         if ( rdds.getRequestProcessingAvg() != 0 ) {
