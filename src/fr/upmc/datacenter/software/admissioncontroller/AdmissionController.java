@@ -16,6 +16,7 @@ import fr.upmc.datacenter.hardware.computers.interfaces.ComputerServicesI;
 import fr.upmc.datacenter.hardware.computers.interfaces.ComputerStateDataConsumerI;
 import fr.upmc.datacenter.hardware.computers.interfaces.ComputerStaticStateI;
 import fr.upmc.datacenter.hardware.computers.ports.ComputerDynamicStateDataOutboundPort;
+import fr.upmc.datacenter.hardware.computers.ports.ComputerServicesInboundPort;
 import fr.upmc.datacenter.hardware.computers.ports.ComputerServicesOutboundPort;
 import fr.upmc.datacenter.hardware.processors.UnacceptableFrequencyException;
 import fr.upmc.datacenter.hardware.processors.UnavailableFrequencyException;
@@ -133,6 +134,12 @@ public class AdmissionController extends AbstractComponent
     /** map associate avmop with csop index **/
     private Map<ApplicationVMManagementOutboundPort , Integer> avmopComp;
 
+    /** map associate avmop with csip */
+    private Map<ApplicationVMManagementOutboundPort, ComputerServicesInboundPort > avmopComp2;
+    
+    /** map associate avmop with their list of allocatedCore */
+    private Map<ApplicationVMManagementOutboundPort, List<AllocatedCore>> avmopACore;
+    
     /**
      * Create an admission controller
      * 
@@ -205,6 +212,8 @@ public class AdmissionController extends AbstractComponent
 
         rsipList = new HashMap<>();
         avmopMap = new HashMap<>();
+        avmopComp2 = new HashMap<>();
+        avmopACore = new HashMap<>();
         allocatedCores = new ArrayList<>();
 
     }
