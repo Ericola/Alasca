@@ -2,27 +2,19 @@ package fr.upmc.datacenter.software.admissioncontroller;
 
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
+import java.util.TreeSet;
 
 import fr.upmc.components.AbstractComponent;
 import fr.upmc.components.cvm.AbstractCVM;
 import fr.upmc.components.exceptions.ComponentShutdownException;
-import fr.upmc.components.ports.OutboundPortI;
 import fr.upmc.datacenter.hardware.computers.Computer.AllocatedCore;
-import fr.upmc.datacenter.hardware.computers.interfaces.ComputerDynamicStateI;
 import fr.upmc.datacenter.hardware.computers.interfaces.ComputerServicesI;
-import fr.upmc.datacenter.hardware.computers.interfaces.ComputerStateDataConsumerI;
-import fr.upmc.datacenter.hardware.computers.interfaces.ComputerStaticStateI;
-import fr.upmc.datacenter.hardware.computers.ports.ComputerDynamicStateDataOutboundPort;
-import fr.upmc.datacenter.hardware.computers.ports.ComputerServicesInboundPort;
 import fr.upmc.datacenter.hardware.computers.ports.ComputerServicesOutboundPort;
-import fr.upmc.datacenter.hardware.processors.UnacceptableFrequencyException;
-import fr.upmc.datacenter.hardware.processors.UnavailableFrequencyException;
 import fr.upmc.datacenter.hardware.processors.connectors.ProcessorManagementConnector;
 import fr.upmc.datacenter.hardware.processors.interfaces.ProcessorManagementI;
-import fr.upmc.datacenter.hardware.processors.ports.ProcessorManagementInboundPort;
 import fr.upmc.datacenter.hardware.processors.ports.ProcessorManagementOutboundPort;
 import fr.upmc.datacenter.software.admissioncontroller.connectors.AdmissionControllerManagementConnector;
 import fr.upmc.datacenter.software.admissioncontroller.interfaces.AdmissionControllerManagementI;
@@ -34,7 +26,6 @@ import fr.upmc.datacenter.software.applicationvm.ports.ApplicationVMManagementOu
 import fr.upmc.datacenter.software.connectors.RequestNotificationConnector;
 import fr.upmc.datacenter.software.connectors.RequestSubmissionConnector;
 import fr.upmc.datacenter.software.controller.Controller;
-import fr.upmc.datacenter.software.ports.RequestNotificationInboundPort;
 import fr.upmc.datacenter.software.ports.RequestNotificationOutboundPort;
 import fr.upmc.datacenter.software.ports.RequestSubmissionInboundPort;
 import fr.upmc.datacenter.software.ports.RequestSubmissionOutboundPort;
@@ -82,6 +73,7 @@ public class AdmissionController extends AbstractComponent
      * The inbound port used to be notified when the requestgenerator is created (by the AP)
      */
     protected ApplicationNotificationInboundPort               anip;
+   
     /**
      * The inbound port used to be notified the end of a VM (by RD)
      */
@@ -133,13 +125,9 @@ public class AdmissionController extends AbstractComponent
 
     /** map associate avmop with csop index **/
     private Map<ApplicationVMManagementOutboundPort , Integer> avmopComp;
+    
+    protected Integer[] frequencies;
 
-    /** map associate avmop with csip */
-    private Map<ApplicationVMManagementOutboundPort, ComputerServicesInboundPort > avmopComp2;
-    
-    /** map associate avmop with their list of allocatedCore */
-    private Map<ApplicationVMManagementOutboundPort, List<AllocatedCore>> avmopACore;
-    
     /**
      * Create an admission controller
      * 
@@ -154,7 +142,7 @@ public class AdmissionController extends AbstractComponent
     public AdmissionController( String acURI , String applicationSubmissionInboundPortURI ,
             String requestDispatcherVMEndingNotificationInboundPortURI , String applicationNotificationInboundPortURI ,
             String AdmissionControllerManagementInboundPortURI , String computerServiceOutboundPortURI[] ,
-            String computerURI[] , int[] nbAvailableCoresPerComputer , Map<String , String> pmipURIs )
+            String computerURI[] , int[] nbAvailableCoresPerComputer , Map<String , String> pmipURIs, Integer[] frequencies )
                     throws Exception {
         super( 2 , 2 );
         this.acURI = acURI;
@@ -212,9 +200,8 @@ public class AdmissionController extends AbstractComponent
 
         rsipList = new HashMap<>();
         avmopMap = new HashMap<>();
-        avmopComp2 = new HashMap<>();
-        avmopACore = new HashMap<>();
         allocatedCores = new ArrayList<>();
+        this.frequencies = frequencies;
 
     }
 
@@ -293,7 +280,8 @@ public class AdmissionController extends AbstractComponent
             rdsop.add( createURI( "rdsop" ) );
             List<String> vmURIs = new ArrayList<>();
             vmURIs.add( vmURI );
-            RequestDispatcher rd = new RequestDispatcher( createURI( "rd" ) , createURI( "rdsip" ) ,
+            String rdURI = createURI( "rd" ) ;
+            RequestDispatcher rd = new RequestDispatcher( rdURI, createURI( "rdsip" ) ,
                     createURI( "rdmip" ) , rdsop , vmURIs , createURI( "rdvenop" ) , createURI( "rdnop" ) ,
                     createURI( "rdnip" ) , createURI( "rddsdip" ) );
             rd.start();
@@ -321,10 +309,17 @@ public class AdmissionController extends AbstractComponent
                     .findPortFromURI( createURI( "rnop" ) );
             rnop.doConnection( createURI( "rdnip" ) , RequestNotificationConnector.class.getCanonicalName() );
 
+            // Allocate remaining VMs
+            for ( int i = 0 ; i < nbVm - 1; i++ ) {
+                this.allocateVM( rdURI );                
+            }
+    
             // Create controller
             print( "Creating the controller..." );
+       
+
             Controller controller = new Controller( createURI( "c" ) , createURI( "rd" ) , createURI( "acmop" ) ,
-                    createURI( "rddsdip" ) );
+                    createURI( "rddsdip" ), frequencies);
             controller.toggleLogging();
             controller.toggleTracing();
             controller.start();
@@ -503,11 +498,14 @@ public class AdmissionController extends AbstractComponent
     }
 
     @Override
-    public void increaseFrequency() throws Exception {
+    public void setFrequency( Integer f ) throws Exception {
         // parcourir les processeurs utilisés
         for ( AllocatedCore a : allocatedCores ) {
             pmops.get( a.processorURI ).setCoreFrequency( a.coreNo , 3000 );
         }
     }
 
+   
+
 }
+

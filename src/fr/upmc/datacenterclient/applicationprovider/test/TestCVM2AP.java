@@ -87,7 +87,7 @@ public class TestCVM2AP extends AbstractCVM {
             nbAvailableCoresPerComputer[i] = numberOfProcessors * numberOfCores; 
 
         //TODO pmipURIs
-        AdmissionController ac = new AdmissionController( "ac" , "asip" , "rdvenip", "anip" , "acmip", csop, computer, nbAvailableCoresPerComputer, null );
+        AdmissionController ac = new AdmissionController( "ac" , "asip" , "rdvenip", "anip" , "acmip", csop, computer, nbAvailableCoresPerComputer, null, null );
 
         this.csop = new ComputerServicesOutboundPort[NB_COMPUTER];
         for ( int i = 0 ; i < NB_COMPUTER ; ++i ) {

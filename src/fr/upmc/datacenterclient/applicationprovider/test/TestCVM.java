@@ -48,7 +48,7 @@ public class TestCVM extends AbstractCVM {
         // --------------------------------------------------------------------
         String computerURI = "computer0";
         int numberOfProcessors = 4;
-        int numberOfCores = 8;
+        int numberOfCores = 4;
         Set<Integer> admissibleFrequencies = new HashSet<Integer>();
         admissibleFrequencies.add( 1500 ); // Cores can run at 1,5 GHz
         admissibleFrequencies.add( 3000 ); // and at 3 GHz
@@ -68,6 +68,7 @@ public class TestCVM extends AbstractCVM {
             Map<ProcessorPortTypes , String> pPortsList = c.getStaticState().getProcessorPortMap()
                     .get( entry.getValue() );
             pmipURIs.put( entry.getValue() , pPortsList.get( Processor.ProcessorPortTypes.MANAGEMENT ) );
+            
         }
 
         // --------------------------------------------------------------------
@@ -80,9 +81,10 @@ public class TestCVM extends AbstractCVM {
         computer[0] = computerURI;
         final int[] nbAvailableCoresPerComputer = new int[1];
         nbAvailableCoresPerComputer[0] = numberOfProcessors * numberOfCores;
-
+       
+        Integer[] frequencies = {1500, 3000};
         AdmissionController ac = new AdmissionController( "ac" , "asip" , "rdvenip" , "anip" , "acmip" , csop,
-                computer , nbAvailableCoresPerComputer , pmipURIs );
+                computer , nbAvailableCoresPerComputer , pmipURIs, frequencies );
         this.addDeployedComponent( ac );
         this.csop = ( ComputerServicesOutboundPort ) ac.findPortFromURI( "csop" );
         this.csop.doConnection( "csip" , ComputerServicesConnector.class.getCanonicalName() );

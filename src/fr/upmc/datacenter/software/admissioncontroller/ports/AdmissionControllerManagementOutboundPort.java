@@ -39,8 +39,10 @@ public class AdmissionControllerManagementOutboundPort extends AbstractOutboundP
     }
 
     @Override
-    public void increaseFrequency() throws Exception {
-        ( ( AdmissionControllerManagementI ) this.connector ).increaseFrequency();
+    public void setFrequency( Integer f ) throws Exception {
+        ( ( AdmissionControllerManagementI ) this.connector ).setFrequency( f );
 
     }
+
+    
 }

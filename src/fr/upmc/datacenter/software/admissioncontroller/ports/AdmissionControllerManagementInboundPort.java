@@ -84,19 +84,21 @@ public class AdmissionControllerManagementInboundPort extends AbstractInboundPor
     }
 
     @Override
-    public void increaseFrequency() throws Exception {
+    public void setFrequency( final Integer f ) throws Exception {
         final AdmissionController ac = ( AdmissionController ) this.owner;
 
         this.owner.handleRequestSync( new ComponentService<Void>() {
 
             @Override
             public Void call() throws Exception {
-                ac.increaseFrequency();
+                ac.setFrequency( f );
                 return null;
             }
 
         } );
 
     }
+
+   
 
 }
