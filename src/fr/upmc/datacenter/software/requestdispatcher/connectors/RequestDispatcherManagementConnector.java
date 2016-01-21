@@ -13,8 +13,8 @@ public class RequestDispatcherManagementConnector extends AbstractConnector
     }
 
 	@Override
-	public String connectVm(String vmURI, String RequestSubmissionInboundPortURI) throws Exception {
-		return ( ( RequestDispatcherManagementI ) this.offering ).connectVm(vmURI, RequestSubmissionInboundPortURI);
+	public void connectVm(String vmURI, String RequestSubmissionInboundPortURI) throws Exception {
+		( ( RequestDispatcherManagementI ) this.offering ).connectVm(vmURI, RequestSubmissionInboundPortURI);
 	}
 
 	@Override

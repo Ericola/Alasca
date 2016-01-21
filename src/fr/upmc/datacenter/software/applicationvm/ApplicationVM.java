@@ -5,6 +5,7 @@ import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.Map;
 import java.util.Queue;
+
 import fr.upmc.components.AbstractComponent;
 import fr.upmc.components.cvm.AbstractCVM;
 import fr.upmc.components.exceptions.ComponentShutdownException;
@@ -434,4 +435,9 @@ implements	ProcessorServicesNotificationConsumerI,
 		}
 		System.out.println("----------") ;
 	}
+	
+	public void acceptNotificationPortURI(final String requestNotificationInboundPortURI) throws Exception{
+		requestNotificationOutboundPort.doConnection(requestNotificationInboundPortURI, RequestSubmissionI.class.getCanonicalName());
+	}
+	
 }

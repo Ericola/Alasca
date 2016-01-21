@@ -41,36 +41,6 @@ public class AdmissionControllerManagementInboundPort extends AbstractInboundPor
     }
 
     @Override
-    public void allocateVM( final String RequestDispatcherURI ) throws Exception {
-        final AdmissionController ac = ( AdmissionController ) this.owner;
-
-        this.owner.handleRequestAsync( new ComponentI.ComponentService<Void>() {
-
-            @Override
-            public Void call() throws Exception {
-                ac.allocateVM( RequestDispatcherURI );
-                return null;
-            }
-        } );
-
-    }
-
-    @Override
-    public void removeVM( final String RequestDispatcherURI ) throws Exception {
-        final AdmissionController ac = ( AdmissionController ) this.owner;
-
-        this.owner.handleRequestAsync( new ComponentI.ComponentService<Void>() {
-
-            @Override
-            public Void call() throws Exception {
-                ac.removeVM( RequestDispatcherURI );
-                return null;
-            }
-        } );
-
-    }
-
-    @Override
     public boolean addCores( final String rdURI, final int nbCores ) throws Exception {
         final AdmissionController ac = ( AdmissionController ) this.owner;
 

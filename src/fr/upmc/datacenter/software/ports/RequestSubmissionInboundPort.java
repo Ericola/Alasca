@@ -1,7 +1,9 @@
 package fr.upmc.datacenter.software.ports;
 
 import fr.upmc.components.ComponentI;
+import fr.upmc.components.ComponentI.ComponentService;
 import fr.upmc.components.ports.AbstractInboundPort;
+import fr.upmc.datacenter.software.applicationvm.ApplicationVM;
 import fr.upmc.datacenter.software.interfaces.RequestI;
 import fr.upmc.datacenter.software.interfaces.RequestSubmissionHandlerI;
 import fr.upmc.datacenter.software.interfaces.RequestSubmissionI;
@@ -106,5 +108,21 @@ implements	RequestSubmissionI
 							return null ;
 						}
 					}) ;
+	}
+
+	@Override
+	public void acceptNotificationPortURI(final String requestNotificationInboundPortURI)
+			throws Exception {
+		final ApplicationVM avm = (ApplicationVM) this.owner;
+		
+		this.owner.handleRequestAsync(
+				new ComponentI.ComponentService<Void>() {
+					@Override
+					public Void call() throws Exception {
+						avm.acceptNotificationPortURI(requestNotificationInboundPortURI);
+						return null ;
+					}
+				}) ;
+		
 	}
 }

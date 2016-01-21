@@ -40,142 +40,142 @@ import fr.upmc.datacenterclient.applicationprovider.ports.ApplicationSubmissionO
  */
 public class TestCVM2AP extends AbstractCVM {
 
-    private static final int NB_COMPUTER             = 2;
-    private static final int NB_APPLICATION_PROVIDER = 3;
+	private static final int NB_COMPUTER             = 2;
+	private static final int NB_APPLICATION_PROVIDER = 3;
 
-    protected ComputerServicesOutboundPort              csop[];
-    protected ComputerDynamicStateDataOutboundPort      cdsdop[];
-    protected ApplicationSubmissionOutboundPort         asop[];
-    protected ApplicationNotificationOutboundPort       anop[];
-    protected ApplicationProvider                       ap[];
-    protected ApplicationProviderManagementOutboundPort apmop[];
+	protected ComputerServicesOutboundPort              csop[];
+	protected ComputerDynamicStateDataOutboundPort      cdsdop[];
+	protected ApplicationSubmissionOutboundPort         asop[];
+	protected ApplicationNotificationOutboundPort       anop[];
+	protected ApplicationProvider                       ap[];
+	protected ApplicationProviderManagementOutboundPort apmop[];
 
-    @Override
-    public void deploy() throws Exception {
-        // --------------------------------------------------------------------
-        // Create and deploy a NB_COMPUTER computer component with its 2 processors and
-        // each with 2 cores.
-        // --------------------------------------------------------------------
-        int numberOfProcessors = 2;
-        int numberOfCores = 2;
-        Set<Integer> admissibleFrequencies = new HashSet<Integer>();
-        admissibleFrequencies.add( 1500 ); // Cores can run at 1,5 GHz
-        admissibleFrequencies.add( 3000 ); // and at 3 GHz
-        Map<Integer , Integer> processingPower = new HashMap<Integer , Integer>();
-        processingPower.put( 1500 , 1500000 ); // 1,5 GHz executes 1,5 Mips
-        processingPower.put( 3000 , 3000000 ); // 3 GHz executes 3 Mips
+	@Override
+	public void deploy() throws Exception {
+		// --------------------------------------------------------------------
+		// Create and deploy a NB_COMPUTER computer component with its 2 processors and
+		// each with 2 cores.
+		// --------------------------------------------------------------------
+		int numberOfProcessors = 2;
+		int numberOfCores = 2;
+		Set<Integer> admissibleFrequencies = new HashSet<Integer>();
+		admissibleFrequencies.add( 1500 ); // Cores can run at 1,5 GHz
+		admissibleFrequencies.add( 3000 ); // and at 3 GHz
+		Map<Integer , Integer> processingPower = new HashMap<Integer , Integer>();
+		processingPower.put( 1500 , 1500000 ); // 1,5 GHz executes 1,5 Mips
+		processingPower.put( 3000 , 3000000 ); // 3 GHz executes 3 Mips
 
-        for ( int i = 0 ; i < NB_COMPUTER ; ++i ) {
-            Computer c = new Computer( "computer" + i , admissibleFrequencies , processingPower , 1500 , 1500 ,
-                    numberOfProcessors , numberOfCores , "csip" + i , "cssdip" + i , "cdsdip" + i );
-            this.addDeployedComponent( c );
-        }
+		for ( int i = 0 ; i < NB_COMPUTER ; ++i ) {
+			Computer c = new Computer( "computer" + i , admissibleFrequencies , processingPower , 1500 , 1500 ,
+					numberOfProcessors , numberOfCores , "csip" + i , "cssdip" + i , "cdsdip" + i );
+			this.addDeployedComponent( c );
+		}
 
-        // --------------------------------------------------------------------
+		// --------------------------------------------------------------------
 
-        // --------------------------------------------------------------------
-        // Create and deploy an AdmissionController component
-        // --------------------------------------------------------------------
+		// --------------------------------------------------------------------
+		// Create and deploy an AdmissionController component
+		// --------------------------------------------------------------------
 
-        String csop[] = new String[NB_COMPUTER];
-        String computer[] = new String[NB_COMPUTER];
-        for ( int i = 0 ; i < NB_COMPUTER ; ++i ){
-            computer[i] = "computer" + i;
-        }
-        final int[] nbAvailableCoresPerComputer = new int[NB_COMPUTER];
-        for ( int i = 0 ; i < NB_COMPUTER ; ++i )     
-            nbAvailableCoresPerComputer[i] = numberOfProcessors * numberOfCores; 
+		String csop[] = new String[NB_COMPUTER];
+		String computer[] = new String[NB_COMPUTER];
+		for ( int i = 0 ; i < NB_COMPUTER ; ++i ){
+			computer[i] = "computer" + i;
+		}
+		final int[] nbAvailableCoresPerComputer = new int[NB_COMPUTER];
+		for ( int i = 0 ; i < NB_COMPUTER ; ++i )     
+			nbAvailableCoresPerComputer[i] = numberOfProcessors * numberOfCores; 
 
-        //TODO pmipURIs
-        AdmissionController ac = new AdmissionController( "ac" , "asip" , "rdvenip", "anip" , "acmip", csop, computer, nbAvailableCoresPerComputer, null, null );
+		//TODO pmipURIs
+		AdmissionController ac = new AdmissionController( "ac" , "asip" , "rdvenip", "anip" , "acmip", "rnetip", "rnetop", csop, computer, nbAvailableCoresPerComputer, null, null );
 
-        this.csop = new ComputerServicesOutboundPort[NB_COMPUTER];
-        for ( int i = 0 ; i < NB_COMPUTER ; ++i ) {
-            this.csop[i] = ( ComputerServicesOutboundPort ) ac.findPortFromURI( "csop" + i );
-            this.csop[i].doConnection( "csip" + i , ComputerServicesConnector.class.getCanonicalName() );
-        }
+		this.csop = new ComputerServicesOutboundPort[NB_COMPUTER];
+		for ( int i = 0 ; i < NB_COMPUTER ; ++i ) {
+			this.csop[i] = ( ComputerServicesOutboundPort ) ac.findPortFromURI( "csop" + i );
+			this.csop[i].doConnection( "csip" + i , ComputerServicesConnector.class.getCanonicalName() );
+		}
 
-        ac.toggleTracing();
-        ac.toggleLogging();
-        this.addDeployedComponent( ac );
+		ac.toggleTracing();
+		ac.toggleLogging();
+		this.addDeployedComponent( ac );
 
-        // --------------------------------------------------------------------
-        // Create and deploy NB_APPLICATION_PROVIDER ApplicationProvider component
-        // --------------------------------------------------------------------
-        this.ap = new ApplicationProvider[NB_APPLICATION_PROVIDER];
-        this.asop = new ApplicationSubmissionOutboundPort[NB_APPLICATION_PROVIDER];
-        this.anop = new ApplicationNotificationOutboundPort[NB_APPLICATION_PROVIDER];
-        this.apmop = new ApplicationProviderManagementOutboundPort[NB_APPLICATION_PROVIDER];
-        for ( int i = 0 ; i < NB_APPLICATION_PROVIDER ; i++ ) {
-            ap[i] = new ApplicationProvider( "ap" + i , "asop" + i , "anop" + i , "apmip" + i );
-            this.addDeployedComponent( ap[i] );
-            ap[i].toggleTracing();
-            ap[i].toggleLogging();
+		// --------------------------------------------------------------------
+		// Create and deploy NB_APPLICATION_PROVIDER ApplicationProvider component
+		// --------------------------------------------------------------------
+		this.ap = new ApplicationProvider[NB_APPLICATION_PROVIDER];
+		this.asop = new ApplicationSubmissionOutboundPort[NB_APPLICATION_PROVIDER];
+		this.anop = new ApplicationNotificationOutboundPort[NB_APPLICATION_PROVIDER];
+		this.apmop = new ApplicationProviderManagementOutboundPort[NB_APPLICATION_PROVIDER];
+		for ( int i = 0 ; i < NB_APPLICATION_PROVIDER ; i++ ) {
+			ap[i] = new ApplicationProvider( "ap" + i , "asop" + i , "anop" + i , "apmip" + i );
+			this.addDeployedComponent( ap[i] );
+			ap[i].toggleTracing();
+			ap[i].toggleLogging();
 
-            // Connect asop -- asip
-            this.asop[i] = ( ApplicationSubmissionOutboundPort ) ap[i].findPortFromURI( "asop" + i );
-            this.asop[i].doConnection( "asip" , ApplicationSubmissionConnector.class.getCanonicalName() );
+			// Connect asop -- asip
+			this.asop[i] = ( ApplicationSubmissionOutboundPort ) ap[i].findPortFromURI( "asop" + i );
+			this.asop[i].doConnection( "asip" , ApplicationSubmissionConnector.class.getCanonicalName() );
 
-            // Connect anop -- anip
-            this.anop[i] = ( ApplicationNotificationOutboundPort ) ap[i].findPortFromURI( "anop" + i );
-            this.anop[i].doConnection( "anip" , ApplicationNotificationConnector.class.getCanonicalName() );
+			// Connect anop -- anip
+			this.anop[i] = ( ApplicationNotificationOutboundPort ) ap[i].findPortFromURI( "anop" + i );
+			this.anop[i].doConnection( "anip" , ApplicationNotificationConnector.class.getCanonicalName() );
 
-            // Connect apmop -- apmip
-            this.apmop[i] = new ApplicationProviderManagementOutboundPort( "apmop" + i , new AbstractComponent() {} );
-            this.apmop[i].publishPort();
-            this.apmop[i].doConnection( "apmip" + i , ApplicationProviderManagementConnector.class.getCanonicalName() );
-        }
-        super.deploy();
-    }
+			// Connect apmop -- apmip
+			this.apmop[i] = new ApplicationProviderManagementOutboundPort( "apmop" + i , new AbstractComponent() {} );
+			this.apmop[i].publishPort();
+			this.apmop[i].doConnection( "apmip" + i , ApplicationProviderManagementConnector.class.getCanonicalName() );
+		}
+		super.deploy();
+	}
 
-    @Override
-    public void start() throws Exception {
-        super.start();
-    }
+	@Override
+	public void start() throws Exception {
+		super.start();
+	}
 
-    public void test() throws Exception {
-        for ( int i = 0 ; i < NB_APPLICATION_PROVIDER ; i++ )
-            apmop[i].sendApplication();
-    }
+	public void test() throws Exception {
+		for ( int i = 0 ; i < NB_APPLICATION_PROVIDER ; i++ )
+			apmop[i].sendApplication();
+	}
 
-    @Override
-    public void shutdown() throws Exception {
-        for ( int i = 0 ; i < NB_COMPUTER ; ++i ) {
-            csop[i].doDisconnection();
-            cdsdop[i].doDisconnection();
-            asop[i].doDisconnection();
-            anop[i].doDisconnection();
-            apmop[i].doDisconnection();
-        }
-        super.shutdown();
-    }
+	@Override
+	public void shutdown() throws Exception {
+		for ( int i = 0 ; i < NB_COMPUTER ; ++i ) {
+			csop[i].doDisconnection();
+			cdsdop[i].doDisconnection();
+			asop[i].doDisconnection();
+			anop[i].doDisconnection();
+			apmop[i].doDisconnection();
+		}
+		super.shutdown();
+	}
 
-    public static void main( String[] args ) {
-        final TestCVM2AP test = new TestCVM2AP();
-        try {
-            test.deploy();
-            test.start();
-            new Thread( new Runnable() {
+	public static void main( String[] args ) {
+		final TestCVM2AP test = new TestCVM2AP();
+		try {
+			test.deploy();
+			test.start();
+			new Thread( new Runnable() {
 
-                @Override
-                public void run() {
-                    try {
-                        test.test();
-                    }
-                    catch ( Exception e ) {
-                        e.printStackTrace();
-                    }
-                }
-            } ).start();
-            Thread.sleep( 10000L );
-            System.out.println( "shutting down..." );
-            test.shutdown();
-            System.out.println( "ending..." );
-            System.exit( 0 );
-        }
-        catch ( Exception e ) {
-            e.printStackTrace();
-        }
-    }
+				@Override
+				public void run() {
+					try {
+						test.test();
+					}
+					catch ( Exception e ) {
+						e.printStackTrace();
+					}
+				}
+			} ).start();
+			Thread.sleep( 10000L );
+			System.out.println( "shutting down..." );
+			test.shutdown();
+			System.out.println( "ending..." );
+			System.exit( 0 );
+		}
+		catch ( Exception e ) {
+			e.printStackTrace();
+		}
+	}
 
 }

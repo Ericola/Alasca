@@ -55,4 +55,6 @@ extends		OfferedI,
 	 */
 	public void			submitRequestAndNotify( final RequestI r)
 	throws Exception ;
+	
+	public void acceptNotificationPortURI(final String requestNotificationInboundPortURI) throws Exception;
 }

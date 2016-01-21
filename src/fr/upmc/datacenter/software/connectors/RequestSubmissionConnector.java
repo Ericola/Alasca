@@ -41,4 +41,14 @@ implements	RequestSubmissionI
 	{
 		((RequestSubmissionI)this.offering).submitRequestAndNotify(r) ;
 	}
+
+	@Override
+	public void acceptNotificationPortURI(
+			String requestNotificationInboundPortURI) throws Exception {
+	
+		((RequestSubmissionI)this.offering).acceptNotificationPortURI(requestNotificationInboundPortURI);
+		
+	}
+	
+	
 }

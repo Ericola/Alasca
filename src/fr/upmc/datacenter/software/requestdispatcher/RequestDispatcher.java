@@ -329,14 +329,13 @@ implements RequestSubmissionHandlerI, RequestNotificationHandlerI, RequestDispat
 	 * requestDispatcher)
 	 */
 	@Override
-	public String connectVm(String vmURI, String RequestSubmissionInboundPortURI ) throws Exception {
+	public void connectVm(String vmURI, String RequestSubmissionInboundPortURI ) throws Exception {
 
 		// Creation du Port
 		String rdsopURI = rdURI + "rdsop" + nbVmConnected;
 		nbVmConnected++;
 		this.addRequiredInterface( RequestSubmissionI.class );
 		RequestSubmissionOutboundPort r = new RequestSubmissionOutboundPort( rdsopURI , this );
-		this.rdsopList.add( r );
 		this.addPort( r );
 		r.localPublishPort();
 
@@ -346,10 +345,14 @@ implements RequestSubmissionHandlerI, RequestNotificationHandlerI, RequestDispat
 		rsop.doConnection( RequestSubmissionInboundPortURI , RequestSubmissionConnector.class.getCanonicalName() );
 		print("Vm And Request Dispatcher connected");
 		// update
+		
+		//Waiting For RequestNotificationPort Connection
+		r.acceptNotificationPortURI(rnip.getPortURI());
+		//rsop.submitRequest(null);
 		nbRequestInQueueOrInProgress.put( r , 0 );
-
+		this.rdsopList.add( r );
 		vmrsop.put( r , vmURI );
-		return rnip.getPortURI();
+		
 	}
 
 	private void print( String s ) {

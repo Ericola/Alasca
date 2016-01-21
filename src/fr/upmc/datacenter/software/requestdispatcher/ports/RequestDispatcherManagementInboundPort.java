@@ -37,14 +37,15 @@ public class RequestDispatcherManagementInboundPort extends AbstractInboundPort
     }
 
     @Override
-    public String connectVm(final String vmURI, final String RequestSubmissionInboundPortURI ) throws Exception {
+    public void connectVm(final String vmURI, final String RequestSubmissionInboundPortURI ) throws Exception {
         final RequestDispatcher rd = ( RequestDispatcher ) this.owner;
 
-        return this.owner.handleRequestSync( new ComponentService<String>() {
+        this.owner.handleRequestSync( new ComponentService<Void>() {
 
             @Override
-            public String call() throws Exception {
-                return rd.connectVm(vmURI, RequestSubmissionInboundPortURI );
+            public Void call() throws Exception {
+               rd.connectVm(vmURI, RequestSubmissionInboundPortURI );
+               return null;
             }
         } );
     }

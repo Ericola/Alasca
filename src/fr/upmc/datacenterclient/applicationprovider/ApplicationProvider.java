@@ -121,7 +121,7 @@ public class ApplicationProvider extends AbstractComponent {
     public void sendApplication() throws Exception {
         print( "Submit an application" );
         print( "Waiting for URI" );
-        String res[] = this.asop.submitApplication( 1 );
+        String res[] = this.asop.submitApplication( 2 );
         String requestDispatcherURI = res[0];
 
         print( "URI received" );

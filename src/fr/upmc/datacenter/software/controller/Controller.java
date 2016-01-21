@@ -14,182 +14,250 @@ import fr.upmc.components.interfaces.DataRequiredI;
 import fr.upmc.datacenter.interfaces.ControlledDataRequiredI;
 import fr.upmc.datacenter.software.admissioncontroller.interfaces.AdmissionControllerManagementI;
 import fr.upmc.datacenter.software.admissioncontroller.ports.AdmissionControllerManagementOutboundPort;
+import fr.upmc.datacenter.software.interfaces.RingNetworkI;
+import fr.upmc.datacenter.software.ports.RingNetworkInboundPort;
+import fr.upmc.datacenter.software.ports.RingNetworkOutboundPort;
 import fr.upmc.datacenter.software.requestdispatcher.interfaces.RequestDispatcherDynamicStateI;
+import fr.upmc.datacenter.software.requestdispatcher.interfaces.RequestDispatcherManagementI;
 import fr.upmc.datacenter.software.requestdispatcher.interfaces.RequestDispatcherStateDataConsumerI;
 import fr.upmc.datacenter.software.requestdispatcher.ports.RequestDispatcherDynamicStateDataOutboundPort;
+import fr.upmc.datacenter.software.requestdispatcher.ports.RequestDispatcherManagementOutboundPort;
 
-public class Controller extends AbstractComponent implements RequestDispatcherStateDataConsumerI {
+public class Controller extends AbstractComponent implements RequestDispatcherStateDataConsumerI, RingNetworkI {
 
-    protected static final long THRESHOLD_AVG_ADJUSTMENT_MS     = 5000;
-    protected static final long MIN_THRESHOLD_AVG_ADJUSTMENT_MS = 1000;
-    protected static final long DURATION_BETWEEN_ADJUSTMENT     = 5000000000L; // 3s
-    public static final boolean TRACE_GRAPH                     = true;
-    public static final boolean TURN_ON_ADAPTATION              = true;
+	protected static final long THRESHOLD_AVG_ADJUSTMENT_MS     = 5000;
+	protected static final long MIN_THRESHOLD_AVG_ADJUSTMENT_MS = 1000;
+	protected static final long DURATION_BETWEEN_ADJUSTMENT     = 5000000000L; // 3s
+	public static final boolean TRACE_GRAPH                     = true;
+	public static final boolean TURN_ON_ADAPTATION              = true;
+	public static final long KEEP_VM_DURATION_S = 5L;
 
-    /** the URI of the component. */
-    protected String             cURI;
-    protected ScheduledFuture<?> pullingFuture;
+	/** the URI of the component. */
+	protected String             cURI;
+	protected ScheduledFuture<?> pullingFuture;
 
-    /**
-     * map associate the difference of the avg request processing between two adjustement with the
-     * number of cores to allocate
-     **/
-    protected Integer[] ladder;
+	/**
+	 * map associate the difference of the avg request processing between two adjustement with the
+	 * number of cores to allocate
+	 **/
+	protected Integer[] ladder;
 
-    protected RequestDispatcherDynamicStateDataOutboundPort requestDispatcherDynamicStateDataOutboundPort;
+	protected RequestDispatcherDynamicStateDataOutboundPort requestDispatcherDynamicStateDataOutboundPort;
 
-    /** OutboundPort uses to communicate with the AdmissionController */
-    protected AdmissionControllerManagementOutboundPort acmop;
-    protected final static String                       Filename  = "Courbe.txt";
-    public static int                                   nbMoyRecu = 0;
-    protected Long   lastAdaptation = 0l;
-    protected double lastAVGTime    = 0;
+	protected RingNetworkInboundPort rnetip;
 
-    private boolean x = false;
+	protected RingNetworkOutboundPort rnetop;
 
-    protected Integer[] frequencies;
+	protected RequestDispatcherManagementOutboundPort rdmop;
 
-    public Controller( String cURI , String requestDispatcherURI , String admissionControllerManagementOutboundPortURI ,
-            String rddsdip , Integer[] frequencies ) throws Exception {
-        super( true , true );
-        this.cURI = cURI;
-        this.requestDispatcherDynamicStateDataOutboundPort = new RequestDispatcherDynamicStateDataOutboundPort( this ,
-                requestDispatcherURI );
-        this.addRequiredInterface( DataRequiredI.PullI.class );
-        this.addOfferedInterface( DataRequiredI.PushI.class );
-        this.addRequiredInterface( ControlledDataRequiredI.ControlledPullI.class );
-        this.addPort( this.requestDispatcherDynamicStateDataOutboundPort );
-        this.requestDispatcherDynamicStateDataOutboundPort.publishPort();
-        this.requestDispatcherDynamicStateDataOutboundPort.doConnection( rddsdip ,
-                DataConnector.class.getCanonicalName() );
+	/** OutboundPort uses to communicate with the AdmissionController */
+	protected AdmissionControllerManagementOutboundPort acmop;
+	protected final static String                       Filename  = "Courbe.txt";
+	public static int                                   nbMoyRecu = 0;
+	protected Long   lastAdaptation = 0l;
+	protected double lastAVGTime    = 0;
 
-        this.addRequiredInterface( AdmissionControllerManagementI.class );
-        this.acmop = new AdmissionControllerManagementOutboundPort( admissionControllerManagementOutboundPortURI ,
-                this );
-        this.addPort( this.acmop );
-        this.acmop.publishPort();
-        if ( TRACE_GRAPH ) {
-            FileWriter f = new FileWriter( Filename , false );
-            f.close();
-        }
-        this.frequencies = frequencies;
+	private boolean flagVM = false;
+	private boolean flagHaveVM = false;
+	public String currentVMURI;
+	public String currentVMRequestSubmissionInboundPortURI;
 
-        ladder = new Integer[] {  2 , 2 , 2 , 3  , 3 , 4 , 5 };
+	protected Integer[] frequencies;
 
-    }
+	public Controller( String cURI , String requestDispatcherURI , String admissionControllerManagementOutboundPortURI ,
+			String requestDispatcherManagementOutboundPortURI, String rddsdip , String rnetipURI, String rnetopURI, Integer[] frequencies ) throws Exception {
+		super( 3 , 3 );
+		this.cURI = cURI;
+		this.requestDispatcherDynamicStateDataOutboundPort = new RequestDispatcherDynamicStateDataOutboundPort( this ,
+				requestDispatcherURI );
+		this.addRequiredInterface( DataRequiredI.PullI.class );
+		this.addOfferedInterface( DataRequiredI.PushI.class );
+		this.addRequiredInterface( ControlledDataRequiredI.ControlledPullI.class );
+		this.addPort( this.requestDispatcherDynamicStateDataOutboundPort );
+		this.requestDispatcherDynamicStateDataOutboundPort.publishPort();
+		this.requestDispatcherDynamicStateDataOutboundPort.doConnection( rddsdip ,
+				DataConnector.class.getCanonicalName() );
 
-    public void startControlling() throws Exception {
-        lastAdaptation = System.nanoTime();
+		this.addRequiredInterface(RingNetworkI.class);
+		this.addOfferedInterface(RingNetworkI.class);
 
-        this.pullingFuture = this.scheduleTaskAtFixedRate( new ComponentI.ComponentTask() {
+		this.rnetop = new RingNetworkOutboundPort(rnetopURI, this);
+		this.addPort(this.rnetop);
+		this.rnetop.publishPort();
 
-            @Override
-            public void run() {
-                try {
+		this.rnetip = new RingNetworkInboundPort(rnetipURI, this);
+		this.addPort(this.rnetip);
+		this.rnetip.publishPort();
 
-                    RequestDispatcherDynamicStateI rdds = getDynamicState();
-                    print( "timestamp      : " + rdds.getTimeStamp() );
-                    print( "timestamper id : " + rdds.getTimeStamperId() );
-                    print( "request time average : " + rdds.getRequestProcessingAvg() + " ms" );
-                    boolean adaptation = false;
+		this.addRequiredInterface(RequestDispatcherManagementI.class);
+		this.rdmop = new RequestDispatcherManagementOutboundPort(requestDispatcherManagementOutboundPortURI, this);
+		this.addPort(this.rdmop);
+		this.rdmop.publishPort();
 
-                    if ( TURN_ON_ADAPTATION ) {
+		this.addRequiredInterface( AdmissionControllerManagementI.class );
+		this.acmop = new AdmissionControllerManagementOutboundPort( admissionControllerManagementOutboundPortURI ,
+				this );
+		this.addPort( this.acmop );
+		this.acmop.publishPort();
+		if ( TRACE_GRAPH ) {
+			FileWriter f = new FileWriter( Filename , false );
+			f.close();
+		}
+		this.frequencies = frequencies;
 
-                        if ( System.nanoTime() - lastAdaptation > DURATION_BETWEEN_ADJUSTMENT ) {
+		ladder = new Integer[] {  2 , 2 , 2 , 3  , 3 , 4 , 5 };
 
-                            // WE ARE ABOVE THE THRESHOLD ------------------------------------
-                            if ( rdds.getRequestProcessingAvg() > THRESHOLD_AVG_ADJUSTMENT_MS ) {
+	}
 
-                                int nbCoresToAllocate = 2;
-                             
-                                if ( lastAVGTime != 0){          
-                                    int i = ( int ) ( ( rdds.getRequestProcessingAvg() - lastAVGTime ) / 1000 );
-                                    nbCoresToAllocate =
-                                            i >= ladder.length ? ladder[ladder.length - 1]
-                                            : i > 0 ? ladder[i] 
-                                            : ladder[0] ;
-                                            System.out.println( "ladder["+i+"] = " + nbCoresToAllocate );
-                                }
-                                System.out.println( "ladder[0] = " + nbCoresToAllocate );
+	public void startControlling() throws Exception {
+		lastAdaptation = System.nanoTime();
 
-                                
-                                acmop.setFrequency( frequencies[frequencies.length - 1] );
+		this.pullingFuture = this.scheduleTaskAtFixedRate( new ComponentI.ComponentTask() {
 
-                                // Trying to add cores.. if no more cores available we add a new VM
-                                System.out.println( "Trying to add cores..." + nbCoresToAllocate );
-                                if ( !acmop.addCores( rdds.getRequestDispatcherURI() , 2 ) ) {
-                                    System.out.println( "Trying to add a new VM..." );
-                                    acmop.allocateVM( rdds.getRequestDispatcherURI() );
-                                }
+			@Override
+			public void run() {
+				try {
 
-                                adaptation = true;
-                                lastAdaptation = System.nanoTime();
-                                lastAVGTime = rdds.getRequestProcessingAvg();
-                            }
+					RequestDispatcherDynamicStateI rdds = getDynamicState();
+					print( "timestamp      : " + rdds.getTimeStamp() );
+					print( "timestamper id : " + rdds.getTimeStamperId() );
+					print( "request time average : " + rdds.getRequestProcessingAvg() + " ms" );
+					boolean adaptation = false;
 
-                            // WE ARE BELOW THE MINIMUM THRESHOLD ------------------------------
-                            if ( rdds.getRequestProcessingAvg() < MIN_THRESHOLD_AVG_ADJUSTMENT_MS ) {
-                                acmop.removeVM( rdds.getRequestDispatcherURI() );
-                                acmop.setFrequency( frequencies[0] );
+					if ( TURN_ON_ADAPTATION ) {
 
-                                adaptation = true;
-                                lastAdaptation = System.nanoTime();
-                                lastAVGTime = rdds.getRequestProcessingAvg();
-                            }
+						if ( System.nanoTime() - lastAdaptation > DURATION_BETWEEN_ADJUSTMENT ) {
 
-                        }
-                    }
+							// WE ARE ABOVE THE THRESHOLD ------------------------------------
+							if ( rdds.getRequestProcessingAvg() > THRESHOLD_AVG_ADJUSTMENT_MS ) {
+
+								int nbCoresToAllocate = 2;
+
+								if ( lastAVGTime != 0){          
+									int i = ( int ) ( ( rdds.getRequestProcessingAvg() - lastAVGTime ) / 1000 );
+									nbCoresToAllocate =
+											i >= ladder.length ? ladder[ladder.length - 1]
+													: i > 0 ? ladder[i] 
+															: ladder[0] ;
+													System.out.println( "ladder["+i+"] = " + nbCoresToAllocate );
+								}
+								System.out.println( "ladder[0] = " + nbCoresToAllocate );
 
 
-                    if ( TRACE_GRAPH ) { // Trace the graph if required
-                        if ( rdds.getRequestProcessingAvg() != 0 ) {
-                            try {
-                                FileWriter fw = new FileWriter( Filename , true );
-                                if ( !adaptation )
-                                    fw.write( nbMoyRecu + " " + rdds.getRequestProcessingAvg() + "\n" );
-                                else
-                                    fw.write( nbMoyRecu + " " + rdds.getRequestProcessingAvg() + " "
-                                            + rdds.getRequestProcessingAvg() + "\n" );
-                                nbMoyRecu++;
-                                fw.close();
-                            }
-                            catch ( IOException exception ) {
-                                System.out.println( "Erreur lors de l'ecriture : " + exception.getMessage() );
-                            }
-                        }
-                    }
+								acmop.setFrequency( frequencies[frequencies.length - 1] );
 
-                }
-                catch ( Exception e ) {
-                    e.printStackTrace();
-                }
-            }
-        } , 1l , 1l , TimeUnit.SECONDS );
-    }
+								// Trying to add cores.. if no more cores available we add a new VM
+								System.out.println( "Trying to add cores..." + nbCoresToAllocate );
+								if ( !acmop.addCores( rdds.getRequestDispatcherURI() , 2 ) ) {
+									System.out.println( "Trying to add a new VM..." );
+									if(flagHaveVM){
+										print("VM found ! Connecting VM " + currentVMURI + " to RD + ");
+										rdmop.connectVm(currentVMURI, currentVMRequestSubmissionInboundPortURI);
+										flagHaveVM = false;
+									}
+									else{
+										print("No VM found ! Waiting...");
+										flagVM = true;
+									}
+								}
 
-    public RequestDispatcherDynamicStateI getDynamicState() throws Exception {
-        return ( RequestDispatcherDynamicStateI ) requestDispatcherDynamicStateDataOutboundPort.request();
-    }
+								adaptation = true;
+								lastAdaptation = System.nanoTime();
+								lastAVGTime = rdds.getRequestProcessingAvg();
+							}
 
-    private void print( String s ) {
-        this.logMessage( "[Controller] " + s );
-    }
+							// WE ARE BELOW THE MINIMUM THRESHOLD ------------------------------
+							if ( rdds.getRequestProcessingAvg() < MIN_THRESHOLD_AVG_ADJUSTMENT_MS ) {
+								//  acmop.removeVM( rdds.getRequestDispatcherURI() );
+								acmop.setFrequency( frequencies[0] );
 
-    @Override
-    public void shutdown() throws ComponentShutdownException {
-        try {
-            if ( this.acmop.connected() )
-                this.acmop.doDisconnection();
-        }
-        catch ( Exception e ) {
-            throw new ComponentShutdownException( e );
-        }
-        super.shutdown();
-    }
+								adaptation = true;
+								lastAdaptation = System.nanoTime();
+								lastAVGTime = rdds.getRequestProcessingAvg();
+							}
 
-    @Override
-    public void acceptRequestDispatcherDynamicData( String requestDispatcherURI ,
-            RequestDispatcherDynamicStateI currentDynamicState ) throws Exception {
-        // TODO Auto-generated method stub
-    }
+						}
+					}
+
+
+					if ( TRACE_GRAPH ) { // Trace the graph if required
+						if ( rdds.getRequestProcessingAvg() != 0 ) {
+							try {
+								FileWriter fw = new FileWriter( Filename , true );
+								if ( !adaptation )
+									fw.write( nbMoyRecu + " " + rdds.getRequestProcessingAvg() + "\n" );
+								else
+									fw.write( nbMoyRecu + " " + rdds.getRequestProcessingAvg() + " "
+											+ rdds.getRequestProcessingAvg() + "\n" );
+								nbMoyRecu++;
+								fw.close();
+							}
+							catch ( IOException exception ) {
+								System.out.println( "Erreur lors de l'ecriture : " + exception.getMessage() );
+							}
+						}
+					}
+
+				}
+				catch ( Exception e ) {
+					e.printStackTrace();
+				}
+			}
+		} , 1l , 1l , TimeUnit.SECONDS );
+	}
+
+	public RequestDispatcherDynamicStateI getDynamicState() throws Exception {
+		return ( RequestDispatcherDynamicStateI ) requestDispatcherDynamicStateDataOutboundPort.request();
+	}
+
+	private void print( String s ) {
+		this.logMessage( "[Controller] " + s);
+	}
+
+	@Override
+	public void shutdown() throws ComponentShutdownException {
+		try {
+			if ( this.acmop.connected() )
+				this.acmop.doDisconnection();
+		}
+		catch ( Exception e ) {
+			throw new ComponentShutdownException( e );
+		}
+		super.shutdown();
+	}
+
+	@Override
+	public void acceptRequestDispatcherDynamicData( String requestDispatcherURI ,
+			RequestDispatcherDynamicStateI currentDynamicState ) throws Exception {
+		// TODO Auto-generated method stub
+	}
+
+	@Override
+	public void sendVM(String vmURI, String requestSubmissionInboundPortURI) throws Exception {
+		flagHaveVM = true;
+		currentVMURI = vmURI;
+		currentVMRequestSubmissionInboundPortURI = requestSubmissionInboundPortURI;
+		if(flagVM){
+			print("Connecting VM " + vmURI + " to RD");
+			rdmop.connectVm(vmURI, currentVMRequestSubmissionInboundPortURI);
+			flagVM = false;
+		}
+		else{
+			print("Keeping VM " + vmURI + " for " + KEEP_VM_DURATION_S + " s");
+			Thread.sleep(KEEP_VM_DURATION_S * 1000);
+			if(flagVM){
+				print("Connecting VM " + currentVMURI + " to RD");
+				rdmop.connectVm(currentVMURI, currentVMRequestSubmissionInboundPortURI);
+				flagVM = false;
+			}
+			else{
+				if(flagHaveVM){
+					flagHaveVM = false;
+					print("Sending VM "+ vmURI + " in the ring");
+					rnetop.sendVM(vmURI, requestSubmissionInboundPortURI);
+				}
+			}
+		}
+
+	}
 }
