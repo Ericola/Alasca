@@ -40,4 +40,6 @@ extends		OfferedI,
 	 */
 	public void			allocateCores(AllocatedCore[] allocatedCores)
 	throws Exception ;
+	
+	public AllocatedCore[] getCoresInVM() throws Exception;
 }

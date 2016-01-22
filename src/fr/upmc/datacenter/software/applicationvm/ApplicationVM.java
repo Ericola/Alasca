@@ -450,5 +450,16 @@ implements	ProcessorServicesNotificationConsumerI,
 		
 		return tab;
 	}
+
+	@Override
+	public AllocatedCore[] getCoresInVM() throws Exception {
+		AllocatedCore[] tab = new AllocatedCore[allocatedCoresIdleStatus.entrySet().size()];
+		int i = 0;
+		for(Map.Entry<AllocatedCore, Boolean> tmp : allocatedCoresIdleStatus.entrySet()){
+			tab[i] = tmp.getKey();
+		}
+		
+		return tab;
+	}
 	
 }

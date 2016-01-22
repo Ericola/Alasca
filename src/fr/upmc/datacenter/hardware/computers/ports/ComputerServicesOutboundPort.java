@@ -60,4 +60,9 @@ implements	ComputerServicesI
 		return ((ComputerServicesI)this.connector).
 											allocateCores(numberRequested) ;
 	}
+
+	@Override
+	public void releaseCores(AllocatedCore[] ac) throws Exception {
+		((ComputerServicesI)this.connector).releaseCores(ac);
+	}
 }

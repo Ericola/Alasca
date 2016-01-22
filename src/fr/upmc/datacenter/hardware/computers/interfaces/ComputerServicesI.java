@@ -63,4 +63,6 @@ extends		OfferedI,
 	 */
 	public AllocatedCore[]	allocateCores(final int numberRequested)
 	throws Exception ;
+	
+	public void releaseCores(AllocatedCore [] ac) throws Exception;
 }

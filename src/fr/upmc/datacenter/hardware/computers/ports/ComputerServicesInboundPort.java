@@ -81,4 +81,17 @@ implements	ComputerServicesI
 						}
 					}) ;
 	}
+
+	@Override
+	public void releaseCores(final AllocatedCore[] ac) throws Exception{
+		final Computer c = (Computer) this.owner ;
+		
+		c.handleRequestSync(new ComponentI.ComponentService<Void>() {
+			@Override
+			public Void call() throws Exception {
+				c.releaseCores(ac);
+				return null;
+			}
+		});
+	}
 }

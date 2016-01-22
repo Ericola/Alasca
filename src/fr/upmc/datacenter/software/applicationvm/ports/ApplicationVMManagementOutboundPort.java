@@ -51,4 +51,9 @@ implements	ApplicationVMManagementI
 		((ApplicationVMManagementI)this.connector).
 												allocateCores(allocatedCores) ;
 	}
+
+	@Override
+	public AllocatedCore[] getCoresInVM() throws Exception {
+		return ((ApplicationVMManagementI)this.connector).getCoresInVM();
+	}
 }

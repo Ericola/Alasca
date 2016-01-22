@@ -149,6 +149,8 @@ implements AdmissionControllerManagementI, RequestDispatcherVMEndingNotification
 	/** map associate avmop with csop index **/
 	private Map<ApplicationVMManagementOutboundPort , Integer> avmopComp;
 
+	/** map associate VmURIs with avmop **/
+	private Map<String, ApplicationVMManagementOutboundPort> vmAvmop;
 	protected Integer[] frequencies;
 
 	private long lastVMReceived;
@@ -237,6 +239,7 @@ implements AdmissionControllerManagementI, RequestDispatcherVMEndingNotification
 
 		rsipList = new HashMap<>();
 		avmopMap = new HashMap<>();
+		vmAvmop = new HashMap<>();
 		allocatedCores = new ArrayList<>();
 		this.frequencies = frequencies;
 
@@ -306,7 +309,8 @@ implements AdmissionControllerManagementI, RequestDispatcherVMEndingNotification
 					( RequestSubmissionInboundPort ) vm.findPortFromURI( createURI( "rsip" ) ) );
 
 			avmopComp.put( avmopTemp , index );
-
+			vmAvmop.put(vmURI, avmopTemp);
+			
 			// AllocateCore des computers aux VMs
 			this.avmop.get( cpt ).allocateCores( ac );
 			print( ac.length + " cores allocated." );
@@ -493,7 +497,8 @@ implements AdmissionControllerManagementI, RequestDispatcherVMEndingNotification
 					ApplicationVMManagementConnector.class.getCanonicalName() );
 			avmopMap.put( vmURI , avmop.get( avmop.size() - 1 ) );
 			avmopComp.put( avmopTemp , index );
-
+			vmAvmop.put(vmURI, avmopTemp);
+			
 			// AllocatedCore to VM
 			avmop.get( avmop.size() - 1 ).allocateCores( ac );
 			print( ac.length + " cores allocated." );
@@ -611,13 +616,13 @@ implements AdmissionControllerManagementI, RequestDispatcherVMEndingNotification
 
 			testDate = new Date();
 			long timeSinceLastVMReceivedInMs = testDate.getTime() - lastVMReceived;
-			if(timeSinceLastVMReceivedInMs > THRESHOLD_ADDING_VM_MS){
-				// Adding new VM in the ring
-
-			}
-
 			if(timeSinceLastVMReceivedInMs < THRESHOLD_REMOVING_VM_RING_MS){
 				// remove the vm from the ring
+				AllocatedCore[] ac = vmAvmop.get(vmURI).getCoresInVM();
+				ComputerServicesOutboundPort csoptmp = csop[avmopComp.get(vmAvmop.get(vmURI))];
+				csoptmp.releaseCores(ac);
+				rsipList.get(requestSubmissionInboundPortURI).getOwner().shutdown();
+				
 			}
 			//else{
 				rnetop.sendVM(vmURI, requestSubmissionInboundPortURI);

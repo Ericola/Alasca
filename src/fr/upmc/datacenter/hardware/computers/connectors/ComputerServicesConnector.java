@@ -43,4 +43,10 @@ implements	ComputerServicesI
 		return ((ComputerServicesI)this.offering).
 											allocateCores(numberRequested) ;
 	}
+
+	@Override
+	public void releaseCores(AllocatedCore[] ac) throws Exception{
+		((ComputerServicesI)this.offering).releaseCores(ac);
+		
+	}
 }

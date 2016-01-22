@@ -33,7 +33,6 @@ import fr.upmc.datacenterclient.applicationprovider.ports.ApplicationSubmissionO
 public class TestCVM extends AbstractCVM {
 
     protected ComputerServicesOutboundPort              csop;
-    protected ComputerDynamicStateDataOutboundPort      cdsdop;
     protected ApplicationSubmissionOutboundPort         asop;
     protected ApplicationNotificationOutboundPort       anop;
     protected ApplicationProvider                       ap;
@@ -123,9 +122,7 @@ public class TestCVM extends AbstractCVM {
     @Override
     public void shutdown() throws Exception {
         csop.doDisconnection();
-        cdsdop.doDisconnection();
         asop.doDisconnection();
-        anop.doDisconnection();
         super.shutdown();
     }
 
