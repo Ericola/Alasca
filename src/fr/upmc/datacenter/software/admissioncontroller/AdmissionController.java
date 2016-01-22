@@ -7,8 +7,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeSet;
+import java.util.concurrent.TimeUnit;
 
 import fr.upmc.components.AbstractComponent;
+import fr.upmc.components.ComponentI;
 import fr.upmc.components.cvm.AbstractCVM;
 import fr.upmc.components.exceptions.ComponentShutdownException;
 import fr.upmc.datacenter.hardware.computers.Computer.AllocatedCore;
@@ -67,7 +69,7 @@ public class AdmissionController extends AbstractComponent
 implements AdmissionControllerManagementI, RequestDispatcherVMEndingNotificationI, RingNetworkI {
 
 	public final static int NB_CORE = 2;
-	public final static long THRESHOLD_ADDING_VM_MS = 5000L;
+	public final static long THRESHOLD_ADDING_VM_MS = 500000L;
 	public final static long THRESHOLD_REMOVING_VM_RING_MS = 5000L;
 
 
@@ -125,7 +127,7 @@ implements AdmissionControllerManagementI, RequestDispatcherVMEndingNotification
 	/** Inbound port used by the controlller to manage the AdmissionController */
 	protected AdmissionControllerManagementInboundPort acmip;
 
-
+	public boolean controlVmFrequency = false;
 
 	private int nbVMCreated = 0;
 
@@ -409,6 +411,11 @@ implements AdmissionControllerManagementI, RequestDispatcherVMEndingNotification
 			
 			this.rnetop.sendVM(tab[0], tab[1]);
 			
+			if(!controlVmFrequency){
+				controlVmFrequency = true;
+				controlVmArrivalFrequency();
+			}
+			
 			vm.toggleTracing();
 			vm.toggleLogging();
 			rd.toggleTracing();
@@ -614,6 +621,38 @@ implements AdmissionControllerManagementI, RequestDispatcherVMEndingNotification
 
 
 	}
+	
+	/**
+	 *ScheduleTask to control the frequency of arrival of VM. If the frequency is too low, we create a new vm 
+	 * and we put it in the ring
+	 */
+	public void controlVmArrivalFrequency(){
+		this.scheduleTaskAtFixedRate( new ComponentI.ComponentTask() {
+			
+			@Override
+			public void run() {
+				Date testDate = new Date();
+				if(lastVMReceived != -1)
+					if(testDate.getTime() - lastVMReceived > THRESHOLD_ADDING_VM_MS){
+						//Create new Vm
+						try {
+							String tab[] = allocateVM("", true);
+							rnetop.sendVM(tab[0], tab[1]);
+							
+						} catch (Exception e) {
+							// TODO Auto-generated catch block
+							e.printStackTrace();
+						}
+					}
+						
+				
+			}
+			
+			
+		}, 1l , 1l , TimeUnit.SECONDS );
+	}
+	
+	
 
 }
 

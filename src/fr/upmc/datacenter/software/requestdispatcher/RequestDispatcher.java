@@ -245,9 +245,11 @@ implements RequestSubmissionHandlerI, RequestNotificationHandlerI, RequestDispat
 			nbRequestInQueueOrInProgress.remove(rdsop);
 			rsopWaitingRequestFinishList.remove(rdsop);
 			vmrsop.remove( rdsop );
+			print("VM has finished all its requests. Waiting for RequestNotificationPortDisconnection");
+			String [] tab = rdsop.acceptRequestNotificationPortDisconnection();
 			rdsop.doDisconnection();
-			print("VM has finished all its requests. Sending notification to ApplicationController...");
-			rdvenop.notifyAdmissionControllerVMFinishRequest(rdsop.getServerPortURI());
+			
+			//rdvenop.notifyAdmissionControllerVMFinishRequest(rdsop.getServerPortURI());
 			
 		}
 	}

@@ -440,4 +440,15 @@ implements	ProcessorServicesNotificationConsumerI,
 		requestNotificationOutboundPort.doConnection(requestNotificationInboundPortURI, RequestSubmissionI.class.getCanonicalName());
 	}
 	
+	public String[] acceptRequestNotificationPortDisconnection()
+			throws Exception {
+		
+		this.requestNotificationOutboundPort.doDisconnection();
+		String[] tab = new String[2];
+		tab[0] = vmURI;
+		tab[1] = requestSubmissionInboundPort.getPortURI();
+		
+		return tab;
+	}
+	
 }

@@ -67,4 +67,12 @@ implements	RequestSubmissionI
 			String requestNotificationInboundPortURI) throws Exception {
 		((RequestSubmissionI)this.connector).acceptNotificationPortURI(requestNotificationInboundPortURI);
 	}
+
+	@Override
+	public String[] acceptRequestNotificationPortDisconnection()
+			throws Exception {
+		
+		return ((RequestSubmissionI)this.connector).acceptRequestNotificationPortDisconnection();
+	}
+	
 }

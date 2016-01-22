@@ -63,7 +63,7 @@ public class Controller extends AbstractComponent implements RequestDispatcherSt
 	public String currentVMRequestSubmissionInboundPortURI;
 
 	protected Integer[] frequencies;
-
+	
 	public Controller( String cURI , String requestDispatcherURI , String admissionControllerManagementOutboundPortURI ,
 			String requestDispatcherManagementOutboundPortURI, String rddsdip , String rnetipURI, String rnetopURI, Integer[] frequencies ) throws Exception {
 		super( 3 , 3 );
@@ -168,7 +168,7 @@ public class Controller extends AbstractComponent implements RequestDispatcherSt
 
 							// WE ARE BELOW THE MINIMUM THRESHOLD ------------------------------
 							if ( rdds.getRequestProcessingAvg() < MIN_THRESHOLD_AVG_ADJUSTMENT_MS ) {
-								//  acmop.removeVM( rdds.getRequestDispatcherURI() );
+								rdmop.disconnectVm();
 								acmop.setFrequency( frequencies[0] );
 
 								adaptation = true;

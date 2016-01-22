@@ -57,4 +57,6 @@ extends		OfferedI,
 	throws Exception ;
 	
 	public void acceptNotificationPortURI(final String requestNotificationInboundPortURI) throws Exception;
-}
+	
+	public String[] acceptRequestNotificationPortDisconnection() throws Exception;
+} 

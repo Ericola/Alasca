@@ -56,11 +56,11 @@ public class RequestDispatcherManagementInboundPort extends AbstractInboundPort
 
         this.owner.handleRequestAsync( new ComponentI.ComponentService<Void>() {
 
-            @Override
-            public Void call() throws Exception {
-                rd.disconnectVm();
-                return null;
-            }
+        	@Override
+        	public Void call() throws Exception {
+        		rd.disconnectVm();
+        		return null;
+        	}
         } );
 
     }
