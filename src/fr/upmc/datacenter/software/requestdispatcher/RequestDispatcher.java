@@ -1,27 +1,18 @@
 package fr.upmc.datacenter.software.requestdispatcher;
 
 import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.Date;
 import java.util.HashMap;
-import java.util.Iterator;
-import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.ListIterator;
 import java.util.Map;
-import java.util.PriorityQueue;
-
-import javax.naming.ldap.StartTlsRequest;
 
 import fr.upmc.components.AbstractComponent;
-import fr.upmc.components.cvm.AbstractCVM;
 import fr.upmc.components.exceptions.ComponentShutdownException;
-import fr.upmc.datacenter.hardware.processors.ports.ProcessorDynamicStateDataInboundPort;
 import fr.upmc.datacenter.interfaces.ControlledDataOfferedI;
 import fr.upmc.datacenter.interfaces.PushModeControllerI;
-import fr.upmc.datacenter.software.applicationvm.ApplicationVM;
 import fr.upmc.datacenter.software.connectors.RequestSubmissionConnector;
+import fr.upmc.datacenter.software.controller.interfaces.ControllerManagementI;
+import fr.upmc.datacenter.software.controller.ports.ControllerManagementOutboundPort;
 import fr.upmc.datacenter.software.interfaces.RequestI;
 import fr.upmc.datacenter.software.interfaces.RequestNotificationHandlerI;
 import fr.upmc.datacenter.software.interfaces.RequestNotificationI;
@@ -33,7 +24,6 @@ import fr.upmc.datacenter.software.ports.RequestSubmissionInboundPort;
 import fr.upmc.datacenter.software.ports.RequestSubmissionOutboundPort;
 import fr.upmc.datacenter.software.requestdispatcher.interfaces.RequestDispatcherDynamicStateI;
 import fr.upmc.datacenter.software.requestdispatcher.interfaces.RequestDispatcherManagementI;
-import fr.upmc.datacenter.software.requestdispatcher.interfaces.RequestDispatcherStateDataConsumerI;
 import fr.upmc.datacenter.software.requestdispatcher.interfaces.RequestDispatcherVMEndingNotificationI;
 import fr.upmc.datacenter.software.requestdispatcher.ports.RequestDispatcherDynamicStateDataInboundPort;
 import fr.upmc.datacenter.software.requestdispatcher.ports.RequestDispatcherManagementInboundPort;
@@ -109,6 +99,8 @@ implements RequestSubmissionHandlerI, RequestNotificationHandlerI, RequestDispat
 	/** map associate vm uri with requestSubmissionOutboundPort **/
 	protected Map<RequestSubmissionOutboundPort, String > vmrsop;
 	
+	protected ControllerManagementOutboundPort cmop;
+	
 	/**
 	 * Create a RequestDispatcher
 	 * 
@@ -120,7 +112,7 @@ implements RequestSubmissionHandlerI, RequestNotificationHandlerI, RequestDispat
 	 * @throws Exception
 	 */
 	public RequestDispatcher( String rdURI , String rdsip , String rdmip , List<String> rdsop , List<String> vmURIs,
-			String rdvenop , String rnop , String rnip , String requestDispatcherDynamicStateDataInboundPortURI ) throws Exception {
+			String rdvenop , String rnop , String rnip , String cmop, String requestDispatcherDynamicStateDataInboundPortURI ) throws Exception {
 		super( 2 , 2 );
 
 		// Preconditions
@@ -171,6 +163,11 @@ implements RequestSubmissionHandlerI, RequestNotificationHandlerI, RequestDispat
 		this.addPort(this.rdvenop);
 		this.rdvenop.publishPort();
 
+		this.addRequiredInterface(ControllerManagementI.class);
+		this.cmop = new ControllerManagementOutboundPort(cmop, this);
+		this.addPort(this.cmop);
+		this.cmop.publishPort();
+		
 		this.addOfferedInterface( ControlledDataOfferedI.ControlledPullI.class );
 		this.requestDispatcherDynamicStateDataInboundPort = new RequestDispatcherDynamicStateDataInboundPort(
 				requestDispatcherDynamicStateDataInboundPortURI , this );
@@ -184,7 +181,7 @@ implements RequestSubmissionHandlerI, RequestNotificationHandlerI, RequestDispat
 		rsopWaitingRequestFinishList = new ArrayList<>();
 		nbVmConnected = rdsop.size();
 
-
+		
 
 		// initialize nbRequestInQueueOrInProgress
 		for ( RequestSubmissionOutboundPort r : rdsopList ) {
@@ -248,8 +245,8 @@ implements RequestSubmissionHandlerI, RequestNotificationHandlerI, RequestDispat
 			print("VM has finished all its requests. Waiting for RequestNotificationPortDisconnection");
 			String [] tab = rdsop.acceptRequestNotificationPortDisconnection();
 			rdsop.doDisconnection();
+			cmop.notifyVMEndingItsRequests(tab);
 			
-			//rdvenop.notifyAdmissionControllerVMFinishRequest(rdsop.getServerPortURI());
 			
 		}
 	}

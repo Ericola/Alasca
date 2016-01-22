@@ -14,6 +14,8 @@ import fr.upmc.components.interfaces.DataRequiredI;
 import fr.upmc.datacenter.interfaces.ControlledDataRequiredI;
 import fr.upmc.datacenter.software.admissioncontroller.interfaces.AdmissionControllerManagementI;
 import fr.upmc.datacenter.software.admissioncontroller.ports.AdmissionControllerManagementOutboundPort;
+import fr.upmc.datacenter.software.controller.interfaces.ControllerManagementI;
+import fr.upmc.datacenter.software.controller.ports.ControllerManagementInboundPort;
 import fr.upmc.datacenter.software.interfaces.RingNetworkI;
 import fr.upmc.datacenter.software.ports.RingNetworkInboundPort;
 import fr.upmc.datacenter.software.ports.RingNetworkOutboundPort;
@@ -50,6 +52,8 @@ public class Controller extends AbstractComponent implements RequestDispatcherSt
 
 	protected RequestDispatcherManagementOutboundPort rdmop;
 
+	protected ControllerManagementInboundPort cmip;
+
 	/** OutboundPort uses to communicate with the AdmissionController */
 	protected AdmissionControllerManagementOutboundPort acmop;
 	protected final static String                       Filename  = "Courbe.txt";
@@ -63,8 +67,8 @@ public class Controller extends AbstractComponent implements RequestDispatcherSt
 	public String currentVMRequestSubmissionInboundPortURI;
 
 	protected Integer[] frequencies;
-	
-	public Controller( String cURI , String requestDispatcherURI , String admissionControllerManagementOutboundPortURI ,
+
+	public Controller( String cURI , String requestDispatcherURI , String cmip, String admissionControllerManagementOutboundPortURI ,
 			String requestDispatcherManagementOutboundPortURI, String rddsdip , String rnetipURI, String rnetopURI, Integer[] frequencies ) throws Exception {
 		super( 3 , 3 );
 		this.cURI = cURI;
@@ -93,6 +97,11 @@ public class Controller extends AbstractComponent implements RequestDispatcherSt
 		this.rdmop = new RequestDispatcherManagementOutboundPort(requestDispatcherManagementOutboundPortURI, this);
 		this.addPort(this.rdmop);
 		this.rdmop.publishPort();
+
+		this.addOfferedInterface(ControllerManagementI.class);
+		this.cmip = new ControllerManagementInboundPort(cmip, this);
+		this.addPort(this.cmip);
+		this.cmip.publishPort();
 
 		this.addRequiredInterface( AdmissionControllerManagementI.class );
 		this.acmop = new AdmissionControllerManagementOutboundPort( admissionControllerManagementOutboundPortURI ,
@@ -259,5 +268,10 @@ public class Controller extends AbstractComponent implements RequestDispatcherSt
 			}
 		}
 
+	}
+
+	public void notifyVMEndingItsRequests(String[] VmURis) throws Exception{
+		print("Putting VM : " + VmURis[0] + " in the ring");
+		rnetop.sendVM(VmURis[0], VmURis[1]);
 	}
 }

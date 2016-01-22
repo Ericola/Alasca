@@ -20,14 +20,14 @@ implements ControllerManagementI {
 	}
 
 	@Override
-	public void notifyVMEndingItsRequests(String[] VmURis) throws Exception{
+	public void notifyVMEndingItsRequests(final String[] VmURis) throws Exception{
 		final Controller c = ( Controller ) this.owner;
 
 		this.owner.handleRequestAsync( new ComponentService<Void>() {
 
 			@Override
 			public Void call() throws Exception {
-
+				c.notifyVMEndingItsRequests(VmURis);
 				return null;
 			}
 

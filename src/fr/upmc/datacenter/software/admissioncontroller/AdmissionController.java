@@ -30,6 +30,8 @@ import fr.upmc.datacenter.software.connectors.RequestNotificationConnector;
 import fr.upmc.datacenter.software.connectors.RequestSubmissionConnector;
 import fr.upmc.datacenter.software.connectors.RingNetworkConnector;
 import fr.upmc.datacenter.software.controller.Controller;
+import fr.upmc.datacenter.software.controller.interfaces.ControllerManagementI;
+import fr.upmc.datacenter.software.controller.ports.ControllerManagementOutboundPort;
 import fr.upmc.datacenter.software.interfaces.RingNetworkI;
 import fr.upmc.datacenter.software.ports.RequestNotificationOutboundPort;
 import fr.upmc.datacenter.software.ports.RequestSubmissionInboundPort;
@@ -317,7 +319,7 @@ implements AdmissionControllerManagementI, RequestDispatcherVMEndingNotification
 			String rdURI = createURI( "rd" ) ;
 			RequestDispatcher rd = new RequestDispatcher( rdURI, createURI( "rdsip" ) ,
 					createURI( "rdmip" ) , rdsop , vmURIs , createURI( "rdvenop" ) , createURI( "rdnop" ) ,
-					createURI( "rdnip" ) , createURI( "rddsdip" ) );
+					createURI( "rdnip" ) , createURI("cmop"), createURI( "rddsdip" ) );
 			rd.start();
 			String rdnop = createURI( "rdnop" );
 			rnopList.put( rdnop , ( RequestNotificationOutboundPort ) ( rd.findPortFromURI( rdnop ) ) );
@@ -352,7 +354,7 @@ implements AdmissionControllerManagementI, RequestDispatcherVMEndingNotification
 			print( "Creating the controller..." );
 
 
-			Controller controller = new Controller( createURI( "c" ) , createURI( "rd" ) , createURI( "acmop" ) ,
+			Controller controller = new Controller( createURI( "c" ) , createURI( "rd" ) , createURI("cmip"), createURI( "acmop" ) ,
 					createURI("rdmop"), createURI( "rddsdip" ), createURI("rnetip"), createURI("rnetop"), frequencies);
 			controller.toggleLogging();
 			controller.toggleTracing();
@@ -367,6 +369,8 @@ implements AdmissionControllerManagementI, RequestDispatcherVMEndingNotification
 			RequestDispatcherManagementOutboundPort rdmop = (RequestDispatcherManagementOutboundPort) controller.findPortFromURI(createURI("rdmop"));
 			rdmop.doConnection(createURI( "rdmip" ) , RequestDispatcherManagementConnector.class.getCanonicalName() );
 
+			ControllerManagementOutboundPort cmop = (ControllerManagementOutboundPort) rd.findPortFromURI(createURI("cmop"));
+			cmop.doConnection(createURI("cmip"), ControllerManagementI.class.getCanonicalName());
 			//	synchronized(this){
 			
 			if(!rnetop.connected()){
