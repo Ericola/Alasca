@@ -30,6 +30,7 @@ import fr.upmc.datacenter.software.connectors.RequestNotificationConnector;
 import fr.upmc.datacenter.software.connectors.RequestSubmissionConnector;
 import fr.upmc.datacenter.software.connectors.RingNetworkConnector;
 import fr.upmc.datacenter.software.controller.Controller;
+import fr.upmc.datacenter.software.controller.connectors.ControllerManagementConnector;
 import fr.upmc.datacenter.software.controller.interfaces.ControllerManagementI;
 import fr.upmc.datacenter.software.controller.ports.ControllerManagementOutboundPort;
 import fr.upmc.datacenter.software.interfaces.RingNetworkI;
@@ -370,9 +371,10 @@ implements AdmissionControllerManagementI, RequestDispatcherVMEndingNotification
 			rdmop.doConnection(createURI( "rdmip" ) , RequestDispatcherManagementConnector.class.getCanonicalName() );
 
 			ControllerManagementOutboundPort cmop = (ControllerManagementOutboundPort) rd.findPortFromURI(createURI("cmop"));
-			cmop.doConnection(createURI("cmip"), ControllerManagementI.class.getCanonicalName());
+			print(cmop.getPortURI());
+			cmop.doConnection(createURI("cmip"), ControllerManagementConnector.class.getCanonicalName());
 			//	synchronized(this){
-			
+		
 			if(!rnetop.connected()){
 				print("Connecting to the Ring network");
 				// Network Connect AdmissionController -> Controller
