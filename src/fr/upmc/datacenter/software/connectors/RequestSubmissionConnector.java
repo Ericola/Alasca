@@ -1,6 +1,7 @@
 package fr.upmc.datacenter.software.connectors;
 
 import fr.upmc.components.connectors.AbstractConnector;
+import fr.upmc.datacenter.hardware.computers.Computer.AllocatedCore;
 import fr.upmc.datacenter.software.interfaces.RequestI;
 import fr.upmc.datacenter.software.interfaces.RequestSubmissionI;
 
@@ -54,6 +55,11 @@ implements	RequestSubmissionI
 	public String[] acceptRequestNotificationPortDisconnection()
 			throws Exception {
 		return ((RequestSubmissionI)this.offering).acceptRequestNotificationPortDisconnection();
+	}
+
+	@Override
+	public AllocatedCore[] getCoresInVM() throws Exception {
+		return ((RequestSubmissionI)this.offering).getCoresInVM();
 	}
 	
 	

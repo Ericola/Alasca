@@ -2,6 +2,7 @@ package fr.upmc.datacenter.software.interfaces;
 
 import fr.upmc.components.interfaces.OfferedI;
 import fr.upmc.components.interfaces.RequiredI;
+import fr.upmc.datacenter.hardware.computers.Computer.AllocatedCore;
 
 /**
  * The interface <code>ApplicationVMServicesI</code>
@@ -59,4 +60,6 @@ extends		OfferedI,
 	public void acceptNotificationPortURI(final String requestNotificationInboundPortURI) throws Exception;
 	
 	public String[] acceptRequestNotificationPortDisconnection() throws Exception;
+	
+	public AllocatedCore[] getCoresInVM() throws Exception;
 } 
