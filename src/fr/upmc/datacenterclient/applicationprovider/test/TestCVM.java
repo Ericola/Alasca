@@ -2,8 +2,10 @@ package fr.upmc.datacenterclient.applicationprovider.test;
 
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.Map.Entry;
 
 import fr.upmc.components.AbstractComponent;
 import fr.upmc.components.cvm.AbstractCVM;
@@ -15,6 +17,7 @@ import fr.upmc.datacenter.hardware.computers.ports.ComputerServicesOutboundPort;
 import fr.upmc.datacenter.hardware.processors.Processor;
 import fr.upmc.datacenter.hardware.processors.Processor.ProcessorPortTypes;
 import fr.upmc.datacenter.software.admissioncontroller.AdmissionController;
+import fr.upmc.datacenter.software.coordinators.ProcessorCoordinator;
 import fr.upmc.datacenter.software.requestdispatcher.ports.RequestDispatcherManagementOutboundPort;
 import fr.upmc.datacenterclient.applicationprovider.ApplicationProvider;
 import fr.upmc.datacenterclient.applicationprovider.connectors.ApplicationNotificationConnector;
@@ -69,7 +72,20 @@ public class TestCVM extends AbstractCVM {
             pmipURIs.put( entry.getValue() , pPortsList.get( Processor.ProcessorPortTypes.MANAGEMENT ) );
             
         }
+      
+        // --------------------------------------------------------------------
+        // Create and deploy Processors coordinator
+        // --------------------------------------------------------------------
+      
+        int i = 0;
+        Map<String, String> processorCoordinators = new HashMap<>();
+        for ( Map.Entry<Integer , String> entry : processorURIs.entrySet() ) {
+            ProcessorCoordinator pc = new ProcessorCoordinator("pc" + i , pmipURIs.get(entry.getValue()));
+            processorCoordinators.put(entry.getValue(), "pc" + i);
+            this.addDeployedComponent(pc);
+        }
 
+   
         // --------------------------------------------------------------------
         // Create and deploy an AdmissionController component
         // --------------------------------------------------------------------
@@ -83,7 +99,7 @@ public class TestCVM extends AbstractCVM {
        
         Integer[] frequencies = {1500, 3000};
         AdmissionController ac = new AdmissionController( "ac" , "asip" , "rdvenip" , "anip" , "acmip" , "rnetip", "rnetop", csop,
-                computer , nbAvailableCoresPerComputer , pmipURIs, frequencies );
+                computer , nbAvailableCoresPerComputer , pmipURIs, frequencies, processorCoordinators );
         this.addDeployedComponent( ac );
         this.csop = ( ComputerServicesOutboundPort ) ac.findPortFromURI( "csop" );
         this.csop.doConnection( "csip" , ComputerServicesConnector.class.getCanonicalName() );

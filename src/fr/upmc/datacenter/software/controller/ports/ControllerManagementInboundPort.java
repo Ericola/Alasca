@@ -1,5 +1,8 @@
 package fr.upmc.datacenter.software.controller.ports;
 
+import java.util.List;
+import java.util.Map;
+
 import fr.upmc.components.ComponentI;
 import fr.upmc.components.ComponentI.ComponentService;
 import fr.upmc.components.ports.AbstractInboundPort;
@@ -35,4 +38,20 @@ implements ControllerManagementI {
 
 
 	}
+
+    @Override
+    public void attachCoordinator(final Map<String, List<Integer>> processorCores) throws Exception {
+        final Controller c = ( Controller ) this.owner;
+
+        this.owner.handleRequestAsync( new ComponentService<Void>() {
+
+            @Override
+            public Void call() throws Exception {
+                c.attachCoordinator(processorCores);
+                return null;
+            }
+
+        });
+        
+    }
 }

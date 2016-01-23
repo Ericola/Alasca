@@ -1,5 +1,8 @@
 package fr.upmc.datacenter.software.controller.ports;
 
+import java.util.List;
+import java.util.Map;
+
 import fr.upmc.components.ComponentI;
 import fr.upmc.components.ports.AbstractOutboundPort;
 import fr.upmc.datacenter.software.controller.interfaces.ControllerManagementI;
@@ -21,4 +24,9 @@ implements ControllerManagementI {
 		( ( ControllerManagementI ) this.connector ).notifyVMEndingItsRequests(VmURis);
 
 	}
+
+    @Override
+    public void attachCoordinator(Map<String, List<Integer>> processorCores) throws Exception {
+        ( ( ControllerManagementI ) this.connector ).attachCoordinator(processorCores);        
+    }
 }
