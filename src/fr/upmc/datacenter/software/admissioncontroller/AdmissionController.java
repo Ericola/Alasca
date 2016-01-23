@@ -196,10 +196,11 @@ implements AdmissionControllerManagementI, RequestDispatcherVMEndingNotification
 
 		this.csop = new ComputerServicesOutboundPort[computerServiceOutboundPortURI.length];
 		this.computerURI = computerURI;
+		this.addRequiredInterface( ComputerServicesI.class );
 		for ( int i = 0 ; i < computerServiceOutboundPortURI.length ; i++ ) {
-			this.addRequiredInterface( ComputerServicesI.class );
+
 			this.csop[i] = new ComputerServicesOutboundPort( computerServiceOutboundPortURI[i] , this );
-			this.addPort( csop[i] );
+			this.addPort( this.csop[i] );
 			this.csop[i].publishPort();
 		}
 
@@ -310,7 +311,7 @@ implements AdmissionControllerManagementI, RequestDispatcherVMEndingNotification
 
 			avmopComp.put( avmopTemp , index );
 			vmAvmop.put(vmURI, avmopTemp);
-			
+
 			// AllocateCore des computers aux VMs
 			this.avmop.get( cpt ).allocateCores( ac );
 			print( ac.length + " cores allocated." );
@@ -360,7 +361,7 @@ implements AdmissionControllerManagementI, RequestDispatcherVMEndingNotification
 
 
 			Controller controller = new Controller( createURI( "c" ) , createURI( "rd" ) , createURI("cmip"), createURI( "acmop" ) ,
-					createURI("rdmop"), createURI( "rddsdip" ), createURI("rnetip"), createURI("rnetop"), frequencies);
+					createURI("rdmop") + "0", createURI( "rddsdip" ), createURI("rnetip"), createURI("rnetop"), frequencies);
 			controller.toggleLogging();
 			controller.toggleTracing();
 			controller.start();
@@ -371,40 +372,40 @@ implements AdmissionControllerManagementI, RequestDispatcherVMEndingNotification
 
 			// Connect Controller with RequestDispatcher
 			print("Connecting Controller and RequestDispatcher");
-			RequestDispatcherManagementOutboundPort rdmop = (RequestDispatcherManagementOutboundPort) controller.findPortFromURI(createURI("rdmop"));
+			RequestDispatcherManagementOutboundPort rdmop = (RequestDispatcherManagementOutboundPort) controller.findPortFromURI(createURI("rdmop") + "0");
 			rdmop.doConnection(createURI( "rdmip" ) , RequestDispatcherManagementConnector.class.getCanonicalName() );
 
 			ControllerManagementOutboundPort cmop = (ControllerManagementOutboundPort) rd.findPortFromURI(createURI("cmop"));
 			print(cmop.getPortURI());
 			cmop.doConnection(createURI("cmip"), ControllerManagementConnector.class.getCanonicalName());
-			//	synchronized(this){
-		
-			if(!rnetop.connected()){
-				print("Connecting to the Ring network");
-				// Network Connect AdmissionController -> Controller
-				rnetop.doConnection(createURI("rnetip"), RingNetworkConnector.class.getCanonicalName());
+			synchronized(this){
 
-				// Network Connect Controller -> AdmissionController
-				RingNetworkOutboundPort ringNetworkOutboundPort = (RingNetworkOutboundPort) controller.findPortFromURI(createURI("rnetop"));
-				ringNetworkOutboundPort.doConnection(rnetip.getPortURI(), RingNetworkConnector.class.getCanonicalName());
+				if(!rnetop.connected()){
+					print("Connecting to the Ring network");
+					// Network Connect AdmissionController -> Controller
+					rnetop.doConnection(createURI("rnetip"), RingNetworkConnector.class.getCanonicalName());
+
+					// Network Connect Controller -> AdmissionController
+					RingNetworkOutboundPort ringNetworkOutboundPort = (RingNetworkOutboundPort) controller.findPortFromURI(createURI("rnetop"));
+					ringNetworkOutboundPort.doConnection(rnetip.getPortURI(), RingNetworkConnector.class.getCanonicalName());
+				}
+
+				else{
+					//Network Disconnect previous Connection AdmissionController -> Controller
+					String ringNetworkInboundPort = rnetop.getServerPortURI();
+					rnetop.doDisconnection();
+
+					// Network Connect AdmissionController -> Controller
+					rnetop.doConnection(createURI("rnetip"), RingNetworkConnector.class.getCanonicalName());
+
+					// Network Connect Controller -> Controller
+					RingNetworkOutboundPort ringNetworkOutboundPort = (RingNetworkOutboundPort) controller.findPortFromURI(createURI("rnetop"));
+					ringNetworkOutboundPort.doConnection(ringNetworkInboundPort, RingNetworkConnector.class.getCanonicalName());
+
+				}
+
+
 			}
-
-			else{
-				//Network Disconnect previous Connection AdmissionController -> Controller
-				String ringNetworkInboundPort = rnetop.getServerPortURI();
-				rnetop.doDisconnection();
-
-				// Network Connect AdmissionController -> Controller
-				rnetop.doConnection(createURI("rnetip"), RingNetworkConnector.class.getCanonicalName());
-
-				// Network Connect Controller -> Controller
-				RingNetworkOutboundPort ringNetworkOutboundPort = (RingNetworkOutboundPort) controller.findPortFromURI(createURI("rnetop"));
-				ringNetworkOutboundPort.doConnection(ringNetworkInboundPort, RingNetworkConnector.class.getCanonicalName());
-
-			}
-
-
-			//}
 			controller.startControlling();
 
 			//Creating a new VM and sending it in the ring
@@ -418,14 +419,14 @@ implements AdmissionControllerManagementI, RequestDispatcherVMEndingNotification
 
 			res[0] = createURI( "rdsip" );
 			res[1] = rdnop;
-			
+
 			this.rnetop.sendVM(tab[0], tab[1]);
-			
+
 			if(!controlVmFrequency){
 				controlVmFrequency = true;
 				controlVmArrivalFrequency();
 			}
-			
+
 			vm.toggleTracing();
 			vm.toggleLogging();
 			rd.toggleTracing();
@@ -489,6 +490,7 @@ implements AdmissionControllerManagementI, RequestDispatcherVMEndingNotification
 			ApplicationVM vm = new ApplicationVM( vmURI , createVMURI( "avmip" ) , createVMURI( "rsip" ) ,
 					createVMURI( "rnop" ) );
 			AbstractCVM.theCVM.addDeployedComponent( vm );
+			vm.start();
 			ApplicationVMManagementOutboundPort avmopTemp = new ApplicationVMManagementOutboundPort(
 					createVMURI( "avmop" ) , new AbstractComponent() {} );
 			avmop.add( avmopTemp );
@@ -498,7 +500,7 @@ implements AdmissionControllerManagementI, RequestDispatcherVMEndingNotification
 			avmopMap.put( vmURI , avmop.get( avmop.size() - 1 ) );
 			avmopComp.put( avmopTemp , index );
 			vmAvmop.put(vmURI, avmopTemp);
-			
+
 			// AllocatedCore to VM
 			avmop.get( avmop.size() - 1 ).allocateCores( ac );
 			print( ac.length + " cores allocated." );
@@ -506,8 +508,8 @@ implements AdmissionControllerManagementI, RequestDispatcherVMEndingNotification
 				this.rdmopList.get( RequestDispatcherURI ).connectVm( vmURI , createVMURI( "rsip" ) );
 			rsipList.put( createVMURI( "rsip" ) ,
 					( RequestSubmissionInboundPort ) vm.findPortFromURI( createVMURI( "rsip" ) ) );
-			
-			vm.start();
+
+
 			vm.toggleLogging();
 			vm.toggleTracing();
 			print( "VM Allocated!" );
@@ -622,24 +624,24 @@ implements AdmissionControllerManagementI, RequestDispatcherVMEndingNotification
 				ComputerServicesOutboundPort csoptmp = csop[avmopComp.get(vmAvmop.get(vmURI))];
 				csoptmp.releaseCores(ac);
 				rsipList.get(requestSubmissionInboundPortURI).getOwner().shutdown();
-				
+
 			}
 			//else{
-				rnetop.sendVM(vmURI, requestSubmissionInboundPortURI);
+			rnetop.sendVM(vmURI, requestSubmissionInboundPortURI);
 			//}
 
 		}
 
 
 	}
-	
+
 	/**
 	 *ScheduleTask to control the frequency of arrival of VM. If the frequency is too low, we create a new vm 
 	 * and we put it in the ring
 	 */
 	public void controlVmArrivalFrequency(){
 		this.scheduleTaskAtFixedRate( new ComponentI.ComponentTask() {
-			
+
 			@Override
 			public void run() {
 				Date testDate = new Date();
@@ -649,21 +651,21 @@ implements AdmissionControllerManagementI, RequestDispatcherVMEndingNotification
 						try {
 							String tab[] = allocateVM("", true);
 							rnetop.sendVM(tab[0], tab[1]);
-							
+
 						} catch (Exception e) {
 							// TODO Auto-generated catch block
 							e.printStackTrace();
 						}
 					}
-						
-				
+
+
 			}
-			
-			
+
+
 		}, 1l , 1l , TimeUnit.SECONDS );
 	}
-	
-	
+
+
 
 }
 
