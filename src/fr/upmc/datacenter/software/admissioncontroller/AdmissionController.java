@@ -347,6 +347,9 @@ public class AdmissionController extends AbstractComponent
                         vmURIs, createURI("rdvenop"), createURI("rdnop"), createURI("rdnip"), createURI("cmop"),
                         createURI("rddsdip"));
                 rd.start();
+                rd.toggleTracing();
+                rd.toggleLogging();
+                
                 String rdnop = createURI("rdnop");
                 rnopList.put(rdnop, (RequestNotificationOutboundPort) (rd.findPortFromURI(rdnop)));
 
@@ -372,11 +375,6 @@ public class AdmissionController extends AbstractComponent
                         .findPortFromURI(createURI("rnop"));
                 rnop.doConnection(createURI("rdnip"), RequestNotificationConnector.class.getCanonicalName());
 
-                // Allocate remaining VMs
-                for (int i = 0; i < nbVm - 1; i++) {
-                    this.allocateVM(rdURI, false);
-                }
-
                 // Create controller
                 print("Creating the controller...");
 
@@ -391,7 +389,7 @@ public class AdmissionController extends AbstractComponent
                 }
 
                 Controller controller = new Controller(createURI("c"), createURI("rd"), createURI("cmip"),
-                        createURI("acmop"), createURI("rdmop"), createURI("rddsdip"), createURI("rnetip"),
+                        createURI("acmop"), createURI("rdmop") + 0, createURI("rddsdip"), createURI("rnetip"),
                         createURI("rnetop"), frequencies, processorCoordinatorMap, coordinatorCores);
 
                 controller.toggleLogging();
@@ -413,6 +411,11 @@ public class AdmissionController extends AbstractComponent
                 print(cmop.getPortURI());
                 cmop.doConnection(createURI("cmip"), ControllerManagementConnector.class.getCanonicalName());
 
+                // Allocate remaining VMs
+                for (int i = 0; i < nbVm - 1; i++) {
+                    this.allocateVM(rdURI, false);
+                }
+                
                 if (!rnetop.connected()) {
                     print("Connecting to the Ring network");
                     // Network Connect AdmissionController -> Controller
@@ -464,8 +467,6 @@ public class AdmissionController extends AbstractComponent
 
                 vm.toggleTracing();
                 vm.toggleLogging();
-                rd.toggleTracing();
-                rd.toggleLogging();
                 print("RequestDispatcher created");
                 cpt++;
                 return res;
