@@ -457,6 +457,7 @@ implements	ProcessorServicesNotificationConsumerI,
 		int i = 0;
 		for(Map.Entry<AllocatedCore, Boolean> tmp : allocatedCoresIdleStatus.entrySet()){
 			tab[i] = tmp.getKey();
+			i++;
 		}
 		
 		return tab;

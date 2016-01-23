@@ -8,6 +8,7 @@ import java.util.Map;
 
 import fr.upmc.components.AbstractComponent;
 import fr.upmc.components.exceptions.ComponentShutdownException;
+import fr.upmc.datacenter.hardware.computers.Computer.AllocatedCore;
 import fr.upmc.datacenter.interfaces.ControlledDataOfferedI;
 import fr.upmc.datacenter.interfaces.PushModeControllerI;
 import fr.upmc.datacenter.software.connectors.RequestSubmissionConnector;
@@ -351,6 +352,23 @@ implements RequestSubmissionHandlerI, RequestNotificationHandlerI, RequestDispat
 		nbRequestInQueueOrInProgress.put( r , 0 );
 		this.rdsopList.add( r );
 		vmrsop.put( r , vmURI );
+		
+		AllocatedCore[] ac = r.getCoresInVM();
+		Map<String, List<Integer>> m = new HashMap<String, List<Integer>>();
+		for(AllocatedCore a : ac){
+			if(m.get(a.processorURI) == null){
+				List<Integer> coreListNo = new ArrayList<Integer>();
+				coreListNo.add(a.coreNo);
+				m.put(a.processorURI, coreListNo);
+			}
+			else{
+				List<Integer> coreListNo = m.get(a.processorURI);
+				coreListNo.add(a.coreNo);
+				m.put(a.processorURI, coreListNo);
+			}
+		}
+		
+		cmop.attachCoordinator(m);
 		
 	}
 

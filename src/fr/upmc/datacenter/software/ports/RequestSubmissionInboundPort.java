@@ -3,8 +3,10 @@ package fr.upmc.datacenter.software.ports;
 import fr.upmc.components.ComponentI;
 import fr.upmc.components.ComponentI.ComponentService;
 import fr.upmc.components.ports.AbstractInboundPort;
+import fr.upmc.datacenter.hardware.computers.Computer.AllocatedCore;
 import fr.upmc.datacenter.software.admissioncontroller.AdmissionController;
 import fr.upmc.datacenter.software.applicationvm.ApplicationVM;
+import fr.upmc.datacenter.software.applicationvm.interfaces.ApplicationVMManagementI;
 import fr.upmc.datacenter.software.interfaces.RequestI;
 import fr.upmc.datacenter.software.interfaces.RequestSubmissionHandlerI;
 import fr.upmc.datacenter.software.interfaces.RequestSubmissionI;
@@ -139,5 +141,19 @@ implements	RequestSubmissionI
                 return avm.acceptRequestNotificationPortDisconnection();     
             }
         } );
+	}
+
+	@Override
+	public AllocatedCore[] getCoresInVM() throws Exception {
+		final ApplicationVMManagementI avm =
+				(ApplicationVMManagementI) this.owner ;
+		
+		return this.owner.handleRequestSync(
+				new ComponentI.ComponentService<AllocatedCore[]>() {
+					@Override
+					public AllocatedCore[] call() throws Exception {
+						return avm.getCoresInVM();
+					}
+				}) ;
 	}
 }

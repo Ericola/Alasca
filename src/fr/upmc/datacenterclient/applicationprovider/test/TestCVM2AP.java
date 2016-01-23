@@ -47,7 +47,7 @@ import fr.upmc.datacenterclient.applicationprovider.ports.ApplicationSubmissionO
 public class TestCVM2AP extends AbstractCVM {
 
     private static final int NB_COMPUTER = 2;
-    private static final int NB_APPLICATION_PROVIDER = 3;
+    private static final int NB_APPLICATION_PROVIDER = 2;
 
     protected ComputerServicesOutboundPort csop[];
     protected ComputerDynamicStateDataOutboundPort cdsdop[];
@@ -63,8 +63,8 @@ public class TestCVM2AP extends AbstractCVM {
         // processors and
         // each with 2 cores.
         // --------------------------------------------------------------------
-        int numberOfProcessors = 2;
-        int numberOfCores = 2;
+        int numberOfProcessors = 4;
+        int numberOfCores = 4;
         Set<Integer> admissibleFrequencies = new HashSet<Integer>();
         admissibleFrequencies.add(1500); // Cores can run at 1,5 GHz
         admissibleFrequencies.add(3000); // and at 3 GHz
@@ -72,8 +72,10 @@ public class TestCVM2AP extends AbstractCVM {
         processingPower.put(1500, 1500000); // 1,5 GHz executes 1,5 Mips
         processingPower.put(3000, 3000000); // 3 GHz executes 3 Mips
 
+        // map associate processor uri with uri of inbound port
         Map<String, String> pmipURIs = new HashMap<>();
         Map<String, String> processorCoordinators = new HashMap<>();
+
         for (int i = 0; i < NB_COMPUTER; ++i) {
             Computer c = new Computer("computer" + i, admissibleFrequencies, processingPower, 1500, 1500,
                     numberOfProcessors, numberOfCores, "csip" + i, "cssdip" + i, "cdsdip" + i);
@@ -108,12 +110,13 @@ public class TestCVM2AP extends AbstractCVM {
         String computer[] = new String[NB_COMPUTER];
         for (int i = 0; i < NB_COMPUTER; ++i) {
             computer[i] = "computer" + i;
+            csop[i] = "csop" + i;
         }
         final int[] nbAvailableCoresPerComputer = new int[NB_COMPUTER];
         for (int i = 0; i < NB_COMPUTER; ++i)
             nbAvailableCoresPerComputer[i] = numberOfProcessors * numberOfCores;
 
-    
+        // TODO pmipURIs
         Integer[] frequencies = { 1500, 3000 };
         AdmissionController ac = new AdmissionController("ac", "asip", "rdvenip", "anip", "acmip", "rnetip", "rnetop",
                 csop, computer, nbAvailableCoresPerComputer, pmipURIs, frequencies, processorCoordinators);

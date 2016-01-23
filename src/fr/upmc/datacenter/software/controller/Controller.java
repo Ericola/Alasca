@@ -62,7 +62,7 @@ public class Controller extends AbstractComponent implements RequestDispatcherSt
 
     /** OutboundPort uses to communicate with the AdmissionController */
     protected AdmissionControllerManagementOutboundPort acmop;
-    protected final static String Filename = "Courbe.txt";
+    protected static String Filename = "Courbe.txt";
     public static int nbMoyRecu = 0;
     protected Long lastAdaptation = 0l;
     protected double lastAVGTime = 0;
@@ -130,9 +130,8 @@ public class Controller extends AbstractComponent implements RequestDispatcherSt
             this.pcsops.put(s, pcsop);
             this.addPort(pcsop);
             pcsop.publishPort();
-            
-            pcsop.doConnection(s + "pcsip",
-                    ProcessorCoordinatorServicesConnector.class.getCanonicalName());
+
+            pcsop.doConnection(s + "pcsip", ProcessorCoordinatorServicesConnector.class.getCanonicalName());
         }
 
         this.addRequiredInterface(AdmissionControllerManagementI.class);
@@ -146,7 +145,7 @@ public class Controller extends AbstractComponent implements RequestDispatcherSt
         this.frequencies = frequencies;
 
         ladder = new Integer[] { 2, 2, 2, 3, 3, 4, 5 };
-
+        Filename = cURI + Filename;
         this.processorCoordinatorMap = processorCoordinatorMap;
         this.coordinatorCores = coordinatorCores;
     }
@@ -259,7 +258,7 @@ public class Controller extends AbstractComponent implements RequestDispatcherSt
     }
 
     private void print(String s) {
-        this.logMessage("[Controller] " + s);
+        this.logMessage("[Controller " + cURI + "] " + s);
     }
 
     @Override
@@ -338,4 +337,5 @@ public class Controller extends AbstractComponent implements RequestDispatcherSt
         }
 
     }
+
 }
