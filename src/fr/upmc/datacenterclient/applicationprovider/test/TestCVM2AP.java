@@ -43,7 +43,7 @@ import fr.upmc.datacenterclient.applicationprovider.ports.ApplicationSubmissionO
 public class TestCVM2AP extends AbstractCVM {
 
 	private static final int NB_COMPUTER             = 2;
-	private static final int NB_APPLICATION_PROVIDER = 3;
+	private static final int NB_APPLICATION_PROVIDER = 2;
 
 	protected ComputerServicesOutboundPort              csop[];
 	protected ComputerDynamicStateDataOutboundPort      cdsdop[];
