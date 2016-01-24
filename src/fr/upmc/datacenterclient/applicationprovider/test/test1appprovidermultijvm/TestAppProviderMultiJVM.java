@@ -137,7 +137,7 @@ public class TestAppProviderMultiJVM extends AbstractDistributedCVM {
             int i = 0;
             Map<String, String> processorCoordinators = new HashMap<>();
             for (Map.Entry<Integer, String> entry : processorURIs.entrySet()) {
-                ProcessorCoordinator pc = new ProcessorCoordinator("pc" + i, pmipURIs.get(entry.getValue()));
+                ProcessorCoordinator pc = new ProcessorCoordinator("pc" + i , pmipURIs.get(entry.getValue()),1500, 1500, numberOfCores );
                 processorCoordinators.put(entry.getValue(), "pc" + i);
                 this.addDeployedComponent(pc);
             }
