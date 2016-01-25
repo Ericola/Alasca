@@ -3,8 +3,8 @@ package fr.upmc.datacenter.software.coordinators.ports;
 import fr.upmc.components.ComponentI;
 import fr.upmc.components.ComponentI.ComponentService;
 import fr.upmc.components.ports.AbstractInboundPort;
-import fr.upmc.datacenter.hardware.processors.Processor;
-import fr.upmc.datacenter.software.controller.interfaces.ControllerManagementI;
+import fr.upmc.datacenter.software.controller.Controller;
+import fr.upmc.datacenter.software.coordinators.CoordinatorDecision;
 import fr.upmc.datacenter.software.coordinators.ProcessorCoordinator;
 import fr.upmc.datacenter.software.coordinators.interfaces.ProcessorCoordinatorServicesI;
 
@@ -14,22 +14,22 @@ public class ProcessorCoordinatorServicesInboundPort extends AbstractInboundPort
     private static final long serialVersionUID = 1L;
 
     public ProcessorCoordinatorServicesInboundPort(ComponentI owner) throws Exception {
-        super(ControllerManagementI.class, owner);
+        super(ProcessorCoordinatorServicesI.class, owner);
     }
 
     public ProcessorCoordinatorServicesInboundPort(String uri, ComponentI owner) throws Exception {
-        super(uri, ControllerManagementI.class, owner);
+        super(uri, ProcessorCoordinatorServicesI.class, owner);
     }
 
     @Override
-    public void changeFrequenciesDemand(final int coreNo, final int f) throws Exception {
-        final ProcessorCoordinator c = (ProcessorCoordinator) this.owner;
+    public void setCoordinatorDecision(final CoordinatorDecision flag) throws Exception {
+        final Controller c = (Controller) this.owner;
 
-        this.owner.handleRequestAsync(new ComponentService<Void>() {
+        this.owner.handleRequestSync(new ComponentService<Void>() {
 
             @Override
             public Void call() throws Exception {
-                c.changeFrequenciesDemand(coreNo, f);
+                c.setCoordinatorDecision(flag);
                 return null;
             }
 
@@ -38,17 +38,29 @@ public class ProcessorCoordinatorServicesInboundPort extends AbstractInboundPort
     }
 
     @Override
-    public void setFrequencies(final int coreNo, final int f) throws Exception {
-        final Processor p = (Processor) this.owner;
+    public boolean frequencyDemand(final String uri, final int coreNo, final int f) throws Exception {
+        final ProcessorCoordinator pc = (ProcessorCoordinator) this.owner;
 
-        this.owner.handleRequestAsync(new ComponentService<Void>() {
+        return this.owner.handleRequestSync(new ComponentService<Boolean>() {
+
+            @Override
+            public Boolean call() throws Exception {
+                return pc.frequencyDemand(uri, coreNo, f);
+            }
+        });
+    }
+
+    @Override
+    public void attachController(final String controllerInboundPortURI) throws Exception {
+        final ProcessorCoordinator pc = (ProcessorCoordinator) this.owner;
+
+         this.owner.handleRequestSync(new ComponentService<Void>() {
 
             @Override
             public Void call() throws Exception {
-                p.setCoreFrequency(coreNo, f);
+                 pc.attachController(controllerInboundPortURI);
                 return null;
             }
-
         });
         
     }

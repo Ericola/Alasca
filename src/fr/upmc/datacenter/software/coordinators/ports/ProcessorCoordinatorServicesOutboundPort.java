@@ -2,7 +2,7 @@ package fr.upmc.datacenter.software.coordinators.ports;
 
 import fr.upmc.components.ComponentI;
 import fr.upmc.components.ports.AbstractOutboundPort;
-import fr.upmc.datacenter.hardware.processors.Processor;
+import fr.upmc.datacenter.software.coordinators.CoordinatorDecision;
 import fr.upmc.datacenter.software.coordinators.interfaces.ProcessorCoordinatorServicesI;
 
 public class ProcessorCoordinatorServicesOutboundPort extends AbstractOutboundPort
@@ -17,14 +17,20 @@ implements ProcessorCoordinatorServicesI {
     }
 
     @Override
-    public void changeFrequenciesDemand (int coreNo, int f) throws Exception {
-        ( ( ProcessorCoordinatorServicesI ) this.connector ).changeFrequenciesDemand(coreNo, f);
-
+    public void setCoordinatorDecision(CoordinatorDecision flag) throws Exception {
+        ( ( ProcessorCoordinatorServicesI ) this.connector ).setCoordinatorDecision(flag);
+        
     }
 
     @Override
-    public void setFrequencies(int coreNo, int f) throws Exception {
-        ( ( Processor ) this.connector ).setCoreFrequency(coreNo, f);
+    public boolean frequencyDemand(String controllerURI, int coreNo, int f) throws Exception {
+        return ( ( ProcessorCoordinatorServicesI ) this.connector ).frequencyDemand(controllerURI, coreNo, f);
+    }
+
+    @Override
+    public void attachController(String controllerInboundPortURI) throws Exception {
+        ( ( ProcessorCoordinatorServicesI ) this.connector ).attachController(controllerInboundPortURI);
+        
     }
 }
 

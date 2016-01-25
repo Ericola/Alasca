@@ -167,6 +167,9 @@ public class AdmissionController extends AbstractComponent
 
     protected Map<String, String> processorCoordinatorMap;
 
+    /** map associate processorsURI with processormanagementInboundPortURI **/
+    protected Map<String, String> pmipURIs;
+
     /**
      * Create an admission controller
      * 
@@ -262,6 +265,7 @@ public class AdmissionController extends AbstractComponent
         this.frequencies = frequencies;
 
         this.processorCoordinatorMap = processorCoordinatorMap;
+        this.pmipURIs = pmipURIs;
     }
 
     private boolean isUsed(int computerIndex) {
@@ -379,18 +383,18 @@ public class AdmissionController extends AbstractComponent
                 print("Creating the controller...");
 
                 // Create map associate processor uri with allocated cores
-                Map<String, List<Integer>> coordinatorCores = new HashMap<>();
+                Map<String, List<Integer>> processorCores = new HashMap<>();
                 for (int i = 0; i < ac.length; i++) {
-                    String coordinatorURI = processorCoordinatorMap.get(ac[i].processorURI);
-                    boolean isInList = coordinatorCores.get(coordinatorURI) != null;
+                    String processorURI = ac[i].processorURI;
+                    boolean isInList = processorCores.get(processorURI) != null;
                     if (!isInList)
-                        coordinatorCores.put(coordinatorURI, new ArrayList<Integer>());
-                    coordinatorCores.get(coordinatorURI).add(ac[i].coreNo);
+                        processorCores.put(processorURI, new ArrayList<Integer>());
+                    processorCores.get(processorURI).add(ac[i].coreNo);
                 }
 
                 Controller controller = new Controller(createURI("c"), createURI("rd"), createURI("cmip"),
                         createURI("acmop"), createURI("rdmop") + 0, createURI("rddsdip"), createURI("rnetip"),
-                        createURI("rnetop"), frequencies, processorCoordinatorMap, coordinatorCores);
+                        createURI("rnetop"), frequencies, processorCoordinatorMap, processorCores, pmipURIs);
 
                 controller.toggleLogging();
                 controller.toggleTracing();

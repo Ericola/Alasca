@@ -14,13 +14,19 @@ import fr.upmc.components.ComponentI;
 import fr.upmc.components.connectors.DataConnector;
 import fr.upmc.components.exceptions.ComponentShutdownException;
 import fr.upmc.components.interfaces.DataRequiredI;
+import fr.upmc.datacenter.hardware.processors.connectors.ProcessorManagementConnector;
+import fr.upmc.datacenter.hardware.processors.interfaces.ProcessorManagementI;
+import fr.upmc.datacenter.hardware.processors.ports.ProcessorManagementOutboundPort;
 import fr.upmc.datacenter.interfaces.ControlledDataRequiredI;
 import fr.upmc.datacenter.software.admissioncontroller.interfaces.AdmissionControllerManagementI;
 import fr.upmc.datacenter.software.admissioncontroller.ports.AdmissionControllerManagementOutboundPort;
 import fr.upmc.datacenter.software.controller.interfaces.ControllerManagementI;
 import fr.upmc.datacenter.software.controller.ports.ControllerManagementInboundPort;
+import fr.upmc.datacenter.software.coordinators.CoordinatorDecision;
+import fr.upmc.datacenter.software.coordinators.ProcessorCoordinator;
 import fr.upmc.datacenter.software.coordinators.connectors.ProcessorCoordinatorServicesConnector;
 import fr.upmc.datacenter.software.coordinators.interfaces.ProcessorCoordinatorServicesI;
+import fr.upmc.datacenter.software.coordinators.ports.ProcessorCoordinatorServicesInboundPort;
 import fr.upmc.datacenter.software.coordinators.ports.ProcessorCoordinatorServicesOutboundPort;
 import fr.upmc.datacenter.software.interfaces.RingNetworkI;
 import fr.upmc.datacenter.software.ports.RingNetworkInboundPort;
@@ -76,19 +82,35 @@ public class Controller extends AbstractComponent implements RequestDispatcherSt
 
     protected Integer[] allocatedCoresNo;
 
-    /** map associate coordinator with its allocated cores no **/
-    protected Map<String, List<Integer>> coordinatorCores;
+    /** map associate processorURI with its allocated cores no **/
+    protected Map<String, List<Integer>> processorCores;
 
     /** map associate coordinator URI with its outboundport **/
     protected Map<String, ProcessorCoordinatorServicesOutboundPort> pcsops;
 
     /** map associate processorURI with coordinator URI **/
-    protected Map<String, String> processorCoordinatorMap;
+    protected Map<String, String> processorCoordinator;
+    
+    /**map associate processorURI with ProcessorManagementOutboundPort. It's used to set frequency on the processor **/
+    protected Map<String, ProcessorManagementOutboundPort> pmops;
+
+
+    /** Coordinator Decision **/
+    protected CoordinatorDecision decision = CoordinatorDecision.NONE;
+    
+    
+    protected ProcessorCoordinatorServicesInboundPort pcsip;
+
+    protected String pcsipURI = cURI + "pcsip";
+
+
+    /** map associate processorsURI with processormanagementInboundPortURI **/
+    protected Map<String, String> pmipURIs;
 
     public Controller(String cURI, String requestDispatcherURI, String cmip,
             String admissionControllerManagementOutboundPortURI, String requestDispatcherManagementOutboundPortURI,
             String rddsdip, String rnetipURI, String rnetopURI, Integer[] frequencies,
-            Map<String, String> processorCoordinatorMap, Map<String, List<Integer>> coordinatorCores) throws Exception {
+            Map<String, String> processorCoordinator, Map<String, List<Integer>> processorCores, Map<String, String> pmipURIs) throws Exception {
 
         super(3, 3);
         this.cURI = cURI;
@@ -122,16 +144,36 @@ public class Controller extends AbstractComponent implements RequestDispatcherSt
         this.cmip = new ControllerManagementInboundPort(cmip, this);
         this.addPort(this.cmip);
         this.cmip.publishPort();
+        
+        this.addOfferedInterface(ProcessorCoordinatorServicesI.class);
+        this.pcsip = new ProcessorCoordinatorServicesInboundPort(cmip, this);
+        this.addPort(this.pcsip);
+        this.pcsip.publishPort();
 
         pcsops = new HashMap<>();
-        for (String s : coordinatorCores.keySet()) {
+        for (String processorURI : processorCores.keySet()) {
+
+            String coordinatorURI = processorCoordinator.get(processorURI);
+
+            // processor coordinator services
             this.addRequiredInterface(ProcessorCoordinatorServicesI.class);
-            ProcessorCoordinatorServicesOutboundPort pcsop = new ProcessorCoordinatorServicesOutboundPort(s, this);
-            this.pcsops.put(s, pcsop);
+            String pcsopURI = cURI + coordinatorURI + "op";
+            ProcessorCoordinatorServicesOutboundPort pcsop = new ProcessorCoordinatorServicesOutboundPort(pcsopURI, this);
+            this.pcsops.put(pcsopURI, pcsop);
             this.addPort(pcsop);
             pcsop.publishPort();
+            pcsop.doConnection(coordinatorURI + "ip", ProcessorCoordinatorServicesConnector.class.getCanonicalName());
 
-            pcsop.doConnection(s + "pcsip", ProcessorCoordinatorServicesConnector.class.getCanonicalName());
+            // processor management 
+            this.addRequiredInterface(ProcessorManagementI.class);
+            String pmopURI = cURI + processorURI + "op";
+            ProcessorManagementOutboundPort pmop = new ProcessorManagementOutboundPort(pmopURI, this);
+            this.pmops.put(pmopURI, pmop);
+            this.addPort(pmop);
+            pmop.publishPort();
+            String pmipURI = pmipURIs.get(processorURI);
+            pmop.doConnection(pmipURI, ProcessorManagementConnector.class.getCanonicalName());
+
         }
 
         this.addRequiredInterface(AdmissionControllerManagementI.class);
@@ -146,8 +188,10 @@ public class Controller extends AbstractComponent implements RequestDispatcherSt
 
         ladder = new Integer[] { 2, 2, 2, 3, 3, 4, 5 };
         Filename = cURI + Filename;
-        this.processorCoordinatorMap = processorCoordinatorMap;
-        this.coordinatorCores = coordinatorCores;
+        this.processorCoordinator = processorCoordinator;
+        this.processorCores = processorCores;
+        
+
     }
 
     public void startControlling() throws Exception {
@@ -185,8 +229,8 @@ public class Controller extends AbstractComponent implements RequestDispatcherSt
 
                                 for (Entry<String, ProcessorCoordinatorServicesOutboundPort> entry : pcsops
                                         .entrySet()) {
-                                    for (int core : coordinatorCores.get(entry.getKey())) {
-                                        entry.getValue().changeFrequenciesDemand(core,
+                                    for (int core : processorCores.get(entry.getKey())) {
+                                        entry.getValue().frequencyDemand(cURI, core,
                                                 frequencies[frequencies.length - 1]);
                                         System.out.println("Trying to change frequencies");
                                     }
@@ -315,27 +359,41 @@ public class Controller extends AbstractComponent implements RequestDispatcherSt
     public void attachCoordinator(Map<String, List<Integer>> processorCores) throws Exception {
 
         for (Entry<String, List<Integer>> entry : processorCores.entrySet()) {
-            String coordinatorURI = processorCoordinatorMap.get(entry.getKey());
-
-            // if the controller doesn't already deal with this processor we add
-            // it
+            String coordinatorURI = processorCoordinator.get(entry.getKey());
+            String processorURI = entry.getKey();
+            // if the controller doesn't already deal with this processor we add it
             if (pcsops.get(coordinatorURI) == null) {
-                this.addRequiredInterface(ProcessorCoordinatorServicesI.class);
-                ProcessorCoordinatorServicesOutboundPort pcsop = new ProcessorCoordinatorServicesOutboundPort(
-                        this.cURI + "pcsop" + cptCoordinator++, this);
-                this.pcsops.put(coordinatorURI, pcsop);
 
+                // processor coordinator services
+                String pcsopURI = cURI + coordinatorURI + "op";
+                ProcessorCoordinatorServicesOutboundPort pcsop = new ProcessorCoordinatorServicesOutboundPort(pcsopURI, this);
+                this.pcsops.put(pcsopURI, pcsop);
                 this.addPort(pcsop);
                 pcsop.publishPort();
+                pcsop.doConnection(coordinatorURI + "ip", ProcessorCoordinatorServicesConnector.class.getCanonicalName());
 
-                pcsop.doConnection(coordinatorURI + "pcsip",
-                        ProcessorCoordinatorServicesConnector.class.getCanonicalName());
+                // processor management 
+                this.addRequiredInterface(ProcessorManagementI.class);
+                String pmopURI = cURI + processorURI + "op";
+                ProcessorManagementOutboundPort pmop = new ProcessorManagementOutboundPort(pmopURI, this);
+                this.pmops.put(pmopURI, pmop);
+                this.addPort(pmop);
+                pmop.publishPort();
+                String pmipURI = pmipURIs.get(processorURI);
+                pmop.doConnection(pmipURI, ProcessorManagementConnector.class.getCanonicalName());
 
-                coordinatorCores.put(coordinatorURI, entry.getValue());
+
+                // attach to the controller
+                pcsop.attachController(this.pcsipURI);
+
             }
-            coordinatorCores.get(coordinatorURI).addAll(entry.getValue());
+            this.processorCores.get(processorURI).addAll(entry.getValue());
         }
 
+    }
+
+    public void setCoordinatorDecision(CoordinatorDecision flag) {
+        this.decision = flag;
     }
 
 }
