@@ -19,12 +19,5 @@ public class AdmissionControllerManagementOutboundPort extends AbstractOutboundP
     public boolean addCores( String rdURI, int nbCores ) throws Exception {
         return ( ( AdmissionControllerManagementI ) this.connector ).addCores( rdURI, nbCores );
     }
-
-    @Override
-    public void setFrequency( Integer f ) throws Exception {
-        ( ( AdmissionControllerManagementI ) this.connector ).setFrequency( f );
-
-    }
-
     
 }

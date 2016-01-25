@@ -13,10 +13,4 @@ public class AdmissionControllerManagementConnector extends AbstractConnector
         return ( ( AdmissionControllerManagementI ) this.offering ).addCores( rdURI , nbCores );
     }
 
-    @Override
-    public void setFrequency( Integer f) throws Exception {
-        ( ( AdmissionControllerManagementI ) this.offering ).setFrequency( f );
-
-    }
-
 }

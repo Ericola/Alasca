@@ -219,7 +219,6 @@ public class Controller extends AbstractComponent implements RequestDispatcherSt
                             // ------------------------------
                             if (rdds.getRequestProcessingAvg() < MIN_THRESHOLD_AVG_ADJUSTMENT_MS) {
                                 rdmop.disconnectVm();
-                                acmop.setFrequency(frequencies[0]);
 
                                 adaptation = true;
                                 lastAdaptation = System.nanoTime();

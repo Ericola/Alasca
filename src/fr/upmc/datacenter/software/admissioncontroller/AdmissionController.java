@@ -591,14 +591,6 @@ implements AdmissionControllerManagementI, RingNetworkI {
 	}
 
 	@Override
-	public void setFrequency(Integer f) throws Exception {
-		// parcourir les processeurs utilisés
-		for (AllocatedCore a : allocatedCores) {
-			pmops.get(a.processorURI).setCoreFrequency(a.coreNo, 3000);
-		}
-	}
-
-	@Override
 	public void sendVM(String vmURI, String requestSubmissionInboundPortURI) throws Exception {
 		Date testDate;
 		// if we did not already receive a VM from the ring, we just have to set
