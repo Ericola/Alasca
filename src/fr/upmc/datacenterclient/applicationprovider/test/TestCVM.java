@@ -54,9 +54,11 @@ public class TestCVM extends AbstractCVM {
         Set<Integer> admissibleFrequencies = new HashSet<Integer>();
         admissibleFrequencies.add( 1500 ); // Cores can run at 1,5 GHz
         admissibleFrequencies.add( 3000 ); // and at 3 GHz
+        admissibleFrequencies.add( 4500 ); // and at 5.5 GHz
         Map<Integer , Integer> processingPower = new HashMap<Integer , Integer>();
         processingPower.put( 1500 , 1500000 ); // 1,5 GHz executes 1,5 Mips
         processingPower.put( 3000 , 3000000 ); // 3 GHz executes 3 Mips
+        processingPower.put( 4500 , 4500000 ); 
         Computer c = new Computer( computerURI , admissibleFrequencies , processingPower , 1500 , 1500 ,
                 numberOfProcessors , numberOfCores , "csip" , "cssdip" , "cdsdip" );
         this.addDeployedComponent( c );
@@ -84,6 +86,8 @@ public class TestCVM extends AbstractCVM {
             processorCoordinators.put(entry.getValue(), "pc" + i);
             this.addDeployedComponent(pc);
             i++;
+            pc.toggleLogging();
+            pc.toggleTracing();
         }
 
    
@@ -98,7 +102,7 @@ public class TestCVM extends AbstractCVM {
         final int[] nbAvailableCoresPerComputer = new int[1];
         nbAvailableCoresPerComputer[0] = numberOfProcessors * numberOfCores;
        
-        Integer[] frequencies = {1500, 3000};
+        Integer[] frequencies = {1500, 3000, 4500};
         AdmissionController ac = new AdmissionController( "ac" , "asip", "anip" , "acmip" , "rnetip", "rnetop", csop,
                 computer , nbAvailableCoresPerComputer , pmipURIs, frequencies, processorCoordinators );
         this.addDeployedComponent( ac );
