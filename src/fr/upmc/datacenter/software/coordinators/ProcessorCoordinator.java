@@ -2,6 +2,7 @@ package fr.upmc.datacenter.software.coordinators;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -48,6 +49,8 @@ public class ProcessorCoordinator extends AbstractComponent {
         this.coreFrequencies = new ArrayList<>();
         for (int i = 0; i < numberOfCores; i++)
             coreFrequencies.add(defaultFrequency);
+        
+        pcsops = new HashMap<>();
 
     }
 
@@ -57,8 +60,10 @@ public class ProcessorCoordinator extends AbstractComponent {
         int maxFrequencyOnACore;
         int minFrequencyOnACore;
 
-        if (coreFrequencies.get(coreNo) == f) 
+        if (coreFrequencies.get(coreNo) == f) {
+            print("The frequency is already to the maximum possible -> REFUSED");
             return false;
+        }
         if (coreFrequencies.get(coreNo) < f) { // we increase the frequency of the core
             print("demand for an increase accepted");
             coreFrequencies.set(coreNo, f);
@@ -88,7 +93,7 @@ public class ProcessorCoordinator extends AbstractComponent {
         print("demand for a decrease");
         if (maxFrequencyOnACore - minFrequencyOnACore > maxFrequencyGap) {
             coreFrequencies.set(coreNo, coreFrequencies.get(coreNo) + f);
-            print("The difference is too big now, so we refuse");
+            print("The difference is too big now, so we REFUSE");
             return false;
         }else
             print("Decreasing core frequency");

@@ -172,11 +172,14 @@ public class Controller extends AbstractComponent implements RequestDispatcherSt
             this.addRequiredInterface(ProcessorManagementI.class);
             String pmopURI = cURI + processorURI + "op";
             ProcessorManagementOutboundPort pmop = new ProcessorManagementOutboundPort(pmopURI, this);
-            this.pmops.put(pmopURI, pmop);
+            this.pmops.put(processorURI, pmop);
             this.addPort(pmop);
             pmop.publishPort();
             String pmipURI = pmipURIs.get(processorURI);
             pmop.doConnection(pmipURI, ProcessorManagementConnector.class.getCanonicalName());
+            
+            // attach to the controller
+            pcsop.attachController(this.pcsipURI);
 
         }
 
@@ -230,32 +233,32 @@ public class Controller extends AbstractComponent implements RequestDispatcherSt
                                 }
                                 System.out.println("ladder[0] = " + nbCoresToAllocate);
 
+                                // Trying to increase frequency if we are refused we will try to add cores..
+                                System.out.println("Trying to change frequencies");
+                                boolean accepted = false;
                                 for (Entry<String, ProcessorCoordinatorServicesOutboundPort> entry : pcsops.entrySet()) {
                                     for (int core : processorCores.get(entry.getKey())) {
-                                        entry.getValue().frequencyDemand(cURI, core,
-                                                frequencies[frequencies.length - 1]);
-                                        System.out.println("Trying to change frequencies");
+
+                                        // If the coordinator accepts we change it otherwise we don't
+                                        if (accepted = entry.getValue().frequencyDemand(cURI, core,frequencies[frequencies.length - 1]))                     
+                                            pmops.get(entry.getKey()).setCoreFrequency(core, frequencies[frequencies.length - 1]);
                                     }
                                 }
-                                
-                          
-
-
-                                // acmop.setFrequency(
-                                // frequencies[frequencies.length - 1] );
 
                                 // Trying to add cores.. if no more cores
                                 // available we add a new VM
-                                System.out.println("Trying to add cores..." + nbCoresToAllocate);
-                                if (!acmop.addCores(rdds.getRequestDispatcherURI(), 2)) {
-                                    System.out.println("Trying to add a new VM...");
-                                    if (flagHaveVM) {
-                                        print("VM found ! Connecting VM " + currentVMURI + " to RD + ");
-                                        rdmop.connectVm(currentVMURI, currentVMRequestSubmissionInboundPortURI);
-                                        flagHaveVM = false;
-                                    } else {
-                                        print("No VM found ! Waiting...");
-                                        flagVM = true;
+                                if (!accepted) {
+                                    System.out.println("Trying to add cores..." + nbCoresToAllocate);
+                                    if (!acmop.addCores(rdds.getRequestDispatcherURI(), 2)) {
+                                        System.out.println("Trying to add a new VM...");
+                                        if (flagHaveVM) {
+                                            print("VM found ! Connecting VM " + currentVMURI + " to RD + ");
+                                            rdmop.connectVm(currentVMURI, currentVMRequestSubmissionInboundPortURI);
+                                            flagHaveVM = false;
+                                        } else {
+                                            print("No VM found ! Waiting...");
+                                            flagVM = true;
+                                        }
                                     }
                                 }
 
@@ -381,7 +384,7 @@ public class Controller extends AbstractComponent implements RequestDispatcherSt
                 this.addRequiredInterface(ProcessorManagementI.class);
                 String pmopURI = cURI + processorURI + "op";
                 ProcessorManagementOutboundPort pmop = new ProcessorManagementOutboundPort(pmopURI, this);
-                this.pmops.put(pmopURI, pmop);
+                this.pmops.put(processorURI, pmop);
                 this.addPort(pmop);
                 pmop.publishPort();
                 String pmipURI = pmipURIs.get(processorURI);
