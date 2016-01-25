@@ -27,20 +27,6 @@ public class AdmissionControllerManagementInboundPort extends AbstractInboundPor
     }
 
     @Override
-    public void freeUpVM() throws Exception {
-        final AdmissionController ac = ( AdmissionController ) this.owner;
-        this.owner.handleRequestAsync( new ComponentI.ComponentService<Void>() {
-
-            @Override
-            public Void call() throws Exception {
-                ac.freeUpVM();
-                return null;
-            }
-        } );
-
-    }
-
-    @Override
     public boolean addCores( final String rdURI, final int nbCores ) throws Exception {
         final AdmissionController ac = ( AdmissionController ) this.owner;
 
@@ -51,24 +37,6 @@ public class AdmissionControllerManagementInboundPort extends AbstractInboundPor
                 return ac.addCores( rdURI, nbCores );
             }
         } );
-    }
-
-    @Override
-    public void setFrequency( final Integer f ) throws Exception {
-        final AdmissionController ac = ( AdmissionController ) this.owner;
-
-        this.owner.handleRequestSync( new ComponentService<Void>() {
-
-            @Override
-            public Void call() throws Exception {
-                ac.setFrequency( f );
-                return null;
-            }
-
-        } );
-
-    }
-
-   
+    }  
 
 }

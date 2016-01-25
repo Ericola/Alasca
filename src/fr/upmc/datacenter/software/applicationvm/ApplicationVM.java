@@ -440,6 +440,12 @@ implements	ProcessorServicesNotificationConsumerI,
 		requestNotificationOutboundPort.doConnection(requestNotificationInboundPortURI, RequestSubmissionI.class.getCanonicalName());
 	}
 	
+	/**
+	 * Disconnect the RequestNotificationOutboundPort and return a String table containing 
+	 * the Uri of the vm and the requestSubmissionInboundPortURI (use to shutdown the ApplicationVM).
+	 * @return String table containing the Uri of the vm and the requestSubmissionInboundPortURI
+	 * @throws Exception
+	 */
 	public String[] acceptRequestNotificationPortDisconnection()
 			throws Exception {
 		
@@ -451,6 +457,7 @@ implements	ProcessorServicesNotificationConsumerI,
 		return tab;
 	}
 
+	
 	@Override
 	public AllocatedCore[] getCoresInVM() throws Exception {
 		AllocatedCore[] tab = new AllocatedCore[allocatedCoresIdleStatus.entrySet().size()];

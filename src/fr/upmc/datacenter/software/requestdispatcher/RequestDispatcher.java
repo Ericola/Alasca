@@ -25,10 +25,8 @@ import fr.upmc.datacenter.software.ports.RequestSubmissionInboundPort;
 import fr.upmc.datacenter.software.ports.RequestSubmissionOutboundPort;
 import fr.upmc.datacenter.software.requestdispatcher.interfaces.RequestDispatcherDynamicStateI;
 import fr.upmc.datacenter.software.requestdispatcher.interfaces.RequestDispatcherManagementI;
-import fr.upmc.datacenter.software.requestdispatcher.interfaces.RequestDispatcherVMEndingNotificationI;
 import fr.upmc.datacenter.software.requestdispatcher.ports.RequestDispatcherDynamicStateDataInboundPort;
 import fr.upmc.datacenter.software.requestdispatcher.ports.RequestDispatcherManagementInboundPort;
-import fr.upmc.datacenter.software.requestdispatcher.ports.RequestDispatcherVMEndingNotificationOutboundPort;
 
 /**
  * 
@@ -59,9 +57,6 @@ implements RequestSubmissionHandlerI, RequestNotificationHandlerI, RequestDispat
 
 	/** Outbound port used by the RD to notify tasks' end to the generator. */
 	protected RequestNotificationOutboundPort rnop;
-
-	/** Outbound port uses to notify that a VM has finished all his task and is waiting to be shutdown */
-	protected RequestDispatcherVMEndingNotificationOutboundPort rdvenop;
 
 	/** Variable to know the less recent ApplicationVM **/
 	protected int current = 0;
@@ -159,11 +154,6 @@ implements RequestSubmissionHandlerI, RequestNotificationHandlerI, RequestDispat
 		this.addPort( this.rnop );
 		this.rnop.publishPort();
 
-		this.addRequiredInterface(RequestDispatcherVMEndingNotificationI.class);
-		this.rdvenop = new RequestDispatcherVMEndingNotificationOutboundPort(rdvenop, this);
-		this.addPort(this.rdvenop);
-		this.rdvenop.publishPort();
-
 		this.addRequiredInterface(ControllerManagementI.class);
 		this.cmop = new ControllerManagementOutboundPort(cmop, this);
 		this.addPort(this.cmop);
@@ -252,22 +242,6 @@ implements RequestSubmissionHandlerI, RequestNotificationHandlerI, RequestDispat
 		}
 	}
 
-	// public RequestDispatcherDynamicStateI getRequestProcessingTimeAvg() throws Exception {
-	// long total = 0;
-	// long nbRequest = 0;
-	// ListIterator<RequestTime> it = requestEndTimes.listIterator( requestEndTimes.size());
-	// while ( it.hasPrevious() ) {
-	// RequestTime endRequest = it.previous();
-	// long startTime = requestStartTimes.get( endRequest.requestURI );
-	// total += endRequest.time - startTime;
-	// nbRequest++;
-	// }
-	//
-	// long avg = nbRequest == 0 ? 0 : total / nbRequest;
-	// return new RequestDispatcherDynamicState( this.rdURI , avg / 1000000 );
-	//
-	// }
-
 	private void updateRequestStates() {
 		if ( requestEndTimes.size() > NB_REQUEST ) {
 			String uri = requestEndTimes.remove( 0 ).requestURI;
@@ -330,10 +304,11 @@ implements RequestSubmissionHandlerI, RequestNotificationHandlerI, RequestDispat
 	 */
 	@Override
 	public void connectVm(String vmURI, String RequestSubmissionInboundPortURI ) throws Exception {
-
+		
 		// Creation du Port
 		String rdsopURI = rdURI + "rdsop" + nbVmConnected;
 		nbVmConnected++;
+		if(!this.requiredInterfaces.contains(RequestSubmissionI.class))
 		this.addRequiredInterface( RequestSubmissionI.class );
 		RequestSubmissionOutboundPort r = new RequestSubmissionOutboundPort( rdsopURI , this );
 		this.addPort( r );

@@ -59,8 +59,6 @@ public class TestAppProviderMultiJVM extends AbstractDistributedCVM {
 
     /** PORT **/
     protected ComputerServicesOutboundPort csop;
-    protected ComputerStaticStateDataOutboundPort cssdop;
-    protected ComputerDynamicStateDataOutboundPort cdsdop;
     protected ApplicationSubmissionOutboundPort asop;
     protected ApplicationNotificationOutboundPort anop;
     protected ApplicationProviderManagementOutboundPort apmop;
@@ -105,8 +103,8 @@ public class TestAppProviderMultiJVM extends AbstractDistributedCVM {
 
             // Computer
             String computerURI = "computer0";
-            int numberOfProcessors = 2;
-            int numberOfCores = 2;
+            int numberOfProcessors = 4;
+            int numberOfCores = 4;
             Set<Integer> admissibleFrequencies = new HashSet<Integer>();
             admissibleFrequencies.add(1500); // Cores can run at 1,5 GHz
             admissibleFrequencies.add(3000); // and at 3 GHz
@@ -140,6 +138,7 @@ public class TestAppProviderMultiJVM extends AbstractDistributedCVM {
                 ProcessorCoordinator pc = new ProcessorCoordinator("pc" + i , pmipURIs.get(entry.getValue()),1500, 1500, numberOfCores );
                 processorCoordinators.put(entry.getValue(), "pc" + i);
                 this.addDeployedComponent(pc);
+                i++;
             }
 
             // AdmissionController
@@ -151,7 +150,7 @@ public class TestAppProviderMultiJVM extends AbstractDistributedCVM {
             final int[] nbAvailableCoresPerComputer = new int[1];
             nbAvailableCoresPerComputer[0] = numberOfProcessors * numberOfCores;
             Integer[] frequencies = { 1500, 3000 };
-            ac = new AdmissionController("ac", "asip", "rdvenip", "anip", "acmip", "rnetip", "rnetop", csop, computer,
+            ac = new AdmissionController("ac", "asip", "anip", "acmip", "rnetip", "rnetop", csop, computer,
                     nbAvailableCoresPerComputer, pmipURIs, frequencies, processorCoordinators);
             this.addDeployedComponent(ac);
 
@@ -201,8 +200,6 @@ public class TestAppProviderMultiJVM extends AbstractDistributedCVM {
     @Override
     public void shutdown() throws Exception {
         if (thisJVMURI.equals(PROVIDER_JVM_URI)) {
-            csop.doDisconnection();
-            cssdop.doDisconnection();
 
         } else if (thisJVMURI.equals(CONSUMER_JVM_URI)) {
             asop.doDisconnection();

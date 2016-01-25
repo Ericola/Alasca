@@ -41,11 +41,7 @@ import fr.upmc.datacenter.software.ports.RingNetworkInboundPort;
 import fr.upmc.datacenter.software.ports.RingNetworkOutboundPort;
 import fr.upmc.datacenter.software.requestdispatcher.RequestDispatcher;
 import fr.upmc.datacenter.software.requestdispatcher.connectors.RequestDispatcherManagementConnector;
-import fr.upmc.datacenter.software.requestdispatcher.connectors.RequestDispatcherVMEndingNotificationConnector;
-import fr.upmc.datacenter.software.requestdispatcher.interfaces.RequestDispatcherVMEndingNotificationI;
 import fr.upmc.datacenter.software.requestdispatcher.ports.RequestDispatcherManagementOutboundPort;
-import fr.upmc.datacenter.software.requestdispatcher.ports.RequestDispatcherVMEndingNotificationInboundPort;
-import fr.upmc.datacenter.software.requestdispatcher.ports.RequestDispatcherVMEndingNotificationOutboundPort;
 import fr.upmc.datacenterclient.applicationprovider.interfaces.ApplicationNotificationI;
 import fr.upmc.datacenterclient.applicationprovider.interfaces.ApplicationSubmissionI;
 import fr.upmc.datacenterclient.applicationprovider.ports.ApplicationNotificationInboundPort;
@@ -71,7 +67,7 @@ import fr.upmc.datacenterclient.applicationprovider.ports.ApplicationSubmissionI
  */
 
 public class AdmissionController extends AbstractComponent
-        implements AdmissionControllerManagementI, RequestDispatcherVMEndingNotificationI, RingNetworkI {
+        implements AdmissionControllerManagementI, RingNetworkI {
 
     public final static int NB_CORE = 2;
     public final static long THRESHOLD_ADDING_VM_MS = 500000L;
@@ -88,11 +84,6 @@ public class AdmissionController extends AbstractComponent
      * (by the AP)
      */
     protected ApplicationNotificationInboundPort anip;
-
-    /**
-     * The inbound port used to be notified the end of a VM (by RD)
-     */
-    protected RequestDispatcherVMEndingNotificationInboundPort rdvenip;
 
     /** The outbound port used to allocate core to the vm */
     protected List<ApplicationVMManagementOutboundPort> avmop;
@@ -185,8 +176,7 @@ public class AdmissionController extends AbstractComponent
      *            URI of computer(s)
      * @throws Exception
      */
-    public AdmissionController(String acURI, String applicationSubmissionInboundPortURI,
-            String requestDispatcherVMEndingNotificationInboundPortURI, String applicationNotificationInboundPortURI,
+    public AdmissionController(String acURI, String applicationSubmissionInboundPortURI, String applicationNotificationInboundPortURI,
             String AdmissionControllerManagementInboundPortURI, String ringNetworkInboundPortURI,
             String ringNetworkOutboundPortURI, String computerServiceOutboundPortURI[], String computerURI[],
             int[] nbAvailableCoresPerComputer, Map<String, String> pmipURIs, Integer[] frequencies,
@@ -208,11 +198,7 @@ public class AdmissionController extends AbstractComponent
         this.addPort(acmip);
         this.acmip.publishPort();
 
-        this.addOfferedInterface(RequestDispatcherVMEndingNotificationI.class);
-        this.rdvenip = new RequestDispatcherVMEndingNotificationInboundPort(
-                requestDispatcherVMEndingNotificationInboundPortURI, this);
-        this.addPort(rdvenip);
-        this.rdvenip.publishPort();
+   
 
         this.csop = new ComputerServicesOutboundPort[computerServiceOutboundPortURI.length];
         this.computerURI = computerURI;
@@ -366,11 +352,7 @@ public class AdmissionController extends AbstractComponent
                         RequestDispatcherManagementConnector.class.getCanonicalName());
                 AbstractCVM.theCVM.addDeployedComponent(rd);
 
-                // Connect RD with AC
-                RequestDispatcherVMEndingNotificationOutboundPort rdvenop = (RequestDispatcherVMEndingNotificationOutboundPort) rd
-                        .findPortFromURI(createURI("rdvenop"));
-                rdvenop.doConnection(rdvenip.getPortURI(),
-                        RequestDispatcherVMEndingNotificationConnector.class.getCanonicalName());
+           
 
                 // Connect RD with VM
                 RequestSubmissionOutboundPort rsop = (RequestSubmissionOutboundPort) rd.findPortFromURI(rdsop.get(0));
@@ -495,9 +477,7 @@ public class AdmissionController extends AbstractComponent
         print("RequestGenerator and requestDispatcher are connected");
     }
 
-    public void freeUpVM() {
 
-    }
 
     private String createURI(String uri) {
         return acURI + uri + cpt;
@@ -564,21 +544,7 @@ public class AdmissionController extends AbstractComponent
         }
     }
 
-    // @Override
-    // public void removeVM( String RequestDispatcherURI ) throws Exception {
-    // rdmopList.get( RequestDispatcherURI ).disconnectVm();
-    //
-    //
-    // }
-
-    @Override
-    public void notifyAdmissionControllerVMFinishRequest(String RequestSubmissionInboundPortURI) throws Exception {
-        print("Shutting down VM...");
-        rsipList.get(RequestSubmissionInboundPortURI).getOwner().shutdown();
-
-        // update available cores
-
-    }
+    
 
     @Override
     public void shutdown() throws ComponentShutdownException {
@@ -631,14 +597,7 @@ public class AdmissionController extends AbstractComponent
         return ok;
     }
 
-    @Override
-    public void setFrequency(Integer f) throws Exception {
-        // parcourir les processeurs utilisés
-        for (AllocatedCore a : allocatedCores) {
-            pmops.get(a.processorURI).setCoreFrequency(a.coreNo, 3000);
-        }
-    }
-
+  
     @Override
     public void sendVM(String vmURI, String requestSubmissionInboundPortURI) throws Exception {
         Date testDate;
