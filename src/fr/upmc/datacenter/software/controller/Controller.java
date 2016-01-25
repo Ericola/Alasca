@@ -246,7 +246,17 @@ public class Controller extends AbstractComponent implements RequestDispatcherSt
                     if (TURN_ON_ADAPTATION) {
                         
                         if (decision == CoordinatorDecision.SHOULD_DECREASE_FREQUENCY) {
-                            
+                            print("Applying the coordination decision");
+                            for (Entry<String, ProcessorCoordinatorServicesOutboundPort> entry : pcsops.entrySet()) {
+                                for (int core : processorCores.get(entry.getKey())) {
+                                    boolean accepted = false;
+                                    // If the coordinator accepts we change it otherwise we don't
+                                    if (accepted = entry.getValue().frequencyDemand(cURI, core,frequencies[frequencies.length - 1])){  
+                                            pmops.get(entry.getKey()).setCoreFrequency(core, frequencies[frequencies.length - 1]);
+                                    }
+                                }
+                            }
+                            decision = CoordinatorDecision.NONE;
                         }
 
                         if (System.nanoTime() - lastAdaptation > DURATION_BETWEEN_ADJUSTMENT) {
@@ -274,7 +284,6 @@ public class Controller extends AbstractComponent implements RequestDispatcherSt
 
                                         // If the coordinator accepts we change it otherwise we don't
                                         if (accepted = entry.getValue().frequencyDemand(cURI, core,frequencies[frequencies.length - 1])){  
-//                                            if(pmops.get(entry.getKey())!=null)
                                                 pmops.get(entry.getKey()).setCoreFrequency(core, frequencies[frequencies.length - 1]);
                                         }
                                     }

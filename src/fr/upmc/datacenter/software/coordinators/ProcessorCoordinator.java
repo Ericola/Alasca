@@ -28,7 +28,7 @@ import fr.upmc.datacenter.software.coordinators.ports.ProcessorCoordinatorServic
  * <code>ProcessorCoordinatorService</code> to attach a new controller to the coordinator.
  * Indeed the coordinator needs to know all of the controller using the 
  * processor to coordinate them.
- * Also it allows a controller to ask for a frequency  
+ * Also it allows a controller to ask for a frequency increase. 
  * 
  */
 public class ProcessorCoordinator extends AbstractComponent {
