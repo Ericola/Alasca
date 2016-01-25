@@ -37,6 +37,32 @@ import fr.upmc.datacenter.software.requestdispatcher.interfaces.RequestDispatche
 import fr.upmc.datacenter.software.requestdispatcher.ports.RequestDispatcherDynamicStateDataOutboundPort;
 import fr.upmc.datacenter.software.requestdispatcher.ports.RequestDispatcherManagementOutboundPort;
 
+/**
+ * The class <code>Controller</code> implements the component
+ * representing an application controller in the datacenter.
+ * 
+ * <p>
+ * <strong>Description</strong>
+ * </p>
+ * 
+ * A controller controls the average time of execution of requests with sensors.
+ * If the time is too high (Above a predefined threshold) it asks the <code>Coordinator</code> the permission to increase the frequency 
+ * of the cores or the processors used by the application. If the coordinator accepts positively it will
+ * then increase those frequencies. 
+ * If the coordinator refuses the controller will then try to allocate core to the Application.
+ * If no more core are available it will try to add a new virutal machine to the application.
+ *  
+ * If the time is too low (below a prefefined threshold) it ask the <code>Coordinator</code> the permission
+ *  to decrease the frequency of the cores or the processors used by the application. If the coordinator accepts positively it will
+ * then increase those frequencies. 
+ * 
+ * The controller offers the interface
+ * <code>ControllerManagementI</code> to attach new coordinator to the controller.
+ * It also offers the interface
+ * <code>ProcessorCoordinatorServicesI</code> to be notifies by the coordinator with the method
+ * <code>setCoordinatorDecision</code>.
+ * For exemple if the coordinator force us to decrease the frequency of the processors.
+ */
 public class Controller extends AbstractComponent implements RequestDispatcherStateDataConsumerI, RingNetworkI {
 
     protected static final long THRESHOLD_AVG_ADJUSTMENT_MS = 5000;
@@ -198,7 +224,7 @@ public class Controller extends AbstractComponent implements RequestDispatcherSt
         ladder = new Integer[] { 2, 2, 2, 3, 3, 4, 5 };
         this.processorCoordinator = processorCoordinator;
         this.processorCores = processorCores;
-        
+        this.pmipURIs = pmipURIs;
 
     }
 
@@ -218,8 +244,13 @@ public class Controller extends AbstractComponent implements RequestDispatcherSt
                     boolean adaptation = false;
 
                     if (TURN_ON_ADAPTATION) {
+                        
+                        if (decision == CoordinatorDecision.SHOULD_DECREASE_FREQUENCY) {
+                            
+                        }
 
                         if (System.nanoTime() - lastAdaptation > DURATION_BETWEEN_ADJUSTMENT) {
+                            
 
                             // WE ARE ABOVE THE THRESHOLD
                             // ------------------------------------
@@ -243,7 +274,7 @@ public class Controller extends AbstractComponent implements RequestDispatcherSt
 
                                         // If the coordinator accepts we change it otherwise we don't
                                         if (accepted = entry.getValue().frequencyDemand(cURI, core,frequencies[frequencies.length - 1])){  
-                                            if(pmops.get(entry.getKey())!=null)
+//                                            if(pmops.get(entry.getKey())!=null)
                                                 pmops.get(entry.getKey()).setCoreFrequency(core, frequencies[frequencies.length - 1]);
                                         }
                                     }

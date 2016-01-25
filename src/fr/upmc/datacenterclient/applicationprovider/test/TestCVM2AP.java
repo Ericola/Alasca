@@ -98,6 +98,8 @@ public class TestCVM2AP extends AbstractCVM {
                 processorCoordinators.put(entry.getValue(), pcURI);
                 this.addDeployedComponent(pc);
                 j++;
+                pc.toggleLogging();
+                pc.toggleTracing();
             }
         }
 

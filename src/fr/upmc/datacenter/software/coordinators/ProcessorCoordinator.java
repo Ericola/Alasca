@@ -13,6 +13,24 @@ import fr.upmc.datacenter.software.coordinators.interfaces.ProcessorCoordinatorS
 import fr.upmc.datacenter.software.coordinators.ports.ProcessorCoordinatorServicesInboundPort;
 import fr.upmc.datacenter.software.coordinators.ports.ProcessorCoordinatorServicesOutboundPort;
 
+/**
+ * The class <code>ProcessorCoordinator</code> implements the component
+ * representing processor coordinator in the data center.
+ * 
+ * <p>
+ * <strong>Description</strong>
+ * </p>
+ * 
+ * A processor coordinator is linked to a processor and manage the availability of its cores.
+ * When a controller 
+ * 
+ * The <code>ProcessorCoordinator</code> offers the interface
+ * <code>ProcessorCoordinatorService</code> to attach a new controller to the coordinator.
+ * Indeed the coordinator needs to know all of the controller using the 
+ * processor to coordinate them.
+ * Also it allows a controller to ask for a frequency  
+ * 
+ */
 public class ProcessorCoordinator extends AbstractComponent {
 
     protected String pcURI;
@@ -26,8 +44,6 @@ public class ProcessorCoordinator extends AbstractComponent {
     protected int defaultFrequency;
     protected int maxFrequencyGap;
 
-
-    private boolean FLAG_SHOULD_INCREASE = false;
     private List<Integer> coreFrequencies;
 
     public ProcessorCoordinator(String uri, String pmipURI, int defaultFrequency, int maxFrequencyGap, int numberOfCores)
