@@ -68,7 +68,7 @@ public class Controller extends AbstractComponent implements RequestDispatcherSt
 
     /** OutboundPort uses to communicate with the AdmissionController */
     protected AdmissionControllerManagementOutboundPort acmop;
-    protected static String Filename = "";
+    protected String Filename = "";
     public static int nbMoyRecu = 0;
     protected Long lastAdaptation = 0l;
     protected double lastAVGTime = 0;
