@@ -77,7 +77,7 @@ public class ProcessorCoordinator extends AbstractComponent {
                 // Force others controller that shares this core to increase the frequency during the next adaptation
                 for (Entry<String, ProcessorCoordinatorServicesOutboundPort> e : pcsops.entrySet()) {
                     if (!e.getKey().equals(controllerURI)) {
-                        print("Force the controller to increase the frequency for the next adaptation");
+                        print("Force the controller "+e.getKey()+" to increase the frequency for the next adaptation");
                         e.getValue().setCoordinatorDecision(CoordinatorDecision.SHOULD_INCREASE_FREQUENCY);
                     }
                 }
