@@ -89,6 +89,8 @@ public class TestCVM2Computers extends AbstractCVM {
                 ProcessorCoordinator pc = new ProcessorCoordinator("pc" + i , pmipURIs.get(entry.getValue()),1500, 1500, numberOfCores );
                 processorCoordinators.put(entry.getValue(), "pc" + j);
                 this.addDeployedComponent(pc);
+                pc.toggleLogging();
+                pc.toggleTracing();
             }
 
         }

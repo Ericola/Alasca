@@ -155,22 +155,22 @@ public class Controller extends AbstractComponent implements RequestDispatcherSt
         pmops = new HashMap<>();
         
         Filename = "./" + Filename + cURI + "Courbe.txt";
-        
+        this.addRequiredInterface(ProcessorCoordinatorServicesI.class);
+        this.addRequiredInterface(ProcessorManagementI.class);
         for (String processorURI : processorCores.keySet()) {
 
             String coordinatorURI = processorCoordinator.get(processorURI);
 
             // processor coordinator services
-            this.addRequiredInterface(ProcessorCoordinatorServicesI.class);
             String pcsopURI = cURI + coordinatorURI + "op";
             ProcessorCoordinatorServicesOutboundPort pcsop = new ProcessorCoordinatorServicesOutboundPort(pcsopURI, this);
-            this.pcsops.put(processorURI, pcsop);
             this.addPort(pcsop);
             pcsop.publishPort();
             pcsop.doConnection(coordinatorURI + "pcsip", ProcessorCoordinatorServicesConnector.class.getCanonicalName());
+            this.pcsops.put(processorURI, pcsop);
 
             // processor management 
-            this.addRequiredInterface(ProcessorManagementI.class);
+
             String pmopURI = cURI + processorURI + "op";
             ProcessorManagementOutboundPort pmop = new ProcessorManagementOutboundPort(pmopURI, this);
             this.pmops.put(processorURI, pmop);
@@ -183,6 +183,7 @@ public class Controller extends AbstractComponent implements RequestDispatcherSt
             pcsop.attachController(this.pcsipURI);
 
         }
+        int size = pmops.size();
 
         this.addRequiredInterface(AdmissionControllerManagementI.class);
         this.acmop = new AdmissionControllerManagementOutboundPort(admissionControllerManagementOutboundPortURI, this);
@@ -241,8 +242,10 @@ public class Controller extends AbstractComponent implements RequestDispatcherSt
                                     for (int core : processorCores.get(entry.getKey())) {
 
                                         // If the coordinator accepts we change it otherwise we don't
-                                        if (accepted = entry.getValue().frequencyDemand(cURI, core,frequencies[frequencies.length - 1]))                     
-                                            pmops.get(entry.getKey()).setCoreFrequency(core, frequencies[frequencies.length - 1]);
+                                        if (accepted = entry.getValue().frequencyDemand(cURI, core,frequencies[frequencies.length - 1])){  
+                                            if(pmops.get(entry.getKey())!=null)
+                                                pmops.get(entry.getKey()).setCoreFrequency(core, frequencies[frequencies.length - 1]);
+                                        }
                                     }
                                 }
 
