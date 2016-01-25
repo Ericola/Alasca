@@ -457,7 +457,9 @@ implements	ProcessorServicesNotificationConsumerI,
 		return tab;
 	}
 
-	
+	/**
+	 * Return a table of AllocatedCore used by the a
+	 */
 	@Override
 	public AllocatedCore[] getCoresInVM() throws Exception {
 		AllocatedCore[] tab = new AllocatedCore[allocatedCoresIdleStatus.entrySet().size()];

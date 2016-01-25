@@ -68,7 +68,7 @@ public class Controller extends AbstractComponent implements RequestDispatcherSt
 
     /** OutboundPort uses to communicate with the AdmissionController */
     protected AdmissionControllerManagementOutboundPort acmop;
-    protected static String Filename = "./Courbe.txt";
+    protected static String Filename = "";
     public static int nbMoyRecu = 0;
     protected Long lastAdaptation = 0l;
     protected double lastAVGTime = 0;
@@ -152,6 +152,8 @@ public class Controller extends AbstractComponent implements RequestDispatcherSt
 
         pcsops = new HashMap<>();
         pmops = new HashMap<>();
+        
+        Filename = "./" + Filename + cURI + ".txt";
         
         for (String processorURI : processorCores.keySet()) {
 
