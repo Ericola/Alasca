@@ -9,12 +9,6 @@ public class AdmissionControllerManagementConnector extends AbstractConnector
         implements AdmissionControllerManagementI {
 
     @Override
-    public void freeUpVM() throws Exception {
-        ( ( AdmissionControllerManagementI ) this.offering ).freeUpVM();
-
-    }
-
-    @Override
     public boolean addCores( String rdURI , int nbCores ) throws Exception {
         return ( ( AdmissionControllerManagementI ) this.offering ).addCores( rdURI , nbCores );
     }

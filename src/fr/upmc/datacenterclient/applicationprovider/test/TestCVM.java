@@ -99,7 +99,7 @@ public class TestCVM extends AbstractCVM {
         nbAvailableCoresPerComputer[0] = numberOfProcessors * numberOfCores;
        
         Integer[] frequencies = {1500, 3000};
-        AdmissionController ac = new AdmissionController( "ac" , "asip" , "rdvenip" , "anip" , "acmip" , "rnetip", "rnetop", csop,
+        AdmissionController ac = new AdmissionController( "ac" , "asip", "anip" , "acmip" , "rnetip", "rnetop", csop,
                 computer , nbAvailableCoresPerComputer , pmipURIs, frequencies, processorCoordinators );
         this.addDeployedComponent( ac );
         this.csop = ( ComputerServicesOutboundPort ) ac.findPortFromURI( "csop" );

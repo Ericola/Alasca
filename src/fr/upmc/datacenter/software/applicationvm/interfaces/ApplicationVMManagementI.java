@@ -41,5 +41,10 @@ extends		OfferedI,
 	public void			allocateCores(AllocatedCore[] allocatedCores)
 	throws Exception ;
 	
+	/**
+	 * return all AllocatedCores of the application virtual machine
+	 * @return table of allocatedCore
+	 * @throws Exception
+	 */
 	public AllocatedCore[] getCoresInVM() throws Exception;
 }

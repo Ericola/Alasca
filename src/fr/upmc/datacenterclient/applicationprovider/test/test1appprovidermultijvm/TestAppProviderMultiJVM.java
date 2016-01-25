@@ -150,7 +150,7 @@ public class TestAppProviderMultiJVM extends AbstractDistributedCVM {
             final int[] nbAvailableCoresPerComputer = new int[1];
             nbAvailableCoresPerComputer[0] = numberOfProcessors * numberOfCores;
             Integer[] frequencies = { 1500, 3000 };
-            ac = new AdmissionController("ac", "asip", "rdvenip", "anip", "acmip", "rnetip", "rnetop", csop, computer,
+            ac = new AdmissionController("ac", "asip", "anip", "acmip", "rnetip", "rnetop", csop, computer,
                     nbAvailableCoresPerComputer, pmipURIs, frequencies, processorCoordinators);
             this.addDeployedComponent(ac);
 

@@ -16,12 +16,6 @@ public class AdmissionControllerManagementOutboundPort extends AbstractOutboundP
     }
 
     @Override
-    public void freeUpVM() throws Exception {
-        ( ( AdmissionControllerManagementI ) this.connector ).freeUpVM();;
-
-    }
-
-    @Override
     public boolean addCores( String rdURI, int nbCores ) throws Exception {
         return ( ( AdmissionControllerManagementI ) this.connector ).addCores( rdURI, nbCores );
     }

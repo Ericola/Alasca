@@ -117,7 +117,7 @@ public class TestCVM2AP extends AbstractCVM {
 
         // TODO pmipURIs
         Integer[] frequencies = { 1500, 3000 };
-        AdmissionController ac = new AdmissionController("ac", "asip", "rdvenip", "anip", "acmip", "rnetip", "rnetop",
+        AdmissionController ac = new AdmissionController("ac", "asip", "anip", "acmip", "rnetip", "rnetop",
                 csop, computer, nbAvailableCoresPerComputer, pmipURIs, frequencies, processorCoordinators);
 
         this.csop = new ComputerServicesOutboundPort[NB_COMPUTER];
