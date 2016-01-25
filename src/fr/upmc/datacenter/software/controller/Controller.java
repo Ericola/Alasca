@@ -153,7 +153,7 @@ public class Controller extends AbstractComponent implements RequestDispatcherSt
         pcsops = new HashMap<>();
         pmops = new HashMap<>();
         
-        Filename = "./" + Filename + cURI + ".txt";
+        Filename = "./" + Filename + cURI + "Courbe.txt";
         
         for (String processorURI : processorCores.keySet()) {
 
