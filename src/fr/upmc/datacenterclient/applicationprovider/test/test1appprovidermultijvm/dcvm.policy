@@ -3,6 +3,7 @@ grant {
   permission java.io.FilePermission "./config/deployment.rnc", "read";
   permission java.io.FilePermission "./config.xml", "read";
   permission java.io.FilePermission "./bcm-tmp/", "write";
+  permission java.io.FilePermission "./Courbe.txt", "write";
   permission java.util.PropertyPermission "user.dir", "read";
   permission java.net.SocketPermission "*:1999", "connect, resolve";
   permission java.net.SocketPermission "*:1024-", "connect, resolve";

@@ -335,7 +335,7 @@ public class AdmissionController extends AbstractComponent
                 // AllocateCore des computers aux VMs
                 this.avmop.get(cpt).allocateCores(ac);
                 print(ac.length + " cores allocated.");
-
+        
                 // Création d'un requestdispatcher
                 print("Creating the requestDispatcher...");
                 List<String> rdsop = new ArrayList<>();
@@ -542,10 +542,10 @@ public class AdmissionController extends AbstractComponent
             // AllocatedCore to VM
             avmop.get(avmop.size() - 1).allocateCores(ac);
             print(ac.length + " cores allocated.");
-            if (!vmToSendToRing)
+            if (!vmToSendToRing){
                 this.rdmopList.get(RequestDispatcherURI).connectVm(vmURI, createVMURI("rsip"));
             rsipList.put(createVMURI("rsip"), (RequestSubmissionInboundPort) vm.findPortFromURI(createVMURI("rsip")));
-
+            }
             vm.toggleLogging();
             vm.toggleTracing();
             print("VM Allocated!");

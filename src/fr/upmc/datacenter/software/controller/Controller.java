@@ -62,7 +62,7 @@ public class Controller extends AbstractComponent implements RequestDispatcherSt
 
     /** OutboundPort uses to communicate with the AdmissionController */
     protected AdmissionControllerManagementOutboundPort acmop;
-    protected static String Filename = "Courbe.txt";
+    protected static String Filename = "./Courbe.txt";
     public static int nbMoyRecu = 0;
     protected Long lastAdaptation = 0l;
     protected double lastAVGTime = 0;
@@ -101,7 +101,7 @@ public class Controller extends AbstractComponent implements RequestDispatcherSt
         this.requestDispatcherDynamicStateDataOutboundPort.publishPort();
         this.requestDispatcherDynamicStateDataOutboundPort.doConnection(rddsdip,
                 DataConnector.class.getCanonicalName());
-
+      
         this.addRequiredInterface(RingNetworkI.class);
         this.addOfferedInterface(RingNetworkI.class);
 
@@ -117,23 +117,24 @@ public class Controller extends AbstractComponent implements RequestDispatcherSt
         this.rdmop = new RequestDispatcherManagementOutboundPort(requestDispatcherManagementOutboundPortURI, this);
         this.addPort(this.rdmop);
         this.rdmop.publishPort();
-
+     
         this.addOfferedInterface(ControllerManagementI.class);
         this.cmip = new ControllerManagementInboundPort(cmip, this);
         this.addPort(this.cmip);
         this.cmip.publishPort();
-
+       
         pcsops = new HashMap<>();
+        this.addRequiredInterface(ProcessorCoordinatorServicesI.class);
         for (String s : coordinatorCores.keySet()) {
-            this.addRequiredInterface(ProcessorCoordinatorServicesI.class);
+        	
             ProcessorCoordinatorServicesOutboundPort pcsop = new ProcessorCoordinatorServicesOutboundPort(s, this);
             this.pcsops.put(s, pcsop);
             this.addPort(pcsop);
             pcsop.publishPort();
-
             pcsop.doConnection(s + "pcsip", ProcessorCoordinatorServicesConnector.class.getCanonicalName());
+           
         }
-
+        System.out.println("test");
         this.addRequiredInterface(AdmissionControllerManagementI.class);
         this.acmop = new AdmissionControllerManagementOutboundPort(admissionControllerManagementOutboundPortURI, this);
         this.addPort(this.acmop);
@@ -145,7 +146,6 @@ public class Controller extends AbstractComponent implements RequestDispatcherSt
         this.frequencies = frequencies;
 
         ladder = new Integer[] { 2, 2, 2, 3, 3, 4, 5 };
-        Filename = cURI + Filename;
         this.processorCoordinatorMap = processorCoordinatorMap;
         this.coordinatorCores = coordinatorCores;
     }

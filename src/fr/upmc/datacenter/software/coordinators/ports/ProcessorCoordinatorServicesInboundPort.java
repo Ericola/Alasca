@@ -14,11 +14,11 @@ public class ProcessorCoordinatorServicesInboundPort extends AbstractInboundPort
     private static final long serialVersionUID = 1L;
 
     public ProcessorCoordinatorServicesInboundPort(ComponentI owner) throws Exception {
-        super(ControllerManagementI.class, owner);
+        super(ProcessorCoordinatorServicesI.class, owner);
     }
 
     public ProcessorCoordinatorServicesInboundPort(String uri, ComponentI owner) throws Exception {
-        super(uri, ControllerManagementI.class, owner);
+        super(uri, ProcessorCoordinatorServicesI.class, owner);
     }
 
     @Override

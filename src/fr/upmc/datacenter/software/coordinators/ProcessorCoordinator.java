@@ -8,6 +8,8 @@ import java.util.Map;
 import java.util.Set;
 
 import fr.upmc.components.AbstractComponent;
+import fr.upmc.components.ComponentState;
+import fr.upmc.components.ComponentStateI;
 import fr.upmc.datacenter.hardware.processors.interfaces.ProcessorManagementI;
 import fr.upmc.datacenter.hardware.processors.ports.ProcessorManagementOutboundPort;
 import fr.upmc.datacenter.software.coordinators.connectors.ProcessorCoordinatorServicesConnector;
@@ -42,9 +44,9 @@ public class ProcessorCoordinator extends AbstractComponent {
         pmop.publishPort();
         pmop.doConnection(pmipURI, ProcessorCoordinatorServicesConnector.class.getCanonicalName());
 
-        this.addOfferedInterface(ProcessorCoordinatorServicesI.class);
         this.pcsip = new ProcessorCoordinatorServicesInboundPort(pcURI + "pcsip", this);
-        this.addPort(pcsip);
+        this.addOfferedInterface(ProcessorCoordinatorServicesI.class);
+        this.addPort(this.pcsip);
         this.pcsip.publishPort();
 
         this.defaultFrequency = defaultFrequency;

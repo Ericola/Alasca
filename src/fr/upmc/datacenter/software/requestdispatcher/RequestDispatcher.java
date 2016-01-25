@@ -330,10 +330,11 @@ implements RequestSubmissionHandlerI, RequestNotificationHandlerI, RequestDispat
 	 */
 	@Override
 	public void connectVm(String vmURI, String RequestSubmissionInboundPortURI ) throws Exception {
-
+		
 		// Creation du Port
 		String rdsopURI = rdURI + "rdsop" + nbVmConnected;
 		nbVmConnected++;
+		if(!this.requiredInterfaces.contains(RequestSubmissionI.class))
 		this.addRequiredInterface( RequestSubmissionI.class );
 		RequestSubmissionOutboundPort r = new RequestSubmissionOutboundPort( rdsopURI , this );
 		this.addPort( r );
