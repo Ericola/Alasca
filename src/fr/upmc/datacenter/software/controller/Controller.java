@@ -101,7 +101,7 @@ public class Controller extends AbstractComponent implements RequestDispatcherSt
     
     protected ProcessorCoordinatorServicesInboundPort pcsip;
 
-    protected String pcsipURI = cURI + "pcsip";
+    protected String pcsipURI;
 
 
     /** map associate processorsURI with processormanagementInboundPortURI **/
@@ -114,6 +114,7 @@ public class Controller extends AbstractComponent implements RequestDispatcherSt
 
         super(3, 3);
         this.cURI = cURI;
+        pcsipURI = cURI + "pcsip";
         this.requestDispatcherDynamicStateDataOutboundPort = new RequestDispatcherDynamicStateDataOutboundPort(this,
                 requestDispatcherURI);
         this.addRequiredInterface(DataRequiredI.PullI.class);
