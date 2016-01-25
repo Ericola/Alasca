@@ -93,9 +93,11 @@ public class TestCVM2AP extends AbstractCVM {
 
             int j = 0;
             for (Map.Entry<Integer, String> entry : processorURIs.entrySet()) {
-                ProcessorCoordinator pc = new ProcessorCoordinator("pc" + i , pmipURIs.get(entry.getValue()),1500, 1500, numberOfCores );
-                processorCoordinators.put(entry.getValue(), "pc" + j);
+                String pcURI = entry.getValue()+"pc";
+                ProcessorCoordinator pc = new ProcessorCoordinator( pcURI, pmipURIs.get(entry.getValue()),1500, 1500, numberOfCores );
+                processorCoordinators.put(entry.getValue(), pcURI);
                 this.addDeployedComponent(pc);
+                j++;
             }
         }
 
@@ -198,7 +200,7 @@ public class TestCVM2AP extends AbstractCVM {
                     }
                 }
             }).start();
-            Thread.sleep(20000L);
+            Thread.sleep(2000000L);
             System.out.println("shutting down...");
             test.shutdown();
             System.out.println("ending...");

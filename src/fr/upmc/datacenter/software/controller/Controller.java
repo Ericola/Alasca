@@ -372,25 +372,24 @@ public class Controller extends AbstractComponent implements RequestDispatcherSt
             String processorURI = entry.getKey();
             // if the controller doesn't already deal with this processor we add it
             if (pcsops.get(processorURI) == null) {
-
+                this.processorCores.put(processorURI, entry.getValue());
                 // processor coordinator services
                 String pcsopURI = cURI + coordinatorURI + "op";
                 ProcessorCoordinatorServicesOutboundPort pcsop = new ProcessorCoordinatorServicesOutboundPort(pcsopURI, this);
-                this.pcsops.put(processorURI, pcsop);
                 this.addPort(pcsop);
                 pcsop.publishPort();
                 pcsop.doConnection(coordinatorURI + "pcsip", ProcessorCoordinatorServicesConnector.class.getCanonicalName());
-
+                this.pcsops.put(processorURI, pcsop);
+                
                 // processor management 
                 this.addRequiredInterface(ProcessorManagementI.class);
                 String pmopURI = cURI + processorURI + "op";
                 ProcessorManagementOutboundPort pmop = new ProcessorManagementOutboundPort(pmopURI, this);
-                this.pmops.put(processorURI, pmop);
                 this.addPort(pmop);
                 pmop.publishPort();
                 String pmipURI = pmipURIs.get(processorURI);
                 pmop.doConnection(pmipURI, ProcessorManagementConnector.class.getCanonicalName());
-
+                this.pmops.put(processorURI, pmop);
 
                 // attach to the controller
                 pcsop.attachController(this.pcsipURI);
