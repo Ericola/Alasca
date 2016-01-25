@@ -151,6 +151,8 @@ public class Controller extends AbstractComponent implements RequestDispatcherSt
         this.pcsip.publishPort();
 
         pcsops = new HashMap<>();
+        pmops = new HashMap<>();
+        
         for (String processorURI : processorCores.keySet()) {
 
             String coordinatorURI = processorCoordinator.get(processorURI);
@@ -162,7 +164,7 @@ public class Controller extends AbstractComponent implements RequestDispatcherSt
             this.pcsops.put(pcsopURI, pcsop);
             this.addPort(pcsop);
             pcsop.publishPort();
-            pcsop.doConnection(coordinatorURI + "ip", ProcessorCoordinatorServicesConnector.class.getCanonicalName());
+            pcsop.doConnection(coordinatorURI + "pcsip", ProcessorCoordinatorServicesConnector.class.getCanonicalName());
 
             // processor management 
             this.addRequiredInterface(ProcessorManagementI.class);
