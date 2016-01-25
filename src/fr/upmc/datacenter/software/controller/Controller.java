@@ -146,7 +146,7 @@ public class Controller extends AbstractComponent implements RequestDispatcherSt
         this.cmip.publishPort();
         
         this.addOfferedInterface(ProcessorCoordinatorServicesI.class);
-        this.pcsip = new ProcessorCoordinatorServicesInboundPort(cmip, this);
+        this.pcsip = new ProcessorCoordinatorServicesInboundPort(pcsipURI, this);
         this.addPort(this.pcsip);
         this.pcsip.publishPort();
 
@@ -161,7 +161,7 @@ public class Controller extends AbstractComponent implements RequestDispatcherSt
             this.addRequiredInterface(ProcessorCoordinatorServicesI.class);
             String pcsopURI = cURI + coordinatorURI + "op";
             ProcessorCoordinatorServicesOutboundPort pcsop = new ProcessorCoordinatorServicesOutboundPort(pcsopURI, this);
-            this.pcsops.put(pcsopURI, pcsop);
+            this.pcsops.put(coordinatorURI, pcsop);
             this.addPort(pcsop);
             pcsop.publishPort();
             pcsop.doConnection(coordinatorURI + "pcsip", ProcessorCoordinatorServicesConnector.class.getCanonicalName());
@@ -229,14 +229,20 @@ public class Controller extends AbstractComponent implements RequestDispatcherSt
                                 }
                                 System.out.println("ladder[0] = " + nbCoresToAllocate);
 
-                                for (Entry<String, ProcessorCoordinatorServicesOutboundPort> entry : pcsops
-                                        .entrySet()) {
+                                for (Entry<String, ProcessorCoordinatorServicesOutboundPort> entry : pcsops.entrySet()) {
                                     for (int core : processorCores.get(entry.getKey())) {
                                         entry.getValue().frequencyDemand(cURI, core,
                                                 frequencies[frequencies.length - 1]);
                                         System.out.println("Trying to change frequencies");
                                     }
                                 }
+                                
+                                for (Entry<String, List<Integer>> entry : processorCores.entrySet()) {
+                                    for (Entry<String, ProcessorCoordinatorServicesOutboundPort> entry : pcsops.entrySet()) {
+                                        
+                                    }
+                                }
+                                
 
                                 // acmop.setFrequency(
                                 // frequencies[frequencies.length - 1] );
@@ -372,7 +378,7 @@ public class Controller extends AbstractComponent implements RequestDispatcherSt
                 this.pcsops.put(pcsopURI, pcsop);
                 this.addPort(pcsop);
                 pcsop.publishPort();
-                pcsop.doConnection(coordinatorURI + "ip", ProcessorCoordinatorServicesConnector.class.getCanonicalName());
+                pcsop.doConnection(coordinatorURI + "pcsip", ProcessorCoordinatorServicesConnector.class.getCanonicalName());
 
                 // processor management 
                 this.addRequiredInterface(ProcessorManagementI.class);
